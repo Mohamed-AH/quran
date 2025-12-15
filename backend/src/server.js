@@ -96,10 +96,9 @@ app.get('/', (req, res) => {
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
-// TODO: Add these routes in Phase 4
-// app.use('/api/user', require('./routes/user'));
-// app.use('/api/logs', require('./routes/logs'));
-// app.use('/api/juz', require('./routes/juz'));
+app.use('/api/user', require('./routes/user'));
+app.use('/api/logs', require('./routes/logs'));
+app.use('/api/juz', require('./routes/juz'));
 
 // ============================================
 // ERROR HANDLING
@@ -137,6 +136,25 @@ const server = app.listen(PORT, () => {
   console.log(`   GET  /api/auth/me              - Get current user (requires auth)`);
   console.log(`   POST /api/auth/refresh         - Refresh access token`);
   console.log(`   POST /api/auth/logout          - Logout`);
+  console.log('');
+  console.log('👤 User endpoints:');
+  console.log(`   GET    /api/user               - Get user profile (requires auth)`);
+  console.log(`   PUT    /api/user               - Update user profile (requires auth)`);
+  console.log(`   DELETE /api/user               - Delete user account (requires auth)`);
+  console.log('');
+  console.log('📝 Logs endpoints:');
+  console.log(`   GET    /api/logs               - Get all logs with pagination (requires auth)`);
+  console.log(`   POST   /api/logs               - Create new log (requires auth)`);
+  console.log(`   GET    /api/logs/stats         - Get user statistics (requires auth)`);
+  console.log(`   GET    /api/logs/:id           - Get single log (requires auth)`);
+  console.log(`   PUT    /api/logs/:id           - Update log (requires auth)`);
+  console.log(`   DELETE /api/logs/:id           - Delete log (requires auth)`);
+  console.log('');
+  console.log('📖 Juz endpoints:');
+  console.log(`   GET    /api/juz                - Get all 30 Juz (requires auth)`);
+  console.log(`   GET    /api/juz/summary        - Get Juz summary (requires auth)`);
+  console.log(`   GET    /api/juz/:juzNumber     - Get single Juz (requires auth)`);
+  console.log(`   PUT    /api/juz/:juzNumber     - Update Juz (requires auth)`);
   console.log('');
 });
 
