@@ -12,6 +12,7 @@ const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 
 const connectDatabase = require('./config/database');
+const passport = require('./config/passport');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 // Initialize Express app
@@ -41,6 +42,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Cookie parser
 app.use(cookieParser());
+
+// Initialize Passport
+app.use(passport.initialize());
 
 // Logging (only in development)
 if (process.env.NODE_ENV === 'development') {
@@ -90,8 +94,9 @@ app.get('/', (req, res) => {
   });
 });
 
-// TODO: Import and use route modules here
-// app.use('/api/auth', require('./routes/auth'));
+// API Routes
+app.use('/api/auth', require('./routes/auth'));
+// TODO: Add these routes in Phase 4
 // app.use('/api/user', require('./routes/user'));
 // app.use('/api/logs', require('./routes/logs'));
 // app.use('/api/juz', require('./routes/juz'));
@@ -125,6 +130,13 @@ const server = app.listen(PORT, () => {
   console.log(`   GET  /              - API info`);
   console.log(`   GET  /health        - Health check`);
   console.log(`   GET  /api/version   - API version`);
+  console.log('');
+  console.log('🔐 Authentication endpoints:');
+  console.log(`   GET  /api/auth/google          - Google OAuth login`);
+  console.log(`   GET  /api/auth/github          - GitHub OAuth login`);
+  console.log(`   GET  /api/auth/me              - Get current user (requires auth)`);
+  console.log(`   POST /api/auth/refresh         - Refresh access token`);
+  console.log(`   POST /api/auth/logout          - Logout`);
   console.log('');
 });
 
