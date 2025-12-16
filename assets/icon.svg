@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#0a3a2a" rx="80"/>
+
+  <!-- Gold border -->
+  <rect x="20" y="20" width="472" height="472" fill="none" stroke="#d4af37" stroke-width="4" rx="70"/>
+
+  <!-- Book icon -->
+  <g transform="translate(256, 256)">
+    <!-- Book pages -->
+    <rect x="-80" y="-100" width="160" height="200" fill="#f4d77f" rx="8"/>
+
+    <!-- Book spine -->
+    <rect x="-85" y="-100" width="10" height="200" fill="#d4af37"/>
+
+    <!-- Book details -->
+    <line x1="-60" y1="-70" x2="60" y2="-70" stroke="#0a3a2a" stroke-width="3"/>
+    <line x1="-60" y1="-40" x2="60" y2="-40" stroke="#0a3a2a" stroke-width="3"/>
+    <line x1="-60" y1="-10" x2="60" y2="-10" stroke="#0a3a2a" stroke-width="3"/>
+    <line x1="-60" y1="20" x2="60" y2="20" stroke="#0a3a2a" stroke-width="3"/>
+    <line x1="-60" y1="50" x2="60" y2="50" stroke="#0a3a2a" stroke-width="3"/>
+
+    <!-- Arabic text "حافظ" styled -->
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#0a3a2a" text-anchor="middle" dominant-baseline="central">📖</text>
+  </g>
+
+  <!-- App name -->
+  <text x="256" y="440" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#d4af37" text-anchor="middle">حافظ</text>
+</svg>
