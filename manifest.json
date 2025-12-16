@@ -1,0 +1,82 @@
+{
+  "name": "حافظ - Hafiz: Quran Memorization Tracker",
+  "short_name": "حافظ Hafiz",
+  "description": "Track your Quran memorization journey with daily logs, Juz progress, and detailed statistics",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a3a2a",
+  "theme_color": "#d4af37",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "lifestyle", "productivity"],
+  "screenshots": [
+    {
+      "src": "/assets/screenshot-1.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "label": "Daily log entry screen"
+    },
+    {
+      "src": "/assets/screenshot-2.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "label": "Juz progress overview"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Today",
+      "short_name": "Log",
+      "description": "Add today's memorization log",
+      "url": "/app.html?tab=today",
+      "icons": [
+        {
+          "src": "/assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "View Juz",
+      "short_name": "Juz",
+      "description": "View Juz progress",
+      "url": "/app.html?tab=juz",
+      "icons": [
+        {
+          "src": "/assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "short_name": "Stats",
+      "description": "View detailed statistics",
+      "url": "/app.html?tab=stats",
+      "icons": [
+        {
+          "src": "/assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
