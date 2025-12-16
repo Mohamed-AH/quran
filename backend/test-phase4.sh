@@ -146,11 +146,12 @@ echo -e "${BLUE}3. Testing Logs Endpoints${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
-# Create a log (using yesterday's date to avoid conflicts)
-YESTERDAY=$(date -d "yesterday" -u +"%Y-%m-%dT00:00:00.000Z" 2>/dev/null || date -v-1d -u +"%Y-%m-%dT00:00:00.000Z" 2>/dev/null || echo "2024-12-15T00:00:00.000Z")
+# Create a log (using unique date based on current time to avoid conflicts)
+# This generates a date like: 2024-01-15T14:30:00.000Z (using current hour:minute)
+UNIQUE_DATE1=$(date -u +"%Y-01-15T%H:%M:00.000Z" 2>/dev/null || echo "2024-01-15T12:00:00.000Z")
 test_endpoint "POST /api/logs - Create log entry" \
     "POST" "/api/logs" \
-    "{\"date\":\"$YESTERDAY\",\"newPages\":\"1-5\",\"newRating\":4,\"reviewPages\":\"10-15\",\"reviewRating\":5,\"notes\":\"Good memorization session\"}" \
+    "{\"date\":\"$UNIQUE_DATE1\",\"newPages\":\"1-5\",\"newRating\":4,\"reviewPages\":\"10-15\",\"reviewRating\":5,\"notes\":\"Good memorization session\"}" \
     201
 
 # Get all logs
@@ -193,11 +194,12 @@ else
     echo ""
 fi
 
-# Create another log for testing (2 days ago to avoid conflicts)
-TWO_DAYS_AGO=$(date -d "2 days ago" -u +"%Y-%m-%dT00:00:00.000Z" 2>/dev/null || date -v-2d -u +"%Y-%m-%dT00:00:00.000Z" 2>/dev/null || echo "2024-12-13T00:00:00.000Z")
+# Create another log for testing (different unique date)
+# This generates a date like: 2024-01-16T14:30:00.000Z (next day, same time)
+UNIQUE_DATE2=$(date -u +"%Y-01-16T%H:%M:00.000Z" 2>/dev/null || echo "2024-01-16T12:00:00.000Z")
 test_endpoint "POST /api/logs - Create second log entry" \
     "POST" "/api/logs" \
-    "{\"date\":\"$TWO_DAYS_AGO\",\"newPages\":\"6-10\",\"newRating\":3,\"notes\":\"Review session\"}" \
+    "{\"date\":\"$UNIQUE_DATE2\",\"newPages\":\"6-10\",\"newRating\":3,\"notes\":\"Review session\"}" \
     201
 
 ##############################################
