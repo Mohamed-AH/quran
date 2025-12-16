@@ -371,17 +371,17 @@
       window.location.href = `${CONFIG.API_BASE_URL}/auth/github`;
     }
 
-    // Add tab click listeners
-    document.querySelectorAll('.demo-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        switchTab(tab.dataset.tab);
-      });
-    });
-
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateLanguage();
       renderJuzGrid();
+
+      // Add tab click listeners after DOM is loaded
+      document.querySelectorAll('.demo-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          switchTab(tab.dataset.tab);
+        });
+      });
 
       // Create language toggle button
       const langToggle = document.createElement('button');
