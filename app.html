@@ -50,7 +50,6 @@
             <button class="tab" onclick="switchTab('juz')" id="tabJuz">الأجزاء</button>
             <button class="tab" onclick="switchTab('history')" id="tabHistory">السجل</button>
             <button class="tab" onclick="switchTab('stats')" id="tabStats">الإحصائيات</button>
-            <button class="tab" onclick="switchTab('profile')" id="tabProfile">الملف الشخصي</button>
         </div>
 
         <div class="content">
@@ -108,39 +107,7 @@
                 <div id="detailedStats"></div>
             </div>
 
-            <div id="profileTab" style="display:none;">
-                <h2 style="color: var(--gold); margin-bottom: 20px;" id="profileTitle">إدارة الملفات الشخصية</h2>
-                <div class="daily-log">
-                    <div class="log-header">
-                        <div class="log-date" id="currentProfileName">الملف الحالي</div>
-                    </div>
-                    <div class="input-group">
-                        <label id="labelProfileSelect">اختر الملف الشخصي</label>
-                        <select id="profileSelect" onchange="switchProfile()"></select>
-                    </div>
-                    <div class="input-group">
-                        <label id="labelNewProfile">إنشاء ملف شخصي جديد</label>
-                        <input type="text" id="newProfileName" placeholder="اسم الملف الجديد...">
-                    </div>
-                    <button class="btn" onclick="createProfile()" id="btnCreateProfile">إنشاء ملف</button>
-                    <div style="margin-top: 40px; padding-top: 30px; border-top: 2px solid rgba(212, 175, 55, 0.2);">
-                        <h3 style="color: var(--gold); margin-bottom: 20px;" id="profileActionsTitle">إجراءات الملف</h3>
-                        <div class="button-group">
-                            <button class="btn" onclick="exportProfile()" id="btnExport">تصدير الملف</button>
-                            <button class="btn" onclick="importProfile()" id="btnImport">استيراد ملف</button>
-                            <button class="btn btn-secondary" onclick="renameProfile()" id="btnRename">إعادة تسمية</button>
-                            <button class="btn btn-secondary" onclick="deleteProfile()" id="btnDelete" style="background: rgba(220, 53, 69, 0.2); color: #ff6b6b;">حذف الملف</button>
-                        </div>
-                    </div>
-                    <div style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; border: 1px solid rgba(212, 175, 55, 0.2);">
-                        <h4 style="color: var(--gold); margin-bottom: 15px;" id="profileInfoTitle">معلومات الملف</h4>
-                        <div id="profileInfo" style="color: var(--sage); line-height: 1.8;"></div>
-                    </div>
-                </div>
-            </div>
         </div>
-
-        <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="handleImportFile(event)">
     </div>
 
     <div class="modal" id="juzModal">
