@@ -92,7 +92,17 @@ let currentJuz = null;
 
 async function init() {
     try {
+        const isArabic = storage.getLanguage() === 'ar';
         ui.showLoader();
+
+        // Show skeleton loaders while data loads
+        const juzGrid = document.getElementById('juzGrid');
+        const historyList = document.getElementById('historyList');
+        const detailedStats = document.getElementById('detailedStats');
+
+        if (juzGrid) ui.createSkeleton(juzGrid, 30);
+        if (historyList) ui.createSkeleton(historyList, 5);
+        if (detailedStats) ui.createSkeleton(detailedStats, 4);
 
         // Load user settings and apply language
         await loadSettings();
