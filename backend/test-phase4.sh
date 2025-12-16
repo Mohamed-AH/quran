@@ -146,10 +146,11 @@ echo -e "${BLUE}3. Testing Logs Endpoints${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
-# Create a log
+# Create a log (using yesterday's date to avoid conflicts)
+YESTERDAY=$(date -d "yesterday" -u +"%Y-%m-%dT00:00:00.000Z" 2>/dev/null || date -v-1d -u +"%Y-%m-%dT00:00:00.000Z" 2>/dev/null || echo "2024-12-15T00:00:00.000Z")
 test_endpoint "POST /api/logs - Create log entry" \
     "POST" "/api/logs" \
-    '{"newPages":"1-5","newRating":4,"reviewPages":"10-15","reviewRating":5,"notes":"Good memorization session"}' \
+    "{\"date\":\"$YESTERDAY\",\"newPages\":\"1-5\",\"newRating\":4,\"reviewPages\":\"10-15\",\"reviewRating\":5,\"notes\":\"Good memorization session\"}" \
     201
 
 # Get all logs

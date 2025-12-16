@@ -143,11 +143,14 @@ const updateJuzSchema = Joi.object({
   }),
 }).min(1);
 
-// Juz number parameter
-const juzNumberSchema = Joi.number().integer().min(1).max(30).required().messages({
-  'number.min': 'Juz number must be between 1 and 30',
-  'number.max': 'Juz number must be between 1 and 30',
-  'any.required': 'Juz number is required',
+// Juz number parameter (URL params come as strings, so we wrap in object and convert)
+const juzNumberSchema = Joi.object({
+  juzNumber: Joi.number().integer().min(1).max(30).required().messages({
+    'number.base': 'Juz number must be a valid number',
+    'number.min': 'Juz number must be between 1 and 30',
+    'number.max': 'Juz number must be between 1 and 30',
+    'any.required': 'Juz number is required',
+  }),
 });
 
 // ============================================
@@ -209,6 +212,7 @@ const validateParams = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.params, {
       abortEarly: false,
+      convert: true, // Allow string to number conversion
     });
 
     if (error) {
