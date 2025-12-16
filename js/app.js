@@ -1,0 +1,756 @@
+        const trans = {
+            ar: {
+                appTitle: 'حافظ', subtitle: 'رحلة حفظ القرآن الكريم', langBtn: 'English',
+                labelPages: 'صفحات محفوظة', labelJuz: 'أجزاء مكتملة', labelStreak: 'أيام متتالية',
+                labelProgress: 'نسبة الإنجاز', tabToday: 'اليوم', tabJuz: 'الأجزاء',
+                tabHistory: 'السجل', tabStats: 'الإحصائيات', tabProfile: 'الملف الشخصي',
+                btnSave: 'حفظ اليوم', labelNewPages: 'الصفحات الجديدة المحفوظة',
+                labelNewQuality: 'جودة الحفظ الجديد', labelReviewPages: 'صفحات المراجعة',
+                labelReviewQuality: 'جودة المراجعة', labelNotes: 'ملاحظات اليوم',
+                placeholderNewPages: 'مثال: 1-3، 5', placeholderReviewPages: 'مثال: 10-15',
+                placeholderNotes: 'آيات صعبة، إنجازات، أو أي ملاحظات...',
+                statsTitle: 'إحصائيات مفصلة', labelJuzStatus: 'حالة الجزء',
+                labelJuzPages: 'عدد الصفحات المحفوظة (من 20)', labelJuzStart: 'تاريخ البدء',
+                labelJuzEnd: 'تاريخ الإتمام', labelJuzNotes: 'ملاحظات',
+                placeholderJuzNotes: 'ملاحظات عن هذا الجزء...', btnJuzSave: 'حفظ', btnJuzCancel: 'إلغاء',
+                statusNotStarted: 'لم يبدأ', statusInProgress: 'جاري الحفظ', statusCompleted: 'مكتمل',
+                emptyHistory: 'لا يوجد سجل بعد. ابدأ بتسجيل يومك الأول!',
+                newMemorization: 'حفظ جديد', review: 'مراجعة', notes: 'ملاحظات', pages: 'صفحات',
+                rating: 'تقييم', totalDays: 'إجمالي أيام التسجيل', avgNewQuality: 'متوسط جودة الحفظ',
+                avgReviewQuality: 'متوسط جودة المراجعة', juzInProgress: 'أجزاء قيد الحفظ',
+                saveSuccess: 'تم حفظ سجل اليوم بنجاح!', saveJuzSuccess: 'تم حفظ بيانات الجزء بنجاح!',
+                alertEnterPages: 'الرجاء إدخال صفحات الحفظ أو المراجعة', helpTitle: 'كيفية الاستخدام',
+                profileTitle: 'إدارة الملفات الشخصية', currentProfileName: 'الملف الحالي',
+                labelProfileSelect: 'اختر الملف الشخصي', labelNewProfile: 'إنشاء ملف شخصي جديد',
+                placeholderNewProfile: 'اسم الملف الجديد...', btnCreateProfile: 'إنشاء ملف',
+                profileActionsTitle: 'إجراءات الملف', btnExport: 'تصدير الملف', btnImport: 'استيراد ملف',
+                btnRename: 'إعادة تسمية', btnDelete: 'حذف الملف', profileInfoTitle: 'معلومات الملف',
+                profileCreated: 'تم إنشاء الملف', totalLogs: 'إجمالي السجلات', lastActive: 'آخر نشاط',
+                alertProfileName: 'الرجاء إدخال اسم للملف الشخصي', alertProfileExists: 'الملف الشخصي موجود بالفعل',
+                profileCreatedSuccess: 'تم إنشاء الملف الشخصي بنجاح!', profileSwitched: 'تم التبديل إلى الملف: ',
+                confirmDelete: 'هل أنت متأكد من حذف هذا الملف؟ لا يمكن التراجع عن هذا الإجراء.',
+                cannotDeleteLast: 'لا يمكن حذف الملف الوحيد المتبقي', profileDeleted: 'تم حذف الملف الشخصي',
+                newProfileName: 'أدخل الاسم الجديد للملف:', profileRenamed: 'تم إعادة تسمية الملف بنجاح',
+                exportSuccess: 'تم تصدير الملف بنجاح!', importSuccess: 'تم استيراد الملف بنجاح!',
+                importError: 'خطأ في استيراد الملف. تأكد من صحة الملف.'
+            },
+            en: {
+                appTitle: 'Hafiz', subtitle: 'Your Quran Memorization Journey', langBtn: 'العربية',
+                labelPages: 'Pages Memorized', labelJuz: 'Juz Completed', labelStreak: 'Day Streak',
+                labelProgress: 'Completion', tabToday: 'Today', tabJuz: 'Juz', tabHistory: 'History',
+                tabStats: 'Statistics', tabProfile: 'Profile', btnSave: 'Save Today',
+                labelNewPages: 'New Pages Memorized', labelNewQuality: 'New Memorization Quality',
+                labelReviewPages: 'Review Pages', labelReviewQuality: 'Review Quality',
+                labelNotes: 'Notes for Today', placeholderNewPages: 'e.g., 1-3, 5',
+                placeholderReviewPages: 'e.g., 10-15', placeholderNotes: 'Difficult verses, achievements...',
+                statsTitle: 'Detailed Statistics', labelJuzStatus: 'Juz Status',
+                labelJuzPages: 'Pages Memorized (out of 20)', labelJuzStart: 'Start Date',
+                labelJuzEnd: 'Completion Date', labelJuzNotes: 'Notes',
+                placeholderJuzNotes: 'Notes about this Juz...', btnJuzSave: 'Save', btnJuzCancel: 'Cancel',
+                statusNotStarted: 'Not Started', statusInProgress: 'In Progress', statusCompleted: 'Completed',
+                emptyHistory: 'No history yet. Start by logging your first day!',
+                newMemorization: 'New Memorization', review: 'Review', notes: 'Notes', pages: 'pages',
+                rating: 'rating', totalDays: 'Total Days Logged', avgNewQuality: 'Avg New Quality',
+                avgReviewQuality: 'Avg Review Quality', juzInProgress: 'Juz In Progress',
+                saveSuccess: 'Today\'s log saved successfully!', saveJuzSuccess: 'Juz data saved successfully!',
+                alertEnterPages: 'Please enter memorization or review pages', helpTitle: 'How to Use',
+                profileTitle: 'Profile Management', currentProfileName: 'Current Profile',
+                labelProfileSelect: 'Select Profile', labelNewProfile: 'Create New Profile',
+                placeholderNewProfile: 'New profile name...', btnCreateProfile: 'Create Profile',
+                profileActionsTitle: 'Profile Actions', btnExport: 'Export Profile', btnImport: 'Import Profile',
+                btnRename: 'Rename', btnDelete: 'Delete Profile', profileInfoTitle: 'Profile Information',
+                profileCreated: 'Created', totalLogs: 'Total Logs', lastActive: 'Last Active',
+                alertProfileName: 'Please enter a profile name', alertProfileExists: 'Profile already exists',
+                profileCreatedSuccess: 'Profile created successfully!', profileSwitched: 'Switched to profile: ',
+                confirmDelete: 'Are you sure you want to delete this profile? This action cannot be undone.',
+                cannotDeleteLast: 'Cannot delete the last remaining profile', profileDeleted: 'Profile deleted',
+                newProfileName: 'Enter new profile name:', profileRenamed: 'Profile renamed successfully',
+                exportSuccess: 'Profile exported successfully!', importSuccess: 'Profile imported successfully!',
+                importError: 'Error importing profile. Please check the file.'
+            }
+        };
+
+        let profiles = {}, currentProfile = 'default';
+        let data = {
+            logs: [], juz: {},
+            settings: { newRating: 0, reviewRating: 0, language: 'ar' },
+            metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() }
+        };
+        let currentJuz = null;
+
+        const juzNames = {
+            ar: ['آلم (الفاتحة - البقرة)', 'سَيَقُولُ (البقرة)', 'تِلْكَ الرُّسُلُ (البقرة - آل عمران)',
+                'لَنْ تَنَالُوا (آل عمران - النساء)', 'وَالْمُحْصَنَاتُ (النساء)', 'لَا يُحِبُّ اللَّهُ (النساء - المائدة)',
+                'وَإِذَا سَمِعُوا (المائدة - الأنعام)', 'وَلَوْ أَنَّنَا (الأنعام - الأعراف)', 'قَالَ الْمَلَأُ (الأعراف - الأنفال)',
+                'وَاعْلَمُوا (الأنفال - التوبة)', 'يَتَعَذَّرُونَ (التوبة - هود)', 'وَمَا مِنْ دَآبَّةٍ (هود - يوسف)',
+                'وَمَا أُبَرِّئُ (يوسف - إبراهيم)', 'رُبَمَا (الحجر - النحل)', 'سُبْحَانَ الَّذِي (الإسراء - الكهف)',
+                'قَالَ أَلَمْ (الكهف - طه)', 'اقْتَرَبَ (الأنبياء - الحج)', 'قَدْ أَفْلَحَ (المؤمنون - الفرقان)',
+                'وَقَالَ الَّذِينَ (الفرقان - النمل)', 'أَمَّنْ خَلَقَ (النمل - العنكبوت)', 'اُتْلُ مَا أُوحِيَ (العنكبوت - الأحزاب)',
+                'وَمَنْ يَقْنُتْ (الأحزاب - يس)', 'وَأَنزَلْنَا (يس - الزمر)', 'فَمَنْ أَظْلَمُ (الزمر - فصلت)',
+                'إِلَيْهِ يُرَدُّ (فصلت - الجاثية)', 'حَا مِيمْ (الأحقاف - الذاريات)', 'قَالَ فَمَا خَطْبُكُمْ (الذاريات - الحديد)',
+                'قَدْ سَمِعَ اللَّهُ (المجادلة - التحريم)', 'تَبَارَكَ الَّذِي (الملك - المرسلات)', 'عَمَّ يَتَسَاءَلُونَ (النبأ - الناس)'],
+            en: ['Alif Lam Meem (Al-Fatiha - Al-Baqarah)', 'Sayaqool (Al-Baqarah)', 'Tilkal Rusul (Al-Baqarah - Al-Imran)',
+                'Lan Tana Loo (Al-Imran - An-Nisa)', 'Wal Mohsanat (An-Nisa)', 'La Yuhibbullah (An-Nisa - Al-Ma\'idah)',
+                'Wa Iza Samiu (Al-Ma\'idah - Al-An\'am)', 'Wa Lau Annana (Al-An\'am - Al-A\'raf)', 'Qalal Malao (Al-A\'raf - Al-Anfal)',
+                'Wa A\'lamu (Al-Anfal - At-Tauba)', 'Yatazeroon (At-Tauba - Hud)', 'Wa Mamin Da\'abat (Hud - Yusuf)',
+                'Wa Ma Ubrioo (Yusuf - Ibrahim)', 'Rubama (Al-Hijr - An-Nahl)', 'Subhanallazi (Al-Isra - Al-Kahf)',
+                'Qal Alam (Al-Kahf - Ta-Ha)', 'Aqtarabo (Al-Anbiyaa - Al-Hajj)', 'Qadd Aflaha (Al-Muminun - Al-Furqan)',
+                'Wa Qalallazina (Al-Furqan - An-Naml)', 'A\'man Khalaq (An-Naml - Al-Ankabut)', 'Utlu Ma Oohi (Al-Ankabut - Al-Azhab)',
+                'Wa Manyaqnut (Al-Azhab - Ya-Sin)', 'Wa Anzalna (Ya-Sin - Az-Zumar)', 'Faman Azlam (Az-Zumar - Fussilat)',
+                'Elahe Yuruddo (Fussilat - Al-Jasiyah)', 'Ha\'a Meem (Al-Ahqaf - Az-Dhariyat)', 'Qala Fama Khatbukum (Az-Dhariyat - Al-Hadid)',
+                'Qadd Sami Allah (Al-Mujadilah - At-Tahrim)', 'Tabarakallazi (Al-Mulk - Al-Mursalat)', 'Amma Yatasa\'aloon (An-Naba - An-Nas)']
+        };
+
+        function init() {
+            loadProfiles(); loadData(); applyLanguage(); updateStats();
+            displayJuz(); displayHistory(); updateCurrentDate(); updateProfileInfo();
+        }
+
+        function loadProfiles() {
+            const saved = localStorage.getItem('quranTrackerProfiles');
+            if (saved) profiles = JSON.parse(saved);
+            if (Object.keys(profiles).length === 0) {
+                profiles['default'] = {
+                    name: 'Default Profile',
+                    data: { logs: [], juz: {},
+                        settings: { newRating: 0, reviewRating: 0, language: 'ar' },
+                        metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() }
+                    }
+                };
+                saveProfiles();
+            }
+            const savedCurrent = localStorage.getItem('quranTrackerCurrentProfile');
+            currentProfile = (savedCurrent && profiles[savedCurrent]) ? savedCurrent : Object.keys(profiles)[0];
+            updateProfileSelector();
+        }
+
+        function saveProfiles() {
+            localStorage.setItem('quranTrackerProfiles', JSON.stringify(profiles));
+            localStorage.setItem('quranTrackerCurrentProfile', currentProfile);
+        }
+
+        function updateProfileSelector() {
+            const select = document.getElementById('profileSelect');
+            select.innerHTML = '';
+            Object.keys(profiles).forEach(key => {
+                const option = document.createElement('option');
+                option.value = key; option.textContent = profiles[key].name;
+                if (key === currentProfile) option.selected = true;
+                select.appendChild(option);
+            });
+        }
+
+        function createProfile() {
+            const t = trans[data.settings.language];
+            const name = document.getElementById('newProfileName').value.trim();
+            if (!name) { alert(t.alertProfileName); return; }
+            const key = 'profile_' + Date.now();
+            profiles[key] = {
+                name: name,
+                data: { logs: [], juz: {},
+                    settings: { newRating: 0, reviewRating: 0, language: data.settings.language },
+                    metadata: { created: new Date().toISOString(), lastModified: new Date().toISOString() }
+                }
+            };
+            saveProfiles(); updateProfileSelector();
+            document.getElementById('newProfileName').value = '';
+            alert(t.profileCreatedSuccess);
+        }
+
+        function switchProfile() {
+            const t = trans[data.settings.language];
+            const newProfile = document.getElementById('profileSelect').value;
+            profiles[currentProfile].data = JSON.parse(JSON.stringify(data));
+            profiles[currentProfile].data.metadata.lastModified = new Date().toISOString();
+            currentProfile = newProfile; loadData(); saveProfiles();
+            updateStats(); displayJuz(); displayHistory(); updateProfileInfo();
+            alert(t.profileSwitched + profiles[currentProfile].name);
+        }
+
+        function deleteProfile() {
+            const t = trans[data.settings.language];
+            if (Object.keys(profiles).length === 1) { alert(t.cannotDeleteLast); return; }
+            if (!confirm(t.confirmDelete)) return;
+            delete profiles[currentProfile];
+            currentProfile = Object.keys(profiles)[0];
+            saveProfiles(); loadData(); updateProfileSelector();
+            updateStats(); displayJuz(); displayHistory(); updateProfileInfo();
+            alert(t.profileDeleted);
+        }
+
+        function renameProfile() {
+            const t = trans[data.settings.language];
+            const newName = prompt(t.newProfileName, profiles[currentProfile].name);
+            if (newName && newName.trim()) {
+                profiles[currentProfile].name = newName.trim();
+                saveProfiles(); updateProfileSelector(); updateProfileInfo();
+                alert(t.profileRenamed);
+            }
+        }
+
+        function exportProfile() {
+            const t = trans[data.settings.language];
+            const exportData = {
+                profileName: profiles[currentProfile].name,
+                data: profiles[currentProfile].data,
+                exportDate: new Date().toISOString(),
+                appVersion: '1.0'
+            };
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hafiz_${profiles[currentProfile].name}_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert(t.exportSuccess);
+        }
+
+        function importProfile() { document.getElementById('importFileInput').click(); }
+
+        function handleImportFile(event) {
+            const t = trans[data.settings.language];
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (!imported.data || !imported.profileName) throw new Error('Invalid file');
+                    const key = 'profile_' + Date.now();
+                    profiles[key] = { name: imported.profileName + ' (imported)', data: imported.data };
+                    saveProfiles(); updateProfileSelector(); alert(t.importSuccess);
+                } catch (error) { alert(t.importError); }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function updateProfileInfo() {
+            const t = trans[data.settings.language];
+            const info = document.getElementById('profileInfo');
+            const profile = profiles[currentProfile];
+            const created = new Date(profile.data.metadata.created).toLocaleDateString(
+                data.settings.language === 'ar' ? 'ar-SA' : 'en-US',
+                { year: 'numeric', month: 'long', day: 'numeric' }
+            );
+            const lastModified = profile.data.metadata.lastModified ?
+                new Date(profile.data.metadata.lastModified).toLocaleDateString(
+                    data.settings.language === 'ar' ? 'ar-SA' : 'en-US',
+                    { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+                ) : created;
+            info.innerHTML = `
+                <div style="margin-bottom: 10px;"><strong>${t.profileCreated}:</strong> ${created}</div>
+                <div style="margin-bottom: 10px;"><strong>${t.lastActive}:</strong> ${lastModified}</div>
+                <div style="margin-bottom: 10px;"><strong>${t.totalLogs}:</strong> ${profile.data.logs.length}</div>
+            `;
+            document.getElementById('currentProfileName').textContent = profile.name;
+        }
+
+        function loadData() {
+            if (profiles[currentProfile]) data = JSON.parse(JSON.stringify(profiles[currentProfile].data));
+            if (!data.settings) data.settings = { newRating: 0, reviewRating: 0, language: 'ar' };
+            if (!data.metadata) data.metadata = { created: new Date().toISOString(), lastModified: new Date().toISOString() };
+            if (Object.keys(data.juz).length === 0) {
+                for (let i = 1; i <= 30; i++) {
+                    data.juz[i] = { status: 'not-started', pages: 0, startDate: null, endDate: null, notes: '' };
+                }
+            }
+        }
+
+        function saveData() {
+            data.metadata.lastModified = new Date().toISOString();
+            profiles[currentProfile].data = JSON.parse(JSON.stringify(data));
+            saveProfiles();
+        }
+
+        function toggleLanguage() {
+            data.settings.language = data.settings.language === 'ar' ? 'en' : 'ar';
+            saveData(); applyLanguage();
+        }
+
+        function applyLanguage() {
+            const lang = data.settings.language, t = trans[lang];
+            document.documentElement.lang = lang;
+            document.documentElement.dir = document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            Object.keys(t).forEach(key => {
+                const el = document.getElementById(key);
+                if (el) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = t[key];
+                    else el.textContent = t[key];
+                }
+            });
+            const statusSelect = document.getElementById('juzStatus');
+            if (statusSelect) {
+                statusSelect.options[0].text = t.statusNotStarted;
+                statusSelect.options[1].text = t.statusInProgress;
+                statusSelect.options[2].text = t.statusCompleted;
+            }
+            displayJuz(); displayHistory(); updateCurrentDate(); updateProfileInfo();
+        }
+
+        const helpDocs = {
+            ar: `
+                <h3 style="color: var(--gold); margin: 25px 0 15px;">مرحباً بك في حافظ! 🌙</h3>
+                <p>تطبيق حافظ هو رفيقك في رحلة حفظ القرآن الكريم. يساعدك على تتبع تقدمك اليومي، إدارة أجزائك، ومراقبة إنجازاتك.</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📊 لوحة المعلومات الرئيسية</h4>
+                <p>في أعلى الصفحة، ستجد أربع بطاقات تعرض إحصائياتك:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>صفحات محفوظة:</strong> إجمالي الصفحات التي حفظتها عبر جميع الأجزاء</li>
+                    <li><strong>أجزاء مكتملة:</strong> عدد الأجزاء التي أتممت حفظها (كل جزء 20 صفحة)</li>
+                    <li><strong>أيام متتالية:</strong> عدد الأيام المتواصلة التي سجلت فيها حفظك</li>
+                    <li><strong>نسبة الإنجاز:</strong> نسبتك المئوية من إتمام القرآن الكريم (604 صفحة)</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📝 تبويب "اليوم"</h4>
+                <p>هنا تسجل حفظك اليومي:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>الصفحات الجديدة المحفوظة:</strong> أدخل الصفحات التي حفظتها اليوم (مثال: "1-3" أو "5، 7-9")</li>
+                    <li><strong>جودة الحفظ الجديد:</strong> قيّم مدى إتقانك للحفظ من 1-5 نجوم</li>
+                    <li><strong>صفحات المراجعة:</strong> الصفحات التي راجعتها من حفظك السابق</li>
+                    <li><strong>جودة المراجعة:</strong> قيّم مدى احتفاظك بالحفظ القديم</li>
+                    <li><strong>ملاحظات اليوم:</strong> سجل أي ملاحظات (آيات صعبة، إنجازات، تأملات)</li>
+                </ul>
+                <p><strong>💡 نصيحة:</strong> اضغط "حفظ اليوم" لتسجيل إدخالك. سيظهر في تبويب السجل!</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📚 تبويب "الأجزاء"</h4>
+                <p>إدارة الأجزاء الثلاثين بشكل فردي:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>اضغط على أي جزء</strong> لفتح نافذة التفاصيل</li>
+                    <li><strong>حدد الحالة:</strong> لم يبدأ، جاري الحفظ، أو مكتمل</li>
+                    <li><strong>تتبع الصفحات:</strong> سجل عدد الصفحات المحفوظة من 20</li>
+                    <li><strong>التواريخ:</strong> سجل تاريخ البدء والإتمام</li>
+                    <li><strong>ملاحظات خاصة:</strong> أضف ملاحظات عن الجزء</li>
+                </ul>
+                <p><strong>💡 نصيحة:</strong> الأجزاء المكتملة تظهر بلون مميز!</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📖 تبويب "السجل"</h4>
+                <p>راجع جميع سجلاتك اليومية السابقة بترتيب زمني. يمكنك رؤية:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>التاريخ الكامل لكل إدخال</li>
+                    <li>الصفحات المحفوظة والمراجعة</li>
+                    <li>التقييمات النجمية</li>
+                    <li>ملاحظاتك اليومية</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📈 تبويب "الإحصائيات"</h4>
+                <p>شاهد تحليلات مفصلة لأدائك:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>إجمالي أيام التسجيل:</strong> كم يوماً سجلت فيه حفظك</li>
+                    <li><strong>متوسط جودة الحفظ:</strong> معدل تقييماتك للحفظ الجديد</li>
+                    <li><strong>متوسط جودة المراجعة:</strong> معدل تقييماتك للمراجعة</li>
+                    <li><strong>أجزاء قيد الحفظ:</strong> عدد الأجزاء التي تعمل عليها حالياً</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">👤 تبويب "الملف الشخصي"</h4>
+                <p>إدارة ملفاتك الشخصية المتعددة:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>إنشاء ملف جديد:</strong> لكل فرد من العائلة ملفه الخاص</li>
+                    <li><strong>التبديل بين الملفات:</strong> اختر من القائمة المنسدلة</li>
+                    <li><strong>تصدير الملف:</strong> حمّل نسخة احتياطية بصيغة JSON</li>
+                    <li><strong>استيراد ملف:</strong> ارفع ملفاً محفوظاً مسبقاً</li>
+                    <li><strong>إعادة تسمية:</strong> غيّر اسم الملف الحالي</li>
+                    <li><strong>حذف الملف:</strong> احذف ملفاً (لا يمكن التراجع!)</li>
+                </ul>
+                <p><strong>⚠️ مهم:</strong> كل ملف له بياناته المستقلة تماماً!</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">💾 تخزين البيانات</h4>
+                <p>جميع بياناتك محفوظة محلياً في متصفحك:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>✅ بياناتك خاصة وتبقى على جهازك</li>
+                    <li>✅ يعمل بدون اتصال بالإنترنت بعد التحميل الأول</li>
+                    <li>⚠️ مسح بيانات المتصفح سيحذف سجلاتك</li>
+                    <li>⚠️ كل متصفح/جهاز له بيانات منفصلة</li>
+                    <li>💡 صدّر ملفك بانتظام كنسخة احتياطية!</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📱 التثبيت كتطبيق</h4>
+                <p>يمكنك تثبيت حافظ كتطبيق على جهازك:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>الجوال:</strong> ابحث عن "إضافة إلى الشاشة الرئيسية" في قائمة المتصفح</li>
+                    <li><strong>سطح المكتب:</strong> اضغط أيقونة التثبيت في شريط عنوان المتصفح</li>
+                    <li>بعد التثبيت، يعمل كتطبيق أصلي مع دعم وضع عدم الاتصال</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">💡 نصائح للنجاح</h4>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>📅 سجل يومياً للحفاظ على سلسلتك ورؤية تقدم مستمر</li>
+                    <li>⭐ كن صادقاً في تقييمات الجودة لتحديد المناطق التي تحتاج مزيداً من العمل</li>
+                    <li>📝 استخدم الملاحظات لتسجيل الآيات الصعبة للمراجعة المركزة</li>
+                    <li>🎯 حدّث حالة الأجزاء بانتظام لرؤية تقدم الإنجاز</li>
+                    <li>📊 راجع تبويب السجل أسبوعياً للتأمل في رحلتك</li>
+                    <li>💾 صدّر ملفك كل شهر كنسخة احتياطية</li>
+                    <li> أنشئ ملفات منفصلة لأفراد العائلة</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">🌐 المشاركة مع الأصدقاء</h4>
+                <p>شارك رابط الموقع مع أصدقائك! بيانات كل شخص محفوظة بشكل منفصل في متصفحه الخاص، لذا يمكن للجميع تتبع تقدمهم الفردي.</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">🔄 تصدير واستيراد البيانات</h4>
+                <p><strong>للنسخ الاحتياطي:</strong></p>
+                <ol style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>اذهب إلى تبويب "الملف الشخصي"</li>
+                    <li>اضغط "تصدير الملف"</li>
+                    <li>سيتم تنزيل ملف JSON يحتوي على جميع بياناتك</li>
+                    <li>احفظ هذا الملف في مكان آمن (سحابة، USB، إلخ)</li>
+                </ol>
+                <p><strong>للاستعادة:</strong></p>
+                <ol style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>اذهب إلى تبويب "الملف الشخصي"</li>
+                    <li>اضغط "استيراد ملف"</li>
+                    <li>اختر ملف JSON المحفوظ مسبقاً</li>
+                    <li>سيتم إنشاء ملف جديد بالبيانات المستوردة</li>
+                </ol>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">❓ أسئلة شائعة</h4>
+                <p><strong>س: هل يمكنني استخدام التطبيق على أجهزة متعددة؟</strong><br>
+                ج: نعم، لكن عليك تصدير واستيراد الملف يدوياً. البيانات لا تتزامن تلقائياً.</p>
+                
+                <p><strong>س: ماذا لو أردت تغيير المتصفح؟</strong><br>
+                ج: صدّر ملفك من المتصفح القديم، ثم استورده في المتصفح الجديد.</p>
+                
+                <p><strong>س: هل بياناتي آمنة؟</strong><br>
+                ج: نعم! جميع البيانات محفوظة محلياً على جهازك فقط. لا تُرسل لأي خادم.</p>
+
+                <p style="margin-top: 30px; text-align: center; color: var(--gold); font-size: 1.1rem;">
+                    <strong>جعل الله رحلة حفظك ميسرة وتقبل جهودك 🤲</strong><br>
+                    <span style="font-size: 0.9rem; color: var(--sage);">بارك الله فيك وفي حفظك للقرآن الكريم</span>
+                </p>
+            `,
+            en: `
+                <h3 style="color: var(--gold); margin: 25px 0 15px;">Welcome to Hafiz! 🌙</h3>
+                <p>Hafiz is your companion in the journey of Quran memorization. It helps you track daily progress, manage your Juz, and monitor your achievements.</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📊 Main Dashboard</h4>
+                <p>At the top of the page, you'll find four cards displaying your statistics:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>Pages Memorized:</strong> Total pages you've memorized across all Juz</li>
+                    <li><strong>Juz Completed:</strong> Number of complete Juz (each has 20 pages)</li>
+                    <li><strong>Day Streak:</strong> Consecutive days you've logged your practice</li>
+                    <li><strong>Completion:</strong> Your percentage toward completing the Quran (604 pages)</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📝 "Today" Tab</h4>
+                <p>Here you log your daily memorization:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>New Pages Memorized:</strong> Enter pages you memorized today (e.g., "1-3" or "5, 7-9")</li>
+                    <li><strong>New Memorization Quality:</strong> Rate how well you memorized (1-5 stars)</li>
+                    <li><strong>Review Pages:</strong> Pages you reviewed from previous memorization</li>
+                    <li><strong>Review Quality:</strong> Rate how well you retained what you reviewed</li>
+                    <li><strong>Notes for Today:</strong> Record any notes (difficult verses, achievements, reflections)</li>
+                </ul>
+                <p><strong>💡 Tip:</strong> Click "Save Today" to record your entry. It will appear in the History tab!</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📚 "Juz" Tab</h4>
+                <p>Manage your 30 Juz individually:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>Click any Juz</strong> to open the details window</li>
+                    <li><strong>Set Status:</strong> Not Started, In Progress, or Completed</li>
+                    <li><strong>Track Pages:</strong> Record number of pages memorized out of 20</li>
+                    <li><strong>Dates:</strong> Record start and completion dates</li>
+                    <li><strong>Specific Notes:</strong> Add notes about the Juz</li>
+                </ul>
+                <p><strong>💡 Tip:</strong> Completed Juz appear with a distinctive color!</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📖 "History" Tab</h4>
+                <p>Review all your past daily logs in chronological order. You can see:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>Full date for each entry</li>
+                    <li>Pages memorized and reviewed</li>
+                    <li>Star ratings</li>
+                    <li>Your daily notes</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📈 "Statistics" Tab</h4>
+                <p>View detailed analytics of your performance:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>Total Days Logged:</strong> How many days you've logged practice</li>
+                    <li><strong>Avg New Quality:</strong> Average of your new memorization ratings</li>
+                    <li><strong>Avg Review Quality:</strong> Average of your review ratings</li>
+                    <li><strong>Juz In Progress:</strong> Number of Juz you're currently working on</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">👤 "Profile" Tab</h4>
+                <p>Manage your multiple profiles:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>Create New Profile:</strong> Each family member can have their own profile</li>
+                    <li><strong>Switch Between Profiles:</strong> Select from dropdown menu</li>
+                    <li><strong>Export Profile:</strong> Download a JSON backup file</li>
+                    <li><strong>Import Profile:</strong> Upload a previously saved file</li>
+                    <li><strong>Rename:</strong> Change the current profile name</li>
+                    <li><strong>Delete Profile:</strong> Remove a profile (cannot be undone!)</li>
+                </ul>
+                <p><strong>⚠️ Important:</strong> Each profile has completely independent data!</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">💾 Data Storage</h4>
+                <p>All your data is saved locally in your browser:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>✅ Your data is private and stays on your device</li>
+                    <li>✅ Works offline after first load</li>
+                    <li>⚠️ Clearing browser data will delete your logs</li>
+                    <li>⚠️ Each browser/device has separate data</li>
+                    <li>💡 Export your profile regularly as backup!</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">📱 Installing as an App</h4>
+                <p>You can install Hafiz as an app on your device:</p>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li><strong>Mobile:</strong> Look for "Add to Home Screen" in your browser menu</li>
+                    <li><strong>Desktop:</strong> Click the install icon in your browser's address bar</li>
+                    <li>Once installed, it works like a native app with offline support</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">💡 Tips for Success</h4>
+                <ul style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>📅 Log daily to maintain your streak and see consistent progress</li>
+                    <li>⭐ Be honest with quality ratings to identify areas needing more work</li>
+                    <li>📝 Use notes to record difficult verses for focused review</li>
+                    <li>🎯 Update Juz status regularly to see your completion progress</li>
+                    <li>📊 Review the History tab weekly to reflect on your journey</li>
+                    <li>💾 Export your profile monthly as backup</li>
+                    <li> Create separate profiles for family members</li>
+                </ul>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">🌐 Sharing with Friends</h4>
+                <p>Share the website URL with friends! Each person's data is stored separately in their own browser, so everyone can track their individual progress.</p>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">🔄 Export & Import Data</h4>
+                <p><strong>To Backup:</strong></p>
+                <ol style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>Go to "Profile" tab</li>
+                    <li>Click "Export Profile"</li>
+                    <li>A JSON file containing all your data will download</li>
+                    <li>Save this file in a safe place (cloud, USB, etc.)</li>
+                </ol>
+                <p><strong>To Restore:</strong></p>
+                <ol style="margin: 10px 0 15px 20px; color: var(--sage);">
+                    <li>Go to "Profile" tab</li>
+                    <li>Click "Import Profile"</li>
+                    <li>Select the previously saved JSON file</li>
+                    <li>A new profile will be created with the imported data</li>
+                </ol>
+
+                <h4 style="color: var(--gold-light); margin: 20px 0 10px;">❓ Frequently Asked Questions</h4>
+                <p><strong>Q: Can I use the app on multiple devices?</strong><br>
+                A: Yes, but you need to manually export and import the profile. Data doesn't sync automatically.</p>
+                
+                <p><strong>Q: What if I want to change browsers?</strong><br>
+                A: Export your profile from the old browser, then import it in the new one.</p>
+                
+                <p><strong>Q: Is my data secure?</strong><br>
+                A: Yes! All data is stored locally on your device only. Nothing is sent to any server.</p>
+
+                <p style="margin-top: 30px; text-align: center; color: var(--gold); font-size: 1.1rem;">
+                    <strong>May Allah make your memorization journey easy and accept your efforts 🤲</strong><br>
+                    <span style="font-size: 0.9rem; color: var(--sage);">May Allah bless you in your Quran memorization</span>
+                </p>
+            `
+        };
+
+        function openHelp() {
+            const lang = data.settings.language;
+            document.getElementById('helpTitle').textContent = trans[lang].helpTitle;
+            document.getElementById('helpContent').innerHTML = helpDocs[lang];
+            document.getElementById('helpModal').classList.add('active');
+        }
+
+        function closeHelp() { document.getElementById('helpModal').classList.remove('active'); }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            ['todayTab', 'juzTab', 'historyTab', 'statsTab', 'profileTab'].forEach(t => 
+                document.getElementById(t).style.display = 'none'
+            );
+            if (tab === 'today') document.getElementById('todayTab').style.display = 'block';
+            else if (tab === 'juz') document.getElementById('juzTab').style.display = 'block';
+            else if (tab === 'history') { document.getElementById('historyTab').style.display = 'block'; displayHistory(); }
+            else if (tab === 'stats') { document.getElementById('statsTab').style.display = 'block'; displayDetailedStats(); }
+            else if (tab === 'profile') { document.getElementById('profileTab').style.display = 'block'; updateProfileInfo(); }
+        }
+
+        function setRating(type, rating) {
+            const container = document.getElementById(type + 'Rating');
+            container.querySelectorAll('.star').forEach((star, index) => {
+                if (index < rating) star.classList.add('active');
+                else star.classList.remove('active');
+            });
+            data.settings[type + 'Rating'] = rating;
+        }
+
+        function saveLog() {
+            const t = trans[data.settings.language];
+            const newPages = document.getElementById('newPages').value;
+            const reviewPages = document.getElementById('reviewPages').value;
+            const notes = document.getElementById('notes').value;
+            if (!newPages && !reviewPages) { alert(t.alertEnterPages); return; }
+            const log = {
+                date: new Date().toISOString(), newPages, newRating: data.settings.newRating,
+                reviewPages, reviewRating: data.settings.reviewRating, notes
+            };
+            data.logs.unshift(log); saveData(); updateStats();
+            document.getElementById('newPages').value = '';
+            document.getElementById('reviewPages').value = '';
+            document.getElementById('notes').value = '';
+            document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+            data.settings.newRating = 0; data.settings.reviewRating = 0;
+            alert(t.saveSuccess); displayHistory();
+        }
+
+        function updateStats() {
+            let totalPages = 0, completedJuz = 0;
+            Object.values(data.juz).forEach(juz => { 
+                totalPages += juz.pages;
+                if (juz.status === 'completed') completedJuz++;
+            });
+            let streak = calculateStreak();
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('totalJuz').textContent = completedJuz;
+            document.getElementById('currentStreak').textContent = streak;
+            const progress = (totalPages / 604) * 100;
+            document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+            const circle = document.getElementById('progressCircle');
+            const offset = 339.292 - (progress / 100) * 339.292;
+            circle.style.strokeDashoffset = offset;
+        }
+
+        function calculateStreak() {
+            if (data.logs.length === 0) return 0;
+            let streak = 0;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            for (let i = 0; i < data.logs.length; i++) {
+                const logDate = new Date(data.logs[i].date); logDate.setHours(0, 0, 0, 0);
+                const diffDays = Math.floor((today - logDate) / (1000 * 60 * 60 * 24));
+                if (diffDays === streak) streak++; else break;
+            }
+            return streak;
+        }
+
+        function displayJuz() {
+            const lang = data.settings.language, t = trans[lang];
+            const grid = document.getElementById('juzGrid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= 30; i++) {
+                const juz = data.juz[i];
+                const card = document.createElement('div');
+                card.className = 'juz-card' + (juz.status === 'completed' ? ' completed' : '');
+                card.onclick = () => openJuzModal(i);
+                const statusText = {
+                    'not-started': t.statusNotStarted,
+                    'in-progress': t.statusInProgress,
+                    'completed': t.statusCompleted
+                };
+                card.innerHTML = `
+                    <div class="juz-number">${lang === 'ar' ? convertToArabicNumerals(i) : i}</div>
+                    <div class="juz-name">${juzNames[lang][i-1]}</div>
+                    <div class="juz-status">${statusText[juz.status]}</div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function convertToArabicNumerals(num) {
+            const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+            return num.toString().split('').map(d => arabicNumerals[parseInt(d)]).join('');
+        }
+
+        function openJuzModal(juzNumber) {
+            currentJuz = juzNumber;
+            const juz = data.juz[juzNumber], lang = data.settings.language;
+            document.getElementById('modalTitle').textContent = (lang === 'ar' ? 'جزء ' : 'Juz ') +
+                (lang === 'ar' ? convertToArabicNumerals(juzNumber) : juzNumber);
+            document.getElementById('juzStatus').value = juz.status;
+            document.getElementById('juzPages').value = juz.pages;
+            document.getElementById('juzStartDate').value = juz.startDate || '';
+            document.getElementById('juzEndDate').value = juz.endDate || '';
+            document.getElementById('juzNotes').value = juz.notes;
+            document.getElementById('juzModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('juzModal').classList.remove('active');
+            currentJuz = null;
+        }
+
+        function saveJuz() {
+            if (!currentJuz) return;
+            const t = trans[data.settings.language];
+            data.juz[currentJuz] = {
+                status: document.getElementById('juzStatus').value,
+                pages: parseInt(document.getElementById('juzPages').value) || 0,
+                startDate: document.getElementById('juzStartDate').value,
+                endDate: document.getElementById('juzEndDate').value,
+                notes: document.getElementById('juzNotes').value
+            };
+            saveData(); updateStats(); displayJuz(); closeModal();
+            alert(t.saveJuzSuccess);
+        }
+
+        function displayHistory() {
+            const lang = data.settings.language, t = trans[lang];
+            const list = document.getElementById('historyList');
+            if (data.logs.length === 0) {
+                list.innerHTML = `<div class="empty-state"><p>${t.emptyHistory}</p></div>`;
+                return;
+            }
+            list.innerHTML = data.logs.map(log => {
+                const date = new Date(log.date);
+                const formattedDate = date.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US',
+                    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                let content = '';
+                if (log.newPages) {
+                    content += `<strong>${t.newMemorization}:</strong> ${log.newPages} ${t.pages}`;
+                    if (log.newRating) content += ` (${t.rating}: ${'★'.repeat(log.newRating)})`;
+                    content += '<br>';
+                }
+                if (log.reviewPages) {
+                    content += `<strong>${t.review}:</strong> ${log.reviewPages} ${t.pages}`;
+                    if (log.reviewRating) content += ` (${t.rating}: ${'★'.repeat(log.reviewRating)})`;
+                    content += '<br>';
+                }
+                if (log.notes) content += `<strong>${t.notes}:</strong> ${log.notes}`;
+                return `<div class="history-item">
+                    <div class="history-date">${formattedDate}</div>
+                    <div class="history-content">${content}</div>
+                </div>`;
+            }).join('');
+        }
+
+        function displayDetailedStats() {
+            const lang = data.settings.language, t = trans[lang];
+            const container = document.getElementById('detailedStats');
+            let totalDays = data.logs.length;
+            let avgNewQuality = 0, avgReviewQuality = 0, newCount = 0, reviewCount = 0;
+            data.logs.forEach(log => {
+                if (log.newRating > 0) { avgNewQuality += log.newRating; newCount++; }
+                if (log.reviewRating > 0) { avgReviewQuality += log.reviewRating; reviewCount++; }
+            });
+            avgNewQuality = newCount > 0 ? (avgNewQuality / newCount).toFixed(1) : 0;
+            avgReviewQuality = reviewCount > 0 ? (avgReviewQuality / reviewCount).toFixed(1) : 0;
+            let juzInProgress = 0;
+            Object.values(data.juz).forEach(juz => { if (juz.status === 'in-progress') juzInProgress++; });
+            container.innerHTML = `<div class="stats-grid">
+                <div class="stat-card"><div class="stat-number">${totalDays}</div><div class="stat-label">${t.totalDays}</div></div>
+                <div class="stat-card"><div class="stat-number">${avgNewQuality}</div><div class="stat-label">${t.avgNewQuality}</div></div>
+                <div class="stat-card"><div class="stat-number">${avgReviewQuality}</div><div class="stat-label">${t.avgReviewQuality}</div></div>
+                <div class="stat-card"><div class="stat-number">${juzInProgress}</div><div class="stat-label">${t.juzInProgress}</div></div>
+            </div>`;
+        }
+
+        function updateCurrentDate() {
+            const lang = data.settings.language;
+            const date = new Date();
+            const formatted = date.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US',
+                { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('currentDate').textContent = formatted;
+        }
+
+        document.getElementById('juzModal').addEventListener('click', (e) => {
+            if (e.target.id === 'juzModal') closeModal();
+        });
+        document.getElementById('helpModal').addEventListener('click', (e) => {
+            if (e.target.id === 'helpModal') closeHelp();
+        });
+
+        init();
