@@ -3,12 +3,18 @@
 > **حافظ** - Your personal companion for tracking Quran memorization journey
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Status: Beta](https://img.shields.io/badge/Status-Beta-blue.svg)]()
+[![Version: 2.0](https://img.shields.io/badge/Version-2.0-blue.svg)]()
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)]()
 
-A beautiful, bilingual (Arabic/English) web application for tracking your Quran memorization progress. Built with vanilla JavaScript, fully functional offline, and installable as a Progressive Web App.
+A beautiful, bilingual (Arabic/English) web application for tracking your Quran memorization progress. Built with modern web technologies, cloud-synced across devices, and installable as a Progressive Web App.
 
 ## ✨ Features
+
+### 🔐 Authentication & Security
+- **OAuth Login**: Sign in with Google or GitHub
+- **JWT Tokens**: Secure authentication with automatic refresh
+- **Privacy First**: Your data belongs to you
+- **Cloud Sync**: Access your progress from any device
 
 ### 📊 Core Functionality
 - **Daily Logging**: Track new pages memorized and pages reviewed
@@ -18,33 +24,108 @@ A beautiful, bilingual (Arabic/English) web application for tracking your Quran 
 - **Streak Tracking**: Monitor consecutive days of practice
 - **Comprehensive History**: View all past entries with dates and details
 
-### 👥 Profile Management
-- **Multiple Profiles**: Create separate profiles for family members
-- **Easy Switching**: Quick profile switching from dropdown
-- **Export/Import**: Backup and restore profiles as JSON files
-- **Profile Metadata**: Track creation date, last activity, and total logs
-
 ### 🌐 User Experience
+- **Interactive Demo**: Try the app before signing up on landing page
 - **Bilingual Interface**: Full Arabic and English support with RTL/LTR layouts
 - **Responsive Design**: Beautiful UI on mobile, tablet, and desktop
-- **Offline-First**: Works completely offline using localStorage
-- **PWA Support**: Installable as a native-like app
-- **No Backend Required**: All data stored locally in browser
+- **PWA Support**: Installable as a native-like app with offline UI
+- **Loading States**: Skeleton loaders and smooth transitions
+- **Toast Notifications**: User-friendly feedback messages
 
 ### 📈 Statistics & Analytics
 - **Total Pages**: Track overall memorization progress
 - **Completion Percentage**: Visual progress toward completing all 604 pages
 - **Average Quality**: Monitor memorization and review quality trends
-- **Active Juz**: See how many Juz are in progress
+- **Current Streak**: Track consecutive days of practice
+- **Juz Completion**: Monitor progress through all 30 Juz
+
+## 🏗️ Architecture
+
+### Frontend (Vanilla JavaScript)
+- **index.html**: Landing page with interactive demo
+- **app.html**: Main authenticated application
+- **callback.html**: OAuth callback handler
+- **Modular JS**:
+  - `js/config.js` - Configuration and constants
+  - `js/storage.js` - localStorage wrapper
+  - `js/auth.js` - OAuth flow and JWT management
+  - `js/api.js` - HTTP client with retry logic
+  - `js/ui.js` - Toast notifications, loaders, skeletons
+  - `js/app.js` - Main application logic
+  - `js/demo.js` - Landing page demo data
+
+### Backend (Node.js/Express)
+- **RESTful API**: Clean endpoint structure
+- **MongoDB Atlas**: Cloud database
+- **JWT Authentication**: Access tokens (15min) with refresh capability
+- **OAuth Integration**: Google and GitHub providers
+- **Error Handling**: Comprehensive error responses
+- **Input Validation**: Request validation middleware
+
+### Tech Stack
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB Atlas
+- **Authentication**: Passport.js, JWT
+- **Fonts**: Google Fonts (Cairo, Amiri, Rakkas, Crimson Pro)
+- **Deployment**: Frontend (Vercel/Netlify), Backend (Railway/Render)
 
 ## 🚀 Quick Start
 
-### Option 1: Direct Use
-1. Download `index.html`
-2. Open in any modern web browser
-3. Start tracking immediately!
+### Prerequisites
+- Node.js 18+ and npm
+- MongoDB Atlas account (free tier)
+- Google OAuth credentials
+- GitHub OAuth app (optional)
 
-### Option 2: Serve Locally
+### Backend Setup
+
+1. **Clone the repository**
+```bash
+git clone https://github.com/Mohamed-AH/quran.git
+cd quran/backend
+```
+
+2. **Install dependencies**
+```bash
+npm install
+```
+
+3. **Configure environment variables**
+```bash
+cp .env.example .env
+# Edit .env with your credentials:
+# - MONGODB_URI
+# - JWT_SECRET
+# - GOOGLE_CLIENT_ID
+# - GOOGLE_CLIENT_SECRET
+# - GITHUB_CLIENT_ID (optional)
+# - GITHUB_CLIENT_SECRET (optional)
+```
+
+4. **Start the server**
+```bash
+# Development
+npm run dev
+
+# Production
+npm start
+```
+
+Backend runs on `http://localhost:5000`
+
+### Frontend Setup
+
+1. **Update API configuration**
+```javascript
+// js/config.js
+const CONFIG = {
+    API_BASE_URL: 'http://localhost:5000/api',  // Change in production
+    // ...
+};
+```
+
+2. **Serve the frontend**
 ```bash
 # Using Python
 python -m http.server 8000
@@ -52,13 +133,27 @@ python -m http.server 8000
 # Using Node.js
 npx http-server
 
-# Then open http://localhost:8000
+# Using PHP
+php -S localhost:8000
 ```
 
-### Option 3: Deploy to Web
-- **Vercel**: Drag and drop `index.html`
-- **Netlify**: Deploy via GitHub or manual upload
-- **GitHub Pages**: Push to `gh-pages` branch
+3. **Open in browser**
+```
+http://localhost:8000
+```
+
+### Production Deployment
+
+#### Backend Deployment (Railway/Render)
+1. Connect your GitHub repository
+2. Set environment variables in dashboard
+3. Deploy from `main` branch
+4. Note your backend URL (e.g., `https://your-app.railway.app`)
+
+#### Frontend Deployment (Vercel/Netlify)
+1. Update `js/config.js` with production backend URL
+2. Deploy via GitHub or drag-and-drop
+3. Configure custom domain (optional)
 
 ## 📱 Installation as PWA
 
@@ -66,7 +161,7 @@ npx http-server
 1. Open the app in Safari/Chrome
 2. Tap the Share button
 3. Select "Add to Home Screen"
-4. App will work offline!
+4. Launch like a native app!
 
 ### Desktop (Chrome/Edge)
 1. Open the app
@@ -75,6 +170,14 @@ npx http-server
 4. Launch from desktop like a native app
 
 ## 🎯 How to Use
+
+### First Time Setup
+1. Open the landing page
+2. Try the **interactive demo** to explore features
+3. Click **"تسجيل الدخول" (Sign In)**
+4. Choose Google or GitHub
+5. Complete OAuth authentication
+6. Start tracking your memorization!
 
 ### Daily Logging
 1. Go to **"اليوم" (Today)** tab
@@ -93,101 +196,115 @@ npx http-server
 5. Add start/end dates
 6. Save notes specific to that Juz
 
-### Profile Management
-1. Go to **"الملف الشخصي" (Profile)** tab
-2. Create new profiles for family members
-3. Switch between profiles using dropdown
-4. **Export**: Download backup as JSON
-5. **Import**: Upload previously exported file
-6. **Rename**: Change profile name
-7. **Delete**: Remove unwanted profiles
-
 ### Viewing Progress
 - **History Tab**: See all past entries chronologically
 - **Statistics Tab**: View detailed analytics
 - **Dashboard Cards**: Quick overview at the top
 
-## 💾 Data Storage
+### Language Switching
+- Click language toggle button (top right)
+- Automatically detects browser language
+- Preference saved for future visits
 
-### Current Implementation (v1.0)
-- **Storage**: Browser localStorage
-- **Capacity**: ~5-10MB (thousands of entries)
-- **Persistence**: Data stays on device
-- **Privacy**: 100% local, no server communication
-- **Sync**: Manual export/import between devices
+## 💾 Data Storage & Sync
 
-### Important Notes
-⚠️ **Clearing browser data will delete your logs!**
-💡 **Export regularly as backup**
-📱 **Each browser/device has separate data**
+### Cloud Storage
+- **Database**: MongoDB Atlas (cloud-hosted)
+- **Automatic Sync**: Changes saved immediately to cloud
+- **Multi-Device**: Access from phone, tablet, computer
+- **No Manual Export**: Data automatically backed up
+- **Security**: Encrypted connections, secure authentication
 
-## 🔄 Export/Import Guide
+### Privacy & Security
+✅ **Your data is private** - Only you can access it
+✅ **Secure authentication** - OAuth 2.0 standard
+✅ **Encrypted storage** - MongoDB Atlas encryption
+✅ **No tracking** - We don't track your usage
+✅ **Open source** - Code is transparent and auditable
 
-### To Backup:
-1. Profile Tab → "تصدير الملف" (Export Profile)
-2. JSON file downloads with format: `hafiz_ProfileName_YYYY-MM-DD.json`
-3. Save to cloud storage (Google Drive, Dropbox, etc.)
+## 🔌 API Endpoints
 
-### To Restore:
-1. Profile Tab → "استيراد ملف" (Import Profile)
-2. Select previously exported JSON file
-3. New profile created with "(imported)" suffix
-4. All data restored!
+### Authentication
+- `POST /api/auth/google` - Google OAuth redirect
+- `POST /api/auth/github` - GitHub OAuth redirect
+- `GET /api/auth/google/callback` - Google OAuth callback
+- `GET /api/auth/github/callback` - GitHub OAuth callback
+- `POST /api/auth/refresh` - Refresh access token
 
-## 🏗️ Technical Details
+### User Management
+- `GET /api/user/me` - Get current user profile
+- `PUT /api/user/settings` - Update user settings
 
-### Tech Stack
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript
-- **Storage**: localStorage API
-- **Fonts**: Google Fonts (Cairo, Amiri, Rakkas, Crimson Pro)
-- **No Dependencies**: Zero external libraries
-- **File Size**: Single file, ~85KB
+### Logs Management
+- `GET /api/logs` - Get all logs (supports pagination)
+- `POST /api/logs` - Create new log entry
+- `GET /api/logs/:id` - Get specific log
+- `PUT /api/logs/:id` - Update log
+- `DELETE /api/logs/:id` - Delete log
 
-### Browser Compatibility
-- ✅ Chrome 90+
-- ✅ Firefox 88+
-- ✅ Safari 14+
-- ✅ Edge 90+
-- ✅ Mobile browsers (iOS Safari, Chrome Android)
+### Juz Management
+- `GET /api/juz` - Get all 30 Juz
+- `PUT /api/juz/:juzNumber` - Update specific Juz
 
-### Data Structure
-```javascript
-{
-  profiles: {
-    "profile_id": {
-      name: "Profile Name",
-      data: {
-        logs: [...],      // Daily entries
-        juz: {...},       // 30 Juz tracking
-        settings: {...},  // Language, ratings
-        metadata: {...}   // Created, modified dates
-      }
-    }
-  }
-}
-```
+### Statistics
+- `GET /api/stats` - Get comprehensive statistics
 
-## 🗺️ Roadmap
+## 🗺️ Version History
 
-### v1.0 - Current (LocalStorage Version) ✅
+### v2.0 - Cloud Version ✅ (Current)
+- [x] User authentication (Google, GitHub OAuth)
+- [x] Cloud database (MongoDB Atlas)
+- [x] Multi-device sync
+- [x] RESTful API with JWT
+- [x] Modular frontend architecture
+- [x] Interactive landing page demo
+- [x] Enhanced loading states (skeleton loaders)
+- [x] Toast notifications
+- [x] PWA with manifest.json
+- [x] Automatic token refresh
+- [x] Bilingual support maintained
+
+### v1.0 - LocalStorage Version ✅ (Deprecated)
 - [x] Daily logging
 - [x] Juz management
-- [x] Multiple profiles
+- [x] Multiple profiles (local)
 - [x] Export/Import
 - [x] Bilingual support
 - [x] Statistics
 - [x] PWA support
 
-### v2.0 - Cloud Version (In Planning) 🚧
-- [ ] User authentication (Google, GitHub)
-- [ ] Cloud database (MongoDB Atlas)
-- [ ] Multi-device sync
-- [ ] Real-time updates
-- [ ] Enhanced analytics
-- [ ] Email notifications
-- [ ] Collaborative features
+### v3.0 - Future Enhancements 🚧 (Planned)
+- [ ] Service worker for offline support
+- [ ] Enhanced analytics with charts
+- [ ] Email notifications and reminders
+- [ ] Weekly/monthly progress reports
+- [ ] Social sharing features
+- [ ] Custom themes
+- [ ] Audio Quran integration
+- [ ] Collaborative features for families
 
 See [ROADMAP.md](./ROADMAP.md) for detailed production plan.
+
+## 🧪 Testing
+
+### Backend Testing
+```bash
+cd backend
+npm test
+```
+
+### Frontend Testing
+- Manual testing on Chrome, Firefox, Safari, Edge
+- Mobile testing on iOS Safari and Chrome Android
+- PWA installation testing
+- OAuth flow testing with Google and GitHub
+
+## 🐛 Known Issues
+
+- [ ] PWA offline support limited (no service worker yet)
+- [ ] Icons need PNG conversion (currently using SVG placeholder)
+- [ ] Statistics tab doesn't have charts/graphs yet
+- [ ] No email notifications system yet
 
 ## 🤝 Contributing
 
@@ -200,6 +317,7 @@ Contributions are welcome! Here's how you can help:
 - 📱 UI/UX improvements
 - 📚 Documentation enhancements
 - ✨ Code optimization
+- 🧪 Test coverage improvements
 
 ### How to Contribute
 1. Fork the repository
@@ -210,17 +328,11 @@ Contributions are welcome! Here's how you can help:
 
 ### Development Guidelines
 - Keep code clean and well-commented
-- Test on multiple browsers
+- Test on multiple browsers and devices
 - Maintain bilingual support
 - Follow existing code style
 - Update documentation
-
-## 🐛 Known Issues
-
-- [ ] Large export files (1000+ entries) may be slow to process
-- [ ] localStorage quota (~5-10MB) may limit very large datasets
-- [ ] No automatic backup reminders yet
-- [ ] Statistics don't show charts/graphs yet
+- Add tests for new features
 
 ## 📄 License
 
@@ -229,7 +341,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Mohamed A Hameed**
-- GitHub: [@Mohamed-ah](https://github.com/mohamed-ah)
+- GitHub: [@Mohamed-AH](https://github.com/Mohamed-AH)
 - Email: emah84@gmail.com
 
 ## 🙏 Acknowledgments
@@ -238,24 +350,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Islamic design inspiration
 - Arabic typography experts
 - Open source community
+- MongoDB Atlas for free tier
 - All beta testers and contributors
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [Open an issue](https://github.com/yourusername/hafiz/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/hafiz/discussions)
-- 📧 **Email**: support@hafiz.app
-- 📖 **Documentation**: [Wiki](https://github.com/yourusername/hafiz/wiki)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/Mohamed-AH/quran/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/Mohamed-AH/quran/discussions)
+- 📧 **Email**: emah84@gmail.com
 
 ## 🌟 Star History
 
 If you find this project helpful, please consider giving it a star! ⭐
-
-## 📊 Project Stats
-
-![GitHub stars](https://img.shields.io/github/stars/yourusername/hafiz?style=social)
-![GitHub forks](https://img.shields.io/github/forks/yourusername/hafiz?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/yourusername/hafiz?style=social)
 
 ---
 
