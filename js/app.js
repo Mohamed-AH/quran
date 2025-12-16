@@ -570,12 +570,66 @@ function openHelp() {
     const lang = data.settings.language;
     const helpContent = lang === 'ar' ? `
         <h3 style="color: var(--gold); margin: 25px 0 15px;">مرحباً بك في حافظ! 🌙</h3>
-        <p>تطبيق حافظ هو رفيقك في رحلة حفظ القرآن الكريم. يساعدك على تتبع تقدمك اليومي، إدارة أجزائك، ومراقبة إنجازاتك.</p>
-        <p>جميع بياناتك محفوظة بشكل آمن في السحابة ومتزامنة عبر جميع أجهزتك.</p>
+        <p><strong>تطبيق حافظ</strong> هو رفيقك في رحلة حفظ القرآن الكريم. يساعدك على تتبع تقدمك اليومي، إدارة أجزائك، ومراقبة إنجازاتك.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">✍️ تسجيل اليومي</h4>
+        <p><strong>تبويب "اليوم":</strong> سجل الصفحات الجديدة والمراجعة. استخدم صيغة: <code>1-5</code> أو <code>1، 3، 5</code></p>
+        <p><strong>تقييم الجودة:</strong> قيّم حفظك من 1-5 نجوم (5 = ممتاز، 1 = يحتاج مراجعة)</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📚 إدارة الأجزاء</h4>
+        <p><strong>تبويب "الأجزاء":</strong> انقر على أي جزء لتحديث حالته (لم يبدأ / جاري الحفظ / مكتمل)</p>
+        <p>كل جزء يحتوي على 20 صفحة. سجل تقدمك وأضف تواريخ البدء والإتمام.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📊 الإحصائيات</h4>
+        <p><strong>البطاقات العلوية:</strong> مجموع الصفحات، الأجزاء المكتملة، الأيام المتتالية، نسبة الإنجاز</p>
+        <p><strong>تبويب "الإحصائيات":</strong> إحصائيات مفصلة عن رحلة حفظك</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">☁️ المزامنة السحابية</h4>
+        <p>جميع بياناتك محفوظة بشكل آمن في السحابة ومتزامنة تلقائياً عبر جميع أجهزتك.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📱 تثبيت التطبيق</h4>
+        <p><strong>iOS:</strong> Safari → زر المشاركة → "إضافة إلى الشاشة الرئيسية"</p>
+        <p><strong>Android:</strong> Chrome → القائمة (⋮) → "إضافة إلى الشاشة الرئيسية"</p>
+        <p><strong>Desktop:</strong> انقر أيقونة التثبيت (⊕) في شريط العنوان</p>
+
+        <p style="margin-top: 25px; padding: 15px; background: rgba(212, 175, 55, 0.1); border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.3);">
+        📖 <strong>دليل المستخدم الكامل:</strong> راجع ملف USER-GUIDE.md للحصول على تعليمات مفصلة
+        </p>
+
+        <p style="text-align: center; margin-top: 20px; color: var(--gold);">
+        <strong>جعل الله رحلة حفظك ميسرة وتقبل جهودك</strong>
+        </p>
     ` : `
         <h3 style="color: var(--gold); margin: 25px 0 15px;">Welcome to Hafiz! 🌙</h3>
-        <p>Hafiz is your companion in the journey of Quran memorization. It helps you track daily progress, manage your Juz, and monitor your achievements.</p>
-        <p>All your data is securely saved in the cloud and synced across all your devices.</p>
+        <p><strong>Hafiz</strong> is your companion in the journey of Quran memorization. It helps you track daily progress, manage your Juz, and monitor your achievements.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">✍️ Daily Logging</h4>
+        <p><strong>"Today" Tab:</strong> Log new pages and review pages. Use format: <code>1-5</code> or <code>1, 3, 5</code></p>
+        <p><strong>Quality Rating:</strong> Rate your memorization 1-5 stars (5 = excellent, 1 = needs review)</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📚 Juz Management</h4>
+        <p><strong>"Juz" Tab:</strong> Click any Juz to update its status (Not Started / In Progress / Completed)</p>
+        <p>Each Juz contains 20 pages. Track your progress and add start/completion dates.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📊 Statistics</h4>
+        <p><strong>Top Cards:</strong> Total pages, completed Juz, current streak, completion percentage</p>
+        <p><strong>"Statistics" Tab:</strong> Detailed analytics about your memorization journey</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">☁️ Cloud Sync</h4>
+        <p>All your data is securely saved in the cloud and automatically synced across all your devices.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📱 Install App</h4>
+        <p><strong>iOS:</strong> Safari → Share button → "Add to Home Screen"</p>
+        <p><strong>Android:</strong> Chrome → Menu (⋮) → "Add to Home screen"</p>
+        <p><strong>Desktop:</strong> Click install icon (⊕) in address bar</p>
+
+        <p style="margin-top: 25px; padding: 15px; background: rgba(212, 175, 55, 0.1); border-radius: 10px; border: 1px solid rgba(212, 175, 55, 0.3);">
+        📖 <strong>Full User Guide:</strong> See USER-GUIDE.md for detailed instructions
+        </p>
+
+        <p style="text-align: center; margin-top: 20px; color: var(--gold);">
+        <strong>May Allah make your memorization journey easy and accept your efforts</strong>
+        </p>
     `;
 
     document.getElementById('helpTitle').textContent = trans[lang].helpTitle;
