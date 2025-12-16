@@ -12,6 +12,10 @@
         <header>
             <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">English</button>
             <button class="help-btn" onclick="openHelp()">?</button>
+            <div class="user-profile" id="userProfile" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 15px;">
+                <span id="userName" style="color: var(--gold); font-weight: 600;"></span>
+                <button class="btn btn-secondary" onclick="handleLogout()" id="btnLogout" style="padding: 8px 20px; font-size: 0.9rem;">تسجيل الخروج</button>
+            </div>
             <h1 id="appTitle">حافظ</h1>
             <p class="subtitle" id="subtitle">رحلة حفظ القرآن الكريم</p>
         </header>
@@ -193,5 +197,51 @@
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/app.js"></script>
+
+    <!-- Authentication initialization -->
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Require authentication - redirects to index.html if not authenticated
+            auth.requireAuth();
+
+            // If we get here, user is authenticated
+            // Display user information
+            try {
+                const token = storage.getToken();
+                if (token) {
+                    // Parse JWT to get user info
+                    const payload = auth.parseJWT(token);
+
+                    // Display user name/email
+                    const userName = document.getElementById('userName');
+                    if (userName && payload) {
+                        userName.textContent = payload.name || payload.email || 'User';
+                    }
+
+                    // Fetch fresh user data from API
+                    const userData = await api.get('/user/me');
+                    if (userData && userData.name) {
+                        userName.textContent = userData.name;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                // Continue with JWT data
+            }
+        });
+
+        // Logout handler
+        function handleLogout() {
+            const currentLang = storage.getLanguage();
+            const confirmMsg = currentLang === 'ar'
+                ? 'هل أنت متأكد من تسجيل الخروج؟'
+                : 'Are you sure you want to logout?';
+
+            if (confirm(confirmMsg)) {
+                auth.logout();
+            }
+        }
+    </script>
 </body>
 </html>
