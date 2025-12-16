@@ -193,10 +193,11 @@ else
     echo ""
 fi
 
-# Create another log for testing
+# Create another log for testing (2 days ago to avoid conflicts)
+TWO_DAYS_AGO=$(date -d "2 days ago" -u +"%Y-%m-%dT00:00:00.000Z" 2>/dev/null || date -v-2d -u +"%Y-%m-%dT00:00:00.000Z" 2>/dev/null || echo "2024-12-13T00:00:00.000Z")
 test_endpoint "POST /api/logs - Create second log entry" \
     "POST" "/api/logs" \
-    '{"date":"2024-12-14T00:00:00.000Z","newPages":"6-10","newRating":3,"notes":"Review session"}' \
+    "{\"date\":\"$TWO_DAYS_AGO\",\"newPages\":\"6-10\",\"newRating\":3,\"notes\":\"Review session\"}" \
     201
 
 ##############################################
