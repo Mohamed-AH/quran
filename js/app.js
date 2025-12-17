@@ -136,9 +136,9 @@ async function init() {
 
 async function loadSettings() {
     try {
-        const response = await api.get('/user/settings');
-        if (response && response.settings) {
-            data.settings = { ...data.settings, ...response.settings };
+        const response = await api.get('/user');
+        if (response && response.user && response.user.settings) {
+            data.settings = { ...data.settings, ...response.user.settings };
         }
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -194,7 +194,7 @@ async function loadLogs() {
 
 async function loadStats() {
     try {
-        const response = await api.get('/stats');
+        const response = await api.get('/logs/stats');
         data.stats = response.stats || {};
     } catch (error) {
         console.error('Error loading stats:', error);
@@ -495,7 +495,7 @@ async function toggleLanguage() {
 
     // Save to API
     try {
-        await api.put('/user/settings', { language: data.settings.language });
+        await api.put('/user', { settings: { language: data.settings.language } });
         storage.setLanguage(data.settings.language);
     } catch (error) {
         console.error('Error saving language:', error);
