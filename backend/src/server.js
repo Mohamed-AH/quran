@@ -99,6 +99,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/user', require('./routes/user'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/juz', require('./routes/juz'));
+app.use('/api/stats', require('./routes/stats'));
 
 // ============================================
 // ERROR HANDLING
@@ -155,6 +156,9 @@ const server = app.listen(PORT, () => {
   console.log(`   GET    /api/juz/summary        - Get Juz summary (requires auth)`);
   console.log(`   GET    /api/juz/:juzNumber     - Get single Juz (requires auth)`);
   console.log(`   PUT    /api/juz/:juzNumber     - Update Juz (requires auth)`);
+  console.log('');
+  console.log('📊 Statistics endpoints:');
+  console.log(`   GET    /api/stats/combined     - Get combined Juz + Log statistics (requires auth)`);
   console.log('');
 });
 

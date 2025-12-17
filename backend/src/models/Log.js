@@ -136,19 +136,17 @@ logSchema.statics.calculateStats = async function (userId) {
     return {
       totalLogs: 0,
       totalDays: 0,
-      totalPages: 0,
       avgNewQuality: 0,
       avgReviewQuality: 0,
       currentStreak: 0,
     };
   }
 
-  // Calculate averages and total pages
+  // Calculate averages for quality ratings
   let newRatingSum = 0;
   let newRatingCount = 0;
   let reviewRatingSum = 0;
   let reviewRatingCount = 0;
-  const allPages = new Set(); // Track unique pages
 
   logs.forEach((log) => {
     // Calculate ratings
@@ -159,12 +157,6 @@ logSchema.statics.calculateStats = async function (userId) {
     if (log.reviewRating > 0) {
       reviewRatingSum += log.reviewRating;
       reviewRatingCount++;
-    }
-
-    // Extract unique pages from newPages
-    if (log.newPages) {
-      const pages = parsePages(log.newPages);
-      pages.forEach(p => allPages.add(p));
     }
   });
 
@@ -198,7 +190,6 @@ logSchema.statics.calculateStats = async function (userId) {
   return {
     totalLogs: logs.length,
     totalDays: uniqueDates.size,
-    totalPages: allPages.size,
     avgNewQuality: newRatingCount > 0 ? (newRatingSum / newRatingCount).toFixed(1) : 0,
     avgReviewQuality: reviewRatingCount > 0 ? (reviewRatingSum / reviewRatingCount).toFixed(1) : 0,
     currentStreak: streak,

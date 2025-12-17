@@ -116,7 +116,8 @@ juzSchema.statics.getProgressSummary = async function (userId) {
       completedJuz: 0,
       inProgressJuz: 0,
       notStartedJuz: 30,
-      progressPercentage: 0,
+      pageProgressPercentage: 0,
+      juzCompletionPercentage: 0,
     };
   }
 
@@ -132,16 +133,20 @@ juzSchema.statics.getProgressSummary = async function (userId) {
     else notStartedJuz++;
   });
 
-  // Total Quran pages: 604 (or 600 in some editions)
-  const QURAN_TOTAL_PAGES = 604;
-  const progressPercentage = ((totalPages / QURAN_TOTAL_PAGES) * 100).toFixed(1);
+  // Total pages from Juz tracking: 30 Juz × 20 pages = 600
+  const TOTAL_JUZ_PAGES = 600;
+  const pageProgressPercentage = ((totalPages / TOTAL_JUZ_PAGES) * 100).toFixed(1);
+
+  // Juz completion percentage (primary metric)
+  const juzCompletionPercentage = ((completedJuz / 30) * 100).toFixed(1);
 
   return {
     totalPages,
     completedJuz,
     inProgressJuz,
     notStartedJuz,
-    progressPercentage: parseFloat(progressPercentage),
+    pageProgressPercentage: parseFloat(pageProgressPercentage),
+    juzCompletionPercentage: parseFloat(juzCompletionPercentage),
   };
 };
 
