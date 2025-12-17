@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const auth = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const Juz = require('../models/Juz');
 const Log = require('../models/Log');
 
@@ -10,7 +10,7 @@ const Log = require('../models/Log');
  * @route   GET /api/stats/combined
  * @access  Private
  */
-router.get('/combined', auth, asyncHandler(async (req, res) => {
+router.get('/combined', authenticate, asyncHandler(async (req, res) => {
   // Get Juz statistics (primary source for progress)
   const juzStats = await Juz.getProgressSummary(req.userId);
 
