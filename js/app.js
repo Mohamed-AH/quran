@@ -369,8 +369,8 @@ async function saveJuz() {
         juzNumber: currentJuz,
         status: document.getElementById('juzStatus').value,
         pages: parseInt(document.getElementById('juzPages').value) || 0,
-        startDate: document.getElementById('juzStartDate').value,
-        endDate: document.getElementById('juzEndDate').value,
+        startDate: document.getElementById('juzStartDate').value || null,
+        endDate: document.getElementById('juzEndDate').value || null,
         notes: document.getElementById('juzNotes').value
     };
 
