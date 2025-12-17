@@ -71,8 +71,15 @@ const updateJuz = asyncHandler(async (req, res) => {
 
   if (status !== undefined) juz.status = status;
   if (pages !== undefined) juz.pages = pages;
-  if (startDate !== undefined) juz.startDate = startDate;
-  if (endDate !== undefined) juz.endDate = endDate;
+
+  // Handle dates gracefully - only set if provided and not empty
+  if (startDate !== undefined) {
+    juz.startDate = startDate || null;
+  }
+  if (endDate !== undefined) {
+    juz.endDate = endDate || null;
+  }
+
   if (notes !== undefined) juz.notes = notes;
 
   await juz.save();
