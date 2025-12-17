@@ -3,7 +3,6 @@
  * Run from project root: node test-juz-system.js
  */
 
-const axios = require('axios');
 const readline = require('readline');
 
 const API_BASE = 'http://localhost:5000/api';
@@ -59,23 +58,36 @@ async function prompt(question) {
   });
 }
 
-// Helper function to make API calls
+// Helper function to make API calls using native fetch
 async function apiCall(method, endpoint, data = null) {
   try {
-    const config = {
+    const options = {
       method,
-      url: `${API_BASE}${endpoint}`,
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
     };
 
-    if (data) config.data = data;
+    if (data && method !== 'GET') {
+      options.body = JSON.stringify(data);
+    }
 
-    const response = await axios(config);
-    return { success: true, data: response.data };
+    const response = await fetch(`${API_BASE}${endpoint}`, options);
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: responseData.message || `HTTP ${response.status}`
+      };
+    }
+
+    return { success: true, data: responseData };
   } catch (error) {
     return {
       success: false,
-      error: error.response?.data?.message || error.message
+      error: error.message
     };
   }
 }
