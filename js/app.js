@@ -92,7 +92,9 @@ let currentJuz = null;
 
 async function init() {
     try {
-        const isArabic = storage.getLanguage() === 'ar';
+        // Initialize language from localStorage (takes priority)
+        data.settings.language = storage.getLanguage();
+        const isArabic = data.settings.language === 'ar';
         ui.showLoader();
 
         // Show skeleton loaders while data loads
@@ -104,7 +106,7 @@ async function init() {
         if (historyList) ui.createSkeleton(historyList, 5);
         if (detailedStats) ui.createSkeleton(detailedStats, 4);
 
-        // Load user settings and apply language
+        // Load user settings (but preserve localStorage language preference)
         await loadSettings();
         applyLanguage();
 
@@ -138,11 +140,14 @@ async function loadSettings() {
     try {
         const response = await api.get('/user');
         if (response && response.user && response.user.settings) {
+            // Preserve language from localStorage (don't overwrite with API)
+            const localLanguage = storage.getLanguage();
             data.settings = { ...data.settings, ...response.user.settings };
+            data.settings.language = localLanguage; // Keep localStorage preference
         }
     } catch (error) {
         console.error('Error loading settings:', error);
-        // Use default settings
+        // Use default settings (language already set from localStorage)
     }
 }
 
