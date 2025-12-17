@@ -140,17 +140,31 @@ juzSchema.statics.getProgressSummary = async function (userId) {
     };
   }
 
+  // Use a Map to ensure only one record per juzNumber (in case of duplicates)
+  const juzMap = new Map();
+  juzList.forEach((juz) => {
+    // Keep the most recently updated record if duplicates exist
+    if (!juzMap.has(juz.juzNumber) ||
+        new Date(juz.updatedAt) > new Date(juzMap.get(juz.juzNumber).updatedAt)) {
+      juzMap.set(juz.juzNumber, juz);
+    }
+  });
+
   let totalPages = 0;
   let completedJuz = 0;
   let inProgressJuz = 0;
   let notStartedJuz = 0;
 
-  juzList.forEach((juz) => {
+  // Calculate from unique Juz records only
+  juzMap.forEach((juz) => {
     totalPages += juz.pages;
     if (juz.status === 'completed') completedJuz++;
     else if (juz.status === 'in-progress') inProgressJuz++;
     else notStartedJuz++;
   });
+
+  // Account for any missing Juz numbers (should be 30 total)
+  notStartedJuz = 30 - completedJuz - inProgressJuz;
 
   // Total pages from Juz tracking: 30 Juz × 20 pages = 600
   const TOTAL_JUZ_PAGES = 600;
