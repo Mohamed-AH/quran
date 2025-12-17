@@ -68,9 +68,6 @@ const logSchema = new mongoose.Schema(
   }
 );
 
-// Compound index: userId + date (ensures one log per user per day)
-logSchema.index({ userId: 1, date: 1 }, { unique: true });
-
 // Compound index for efficient querying of user's logs by date
 logSchema.index({ userId: 1, date: -1 });
 
@@ -137,20 +134,24 @@ logSchema.statics.calculateStats = async function (userId) {
 
   if (logs.length === 0) {
     return {
+      totalLogs: 0,
       totalDays: 0,
+      totalPages: 0,
       avgNewQuality: 0,
       avgReviewQuality: 0,
       currentStreak: 0,
     };
   }
 
-  // Calculate averages
+  // Calculate averages and total pages
   let newRatingSum = 0;
   let newRatingCount = 0;
   let reviewRatingSum = 0;
   let reviewRatingCount = 0;
+  const allPages = new Set(); // Track unique pages
 
   logs.forEach((log) => {
+    // Calculate ratings
     if (log.newRating > 0) {
       newRatingSum += log.newRating;
       newRatingCount++;
@@ -159,22 +160,35 @@ logSchema.statics.calculateStats = async function (userId) {
       reviewRatingSum += log.reviewRating;
       reviewRatingCount++;
     }
+
+    // Extract unique pages from newPages
+    if (log.newPages) {
+      const pages = parsePages(log.newPages);
+      pages.forEach(p => allPages.add(p));
+    }
   });
 
-  // Calculate streak
-  const sortedLogs = logs.sort((a, b) => b.date - a.date);
+  // Get unique days (multiple logs per day count as 1 day)
+  const uniqueDates = new Set(
+    logs.map(log => {
+      const d = new Date(log.date);
+      d.setUTCHours(0, 0, 0, 0);
+      return d.getTime();
+    })
+  );
+
+  // Calculate streak (count consecutive unique days)
+  const sortedDates = Array.from(uniqueDates).sort((a, b) => b - a);
   let streak = 0;
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
-  for (let i = 0; i < sortedLogs.length; i++) {
-    const logDate = new Date(sortedLogs[i].date);
-    logDate.setUTCHours(0, 0, 0, 0);
+  for (let i = 0; i < sortedDates.length; i++) {
     const expectedDate = new Date(today);
     expectedDate.setDate(today.getDate() - streak);
     expectedDate.setUTCHours(0, 0, 0, 0);
 
-    if (logDate.getTime() === expectedDate.getTime()) {
+    if (sortedDates[i] === expectedDate.getTime()) {
       streak++;
     } else {
       break;
@@ -182,12 +196,36 @@ logSchema.statics.calculateStats = async function (userId) {
   }
 
   return {
-    totalDays: logs.length,
+    totalLogs: logs.length,
+    totalDays: uniqueDates.size,
+    totalPages: allPages.size,
     avgNewQuality: newRatingCount > 0 ? (newRatingSum / newRatingCount).toFixed(1) : 0,
     avgReviewQuality: reviewRatingCount > 0 ? (reviewRatingSum / reviewRatingCount).toFixed(1) : 0,
     currentStreak: streak,
   };
 };
+
+// Helper function to parse page ranges
+function parsePages(pageStr) {
+  const pages = new Set();
+  if (!pageStr) return pages;
+
+  const parts = pageStr.split(',').map(s => s.trim());
+  parts.forEach(part => {
+    if (part.includes('-')) {
+      const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+      if (!isNaN(start) && !isNaN(end)) {
+        for (let i = start; i <= end; i++) {
+          pages.add(i);
+        }
+      }
+    } else {
+      const page = parseInt(part.trim());
+      if (!isNaN(page)) pages.add(page);
+    }
+  });
+  return pages;
+}
 
 const Log = mongoose.model('Log', logSchema);
 
