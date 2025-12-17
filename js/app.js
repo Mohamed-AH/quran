@@ -452,10 +452,33 @@ function openJuzModal(juzNumber) {
         (lang === 'ar' ? convertToArabicNumerals(juzNumber) : juzNumber);
     document.getElementById('juzStatus').value = juz.status;
     document.getElementById('juzPages').value = juz.pages;
-    document.getElementById('juzStartDate').value = juz.startDate || '';
-    document.getElementById('juzEndDate').value = juz.endDate || '';
+
+    // Format dates for HTML date input (YYYY-MM-DD)
+    document.getElementById('juzStartDate').value = formatDateForInput(juz.startDate);
+    document.getElementById('juzEndDate').value = formatDateForInput(juz.endDate);
+
     document.getElementById('juzNotes').value = juz.notes || '';
     document.getElementById('juzModal').classList.add('active');
+}
+
+// Helper function to format date for HTML date input
+function formatDateForInput(dateValue) {
+    if (!dateValue) return '';
+
+    try {
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) return '';
+
+        // Format as YYYY-MM-DD
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return '';
+    }
 }
 
 function closeModal() {
