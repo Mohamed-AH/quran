@@ -15,7 +15,7 @@ const { APIError, asyncHandler } = require('../middleware/errorHandler');
 /**
  * OAuth Success Handler
  * Called after successful OAuth authentication
- * Generates JWT tokens and returns to client
+ * Generates JWT tokens and redirects to frontend
  */
 const oauthSuccess = asyncHandler(async (req, res) => {
   if (!req.user) {
@@ -32,13 +32,9 @@ const oauthSuccess = asyncHandler(async (req, res) => {
   req.user.lastLoginAt = new Date();
   await req.user.save();
 
-  // Return tokens and user info
-  res.status(200).json({
-    success: true,
-    message: 'Authentication successful',
-    accessToken,
-    user: req.user.toSafeObject(),
-  });
+  // Redirect to frontend with access token
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  res.redirect(`${frontendUrl}/callback.html?token=${accessToken}`);
 });
 
 /**
@@ -116,11 +112,8 @@ const logout = asyncHandler(async (req, res) => {
  * Called if OAuth authentication fails
  */
 const oauthFailure = (req, res) => {
-  res.status(401).json({
-    success: false,
-    error: 'Authentication failed',
-    message: 'OAuth authentication was unsuccessful',
-  });
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  res.redirect(`${frontendUrl}/callback.html?error=authentication_failed`);
 };
 
 module.exports = {
