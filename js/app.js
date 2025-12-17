@@ -545,8 +545,8 @@ function displayDetailedStats() {
 
     container.innerHTML = `<div class="stats-grid">
         <div class="stat-card"><div class="stat-number">${stats.totalDays || 0}</div><div class="stat-label">${t.totalDays}</div></div>
-        <div class="stat-card"><div class="stat-number">${(stats.avgNewQuality || 0).toFixed(1)}</div><div class="stat-label">${t.avgNewQuality}</div></div>
-        <div class="stat-card"><div class="stat-number">${(stats.avgReviewQuality || 0).toFixed(1)}</div><div class="stat-label">${t.avgReviewQuality}</div></div>
+        <div class="stat-card"><div class="stat-number">${stats.avgNewQuality || 0}</div><div class="stat-label">${t.avgNewQuality}</div></div>
+        <div class="stat-card"><div class="stat-number">${stats.avgReviewQuality || 0}</div><div class="stat-label">${t.avgReviewQuality}</div></div>
         <div class="stat-card"><div class="stat-number">${stats.juzInProgress || 0}</div><div class="stat-label">${t.juzInProgress}</div></div>
     </div>`;
 }
