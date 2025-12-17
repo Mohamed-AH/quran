@@ -53,11 +53,29 @@ const juzSchema = new mongoose.Schema(
 // Compound index: userId + juzNumber (ensures one record per user per juz)
 juzSchema.index({ userId: 1, juzNumber: 1 }, { unique: true });
 
-// Pre-save hook: Auto-update status based on pages
+// Pre-save hook: Auto-sync status and pages bidirectionally
 juzSchema.pre('save', function (next) {
+  // If status is explicitly changed, update pages accordingly
+  if (this.isModified('status')) {
+    if (this.status === 'completed') {
+      this.pages = 20; // Completed = full Juz
+      if (!this.endDate) {
+        this.endDate = new Date();
+      }
+    } else if (this.status === 'not-started') {
+      this.pages = 0; // Not started = 0 pages
+      this.startDate = null;
+      this.endDate = null;
+    }
+    // For 'in-progress', keep current pages value (1-19)
+  }
+
+  // If pages are changed, update status accordingly
   if (this.isModified('pages')) {
     if (this.pages === 0) {
       this.status = 'not-started';
+      this.startDate = null;
+      this.endDate = null;
     } else if (this.pages >= 20) {
       this.status = 'completed';
       this.pages = 20; // Cap at 20
@@ -71,6 +89,7 @@ juzSchema.pre('save', function (next) {
       }
     }
   }
+
   next();
 });
 
