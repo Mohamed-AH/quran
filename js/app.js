@@ -206,6 +206,83 @@ async function loadStats() {
 // DAILY LOG OPERATIONS
 // ================================
 
+// Validate page format
+function validatePages(pageStr, isArabic) {
+    if (!pageStr || pageStr.trim() === '') return { valid: true };
+
+    const t = trans[data.settings.language];
+
+    // Check for invalid characters
+    if (!/^[\d\s,\-]+$/.test(pageStr)) {
+        return {
+            valid: false,
+            error: isArabic
+                ? 'صيغة غير صحيحة. استخدم الأرقام والفواصل والشرطات فقط'
+                : 'Invalid format. Use numbers, commas, and hyphens only'
+        };
+    }
+
+    // Parse and validate each part
+    const parts = pageStr.split(',').map(s => s.trim()).filter(s => s);
+
+    for (const part of parts) {
+        if (part.includes('-')) {
+            // Range validation
+            const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+
+            if (isNaN(start) || isNaN(end)) {
+                return {
+                    valid: false,
+                    error: isArabic
+                        ? `نطاق غير صحيح: ${part}`
+                        : `Invalid range: ${part}`
+                };
+            }
+
+            if (start < 1 || end > 604) {
+                return {
+                    valid: false,
+                    error: isArabic
+                        ? `الصفحات يجب أن تكون بين 1-604 (وجدنا: ${part})`
+                        : `Pages must be between 1-604 (found: ${part})`
+                };
+            }
+
+            if (start > end) {
+                return {
+                    valid: false,
+                    error: isArabic
+                        ? `نطاق غير صحيح: ${start} أكبر من ${end}`
+                        : `Invalid range: ${start} is greater than ${end}`
+                };
+            }
+        } else {
+            // Single page validation
+            const page = parseInt(part.trim());
+
+            if (isNaN(page)) {
+                return {
+                    valid: false,
+                    error: isArabic
+                        ? `رقم غير صحيح: ${part}`
+                        : `Invalid number: ${part}`
+                };
+            }
+
+            if (page < 1 || page > 604) {
+                return {
+                    valid: false,
+                    error: isArabic
+                        ? `الصفحة يجب أن تكون بين 1-604 (وجدنا: ${page})`
+                        : `Page must be between 1-604 (found: ${page})`
+                };
+            }
+        }
+    }
+
+    return { valid: true };
+}
+
 async function saveLog() {
     const t = trans[data.settings.language];
     const isArabic = data.settings.language === 'ar';
@@ -216,6 +293,20 @@ async function saveLog() {
 
     if (!newPages && !reviewPages) {
         ui.showError(t.alertEnterPages, isArabic);
+        return;
+    }
+
+    // Validate newPages format
+    const newPagesValidation = validatePages(newPages, isArabic);
+    if (!newPagesValidation.valid) {
+        ui.showError(newPagesValidation.error, isArabic);
+        return;
+    }
+
+    // Validate reviewPages format
+    const reviewPagesValidation = validatePages(reviewPages, isArabic);
+    if (!reviewPagesValidation.valid) {
+        ui.showError(reviewPagesValidation.error, isArabic);
         return;
     }
 
