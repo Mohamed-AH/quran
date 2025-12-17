@@ -99,6 +99,9 @@ async function testStatusPagesSync() {
   // Test 1.1: Status → Pages (Completed)
   log('\nTest 1.1: Completed status → 20 pages', 'yellow');
   let result = await apiCall('PUT', '/juz/1', { status: 'completed', pages: 5 });
+  if (!result.success) {
+    log(`  ⚠️  API Error: ${result.error}`, 'red');
+  }
   logTest('Save Juz 1 as completed', result.success);
 
   result = await apiCall('GET', '/juz/1');
@@ -151,6 +154,9 @@ async function testDashboardStatistics() {
   // Test 2.1: Initial State
   log('\nTest 2.1: Initial state after Suite 1', 'yellow');
   let result = await apiCall('GET', '/stats/combined');
+  if (!result.success) {
+    log(`  ⚠️  API Error: ${result.error}`, 'red');
+  }
   logTest('Get combined stats', result.success);
 
   if (result.success) {
@@ -363,6 +369,21 @@ async function runTests() {
   }
 
   log('\n✅ Token received. Starting tests...\n', 'green');
+  log('🔍 Testing API connection...', 'yellow');
+
+  // Test API connection first
+  const healthCheck = await apiCall('GET', '/stats/combined');
+  if (!healthCheck.success) {
+    log(`\n❌ API Connection Failed: ${healthCheck.error}`, 'red');
+    log('\nPossible issues:', 'yellow');
+    log('  1. Backend not running on port 5000', 'yellow');
+    log('  2. Invalid or expired token', 'yellow');
+    log('  3. User not authenticated', 'yellow');
+    log('\nPlease check and try again.\n', 'yellow');
+    return;
+  }
+
+  log('✅ API Connection successful!\n', 'green');
 
   try {
     await testStatusPagesSync();
