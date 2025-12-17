@@ -6,16 +6,16 @@
 const trans = {
     ar: {
         appTitle: 'حافظ', subtitle: 'رحلة حفظ القرآن الكريم', langBtn: 'English',
-        labelPages: 'صفحات محفوظة', labelJuz: 'أجزاء مكتملة', labelStreak: 'أيام متتالية',
+        labelPages: 'صفحات من الأجزاء', labelJuz: 'أجزاء مكتملة', labelStreak: 'أيام متتالية',
         labelProgress: 'نسبة الإنجاز', tabToday: 'اليوم', tabJuz: 'الأجزاء',
         tabHistory: 'السجل', tabStats: 'الإحصائيات',
-        btnSave: 'حفظ اليوم', labelNewPages: 'الصفحات الجديدة المحفوظة',
-        labelNewQuality: 'جودة الحفظ الجديد', labelReviewPages: 'صفحات المراجعة',
+        btnSave: 'حفظ اليوم', labelNewPages: 'صفحات القرآن المحفوظة اليوم (مثال: 1-5، 10)',
+        labelNewQuality: 'جودة الحفظ الجديد', labelReviewPages: 'صفحات المراجعة (مثال: 10-15)',
         labelReviewQuality: 'جودة المراجعة', labelNotes: 'ملاحظات اليوم',
-        placeholderNewPages: 'مثال: 1-3، 5', placeholderReviewPages: 'مثال: 10-15',
+        placeholderNewPages: 'أدخل أرقام الصفحات: 1-5، 10', placeholderReviewPages: 'أدخل أرقام الصفحات: 10-15',
         placeholderNotes: 'آيات صعبة، إنجازات، أو أي ملاحظات...',
         statsTitle: 'إحصائيات مفصلة', labelJuzStatus: 'حالة الجزء',
-        labelJuzPages: 'عدد الصفحات المحفوظة (من 20)', labelJuzStart: 'تاريخ البدء',
+        labelJuzPages: 'التقدم: ___ صفحة من 20', labelJuzStart: 'تاريخ البدء',
         labelJuzEnd: 'تاريخ الإتمام', labelJuzNotes: 'ملاحظات',
         placeholderJuzNotes: 'ملاحظات عن هذا الجزء...', btnJuzSave: 'حفظ', btnJuzCancel: 'إلغاء',
         statusNotStarted: 'لم يبدأ', statusInProgress: 'جاري الحفظ', statusCompleted: 'مكتمل',
@@ -30,16 +30,16 @@ const trans = {
     },
     en: {
         appTitle: 'Hafiz', subtitle: 'Your Quran Memorization Journey', langBtn: 'العربية',
-        labelPages: 'Pages Memorized', labelJuz: 'Juz Completed', labelStreak: 'Day Streak',
+        labelPages: 'Pages from Juz', labelJuz: 'Juz Completed', labelStreak: 'Day Streak',
         labelProgress: 'Completion', tabToday: 'Today', tabJuz: 'Juz', tabHistory: 'History',
         tabStats: 'Statistics',
         btnSave: 'Save Today',
-        labelNewPages: 'New Pages Memorized', labelNewQuality: 'New Memorization Quality',
-        labelReviewPages: 'Review Pages', labelReviewQuality: 'Review Quality',
-        labelNotes: 'Notes for Today', placeholderNewPages: 'e.g., 1-3, 5',
-        placeholderReviewPages: 'e.g., 10-15', placeholderNotes: 'Difficult verses, achievements...',
+        labelNewPages: 'Quran Pages Practiced Today (e.g., 1-5, 10)', labelNewQuality: 'New Memorization Quality',
+        labelReviewPages: 'Review Pages (e.g., 10-15)', labelReviewQuality: 'Review Quality',
+        labelNotes: 'Notes for Today', placeholderNewPages: 'Enter page numbers: 1-5, 10',
+        placeholderReviewPages: 'Enter page numbers: 10-15', placeholderNotes: 'Difficult verses, achievements...',
         statsTitle: 'Detailed Statistics', labelJuzStatus: 'Juz Status',
-        labelJuzPages: 'Pages Memorized (out of 20)', labelJuzStart: 'Start Date',
+        labelJuzPages: 'Progress: ___ pages out of 20', labelJuzStart: 'Start Date',
         labelJuzEnd: 'Completion Date', labelJuzNotes: 'Notes',
         placeholderJuzNotes: 'Notes about this Juz...', btnJuzSave: 'Save', btnJuzCancel: 'Cancel',
         statusNotStarted: 'Not Started', statusInProgress: 'In Progress', statusCompleted: 'Completed',
@@ -199,7 +199,7 @@ async function loadLogs() {
 
 async function loadStats() {
     try {
-        const response = await api.get('/logs/stats');
+        const response = await api.get('/stats/combined');
         data.stats = response.stats || {};
     } catch (error) {
         console.error('Error loading stats:', error);
@@ -532,11 +532,13 @@ function updateStats() {
         return;
     }
 
+    // Display Juz-based statistics (primary metrics)
     document.getElementById('totalPages').textContent = data.stats.totalPages || 0;
     document.getElementById('totalJuz').textContent = data.stats.completedJuz || 0;
     document.getElementById('currentStreak').textContent = data.stats.currentStreak || 0;
 
-    const progress = ((data.stats.totalPages || 0) / 604) * 100;
+    // Main progress graph based on Juz completion (primary metric)
+    const progress = data.stats.juzCompletionPercentage || 0;
     document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
 
     const circle = document.getElementById('progressCircle');
@@ -545,7 +547,7 @@ function updateStats() {
 }
 
 function calculateLocalStats() {
-    // Fallback: calculate stats from local data
+    // Fallback: calculate stats from local Juz data
     let totalPages = 0, completedJuz = 0;
     data.juz.forEach(juz => {
         totalPages += juz.pages || 0;
@@ -556,7 +558,8 @@ function calculateLocalStats() {
     document.getElementById('totalJuz').textContent = completedJuz;
     document.getElementById('currentStreak').textContent = 0; // Will be calculated by backend
 
-    const progress = (totalPages / 604) * 100;
+    // Calculate Juz completion percentage for progress graph (primary metric)
+    const progress = (completedJuz / 30) * 100;
     document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
 
     const circle = document.getElementById('progressCircle');
@@ -571,12 +574,60 @@ function displayDetailedStats() {
 
     const stats = data.stats || {};
 
-    container.innerHTML = `<div class="stats-grid">
-        <div class="stat-card"><div class="stat-number">${stats.totalDays || 0}</div><div class="stat-label">${t.totalDays}</div></div>
-        <div class="stat-card"><div class="stat-number">${stats.avgNewQuality || 0}</div><div class="stat-label">${t.avgNewQuality}</div></div>
-        <div class="stat-card"><div class="stat-number">${stats.avgReviewQuality || 0}</div><div class="stat-label">${t.avgReviewQuality}</div></div>
-        <div class="stat-card"><div class="stat-number">${stats.juzInProgress || 0}</div><div class="stat-label">${t.juzInProgress}</div></div>
-    </div>`;
+    // Juz Progress Section
+    const juzSection = lang === 'ar'
+        ? `<h3 style="margin-bottom: 1rem;">تقدم الأجزاء</h3>`
+        : `<h3 style="margin-bottom: 1rem;">Juz Progress</h3>`;
+
+    const juzCards = `
+        <div class="stat-card">
+            <div class="stat-number">${stats.completedJuz || 0}/30</div>
+            <div class="stat-label">${lang === 'ar' ? 'أجزاء مكتملة' : 'Juz Completed'}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.inProgressJuz || 0}</div>
+            <div class="stat-label">${t.juzInProgress}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.totalPages || 0}/600</div>
+            <div class="stat-label">${lang === 'ar' ? 'صفحات من الأجزاء' : 'Pages from Juz'}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${Math.round(stats.juzCompletionPercentage || 0)}%</div>
+            <div class="stat-label">${lang === 'ar' ? 'نسبة الإنجاز' : 'Completion'}</div>
+        </div>
+    `;
+
+    // Activity Section
+    const activitySection = lang === 'ar'
+        ? `<h3 style="margin: 2rem 0 1rem 0;">إحصائيات النشاط</h3>`
+        : `<h3 style="margin: 2rem 0 1rem 0;">Activity Statistics</h3>`;
+
+    const activityCards = `
+        <div class="stat-card">
+            <div class="stat-number">${stats.totalDays || 0}</div>
+            <div class="stat-label">${t.totalDays}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.currentStreak || 0}</div>
+            <div class="stat-label">${lang === 'ar' ? 'أيام متتالية' : 'Day Streak'}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.avgNewQuality || 0}</div>
+            <div class="stat-label">${t.avgNewQuality}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.avgReviewQuality || 0}</div>
+            <div class="stat-label">${t.avgReviewQuality}</div>
+        </div>
+    `;
+
+    container.innerHTML = `
+        ${juzSection}
+        <div class="stats-grid">${juzCards}</div>
+        ${activitySection}
+        <div class="stats-grid">${activityCards}</div>
+    `;
 }
 
 // ================================
