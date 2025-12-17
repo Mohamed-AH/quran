@@ -67,12 +67,12 @@ const updateJuz = asyncHandler(async (req, res) => {
     throw new APIError('Juz not found', 404);
   }
 
-  const { status, pages, startDate, completionDate, notes } = req.body;
+  const { status, pages, startDate, endDate, notes } = req.body;
 
   if (status !== undefined) juz.status = status;
   if (pages !== undefined) juz.pages = pages;
   if (startDate !== undefined) juz.startDate = startDate;
-  if (completionDate !== undefined) juz.completionDate = completionDate;
+  if (endDate !== undefined) juz.endDate = endDate;
   if (notes !== undefined) juz.notes = notes;
 
   await juz.save();
