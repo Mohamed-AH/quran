@@ -62,7 +62,7 @@ if (process.env.NODE_ENV === 'production') {
   });
   app.use('/api', limiter);
 } else {
-  log('⚠️  Rate limiting disabled in development mode', 'yellow');
+  console.log('⚠️  Rate limiting disabled in development mode');
 }
 
 // ============================================
