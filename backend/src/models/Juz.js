@@ -55,8 +55,11 @@ juzSchema.index({ userId: 1, juzNumber: 1 }, { unique: true });
 
 // Pre-save hook: Auto-sync status and pages bidirectionally
 juzSchema.pre('save', function (next) {
-  // If status is explicitly changed, update pages accordingly
-  if (this.isModified('status')) {
+  const statusWasModified = this.isModified('status');
+  const pagesWereModified = this.isModified('pages');
+
+  // If status is explicitly changed, update pages accordingly (takes priority)
+  if (statusWasModified) {
     if (this.status === 'completed') {
       this.pages = 20; // Completed = full Juz
       if (!this.endDate) {
@@ -69,9 +72,8 @@ juzSchema.pre('save', function (next) {
     }
     // For 'in-progress', keep current pages value (1-19)
   }
-
-  // If pages are changed, update status accordingly
-  if (this.isModified('pages')) {
+  // If ONLY pages are changed (not status), update status accordingly
+  else if (pagesWereModified) {
     if (this.pages === 0) {
       this.status = 'not-started';
       this.startDate = null;
