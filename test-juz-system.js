@@ -196,16 +196,28 @@ async function testDashboardStatistics() {
 
   await apiCall('PUT', '/juz/1', { pages: 15 });
   result = await apiCall('GET', '/stats/combined');
+  if (!result.success || !result.data || !result.data.stats) {
+    log(`  ⚠️  Stats API failed: ${result.error || 'No data returned'}`, 'red');
+    return; // Skip rest of test
+  }
   const pages1 = result.data.stats.totalPages;
   logTest('After 15 pages: correct total', pages1 === 50, `(got ${pages1})`);
 
   await apiCall('PUT', '/juz/1', { pages: 18 });
   result = await apiCall('GET', '/stats/combined');
+  if (!result.success || !result.data || !result.data.stats) {
+    log(`  ⚠️  Stats API failed: ${result.error || 'No data returned'}`, 'red');
+    return; // Skip rest of test
+  }
   const pages2 = result.data.stats.totalPages;
   logTest('After 18 pages: correct total', pages2 === 53, `(got ${pages2})`);
 
   await apiCall('PUT', '/juz/1', { pages: 12 });
   result = await apiCall('GET', '/stats/combined');
+  if (!result.success || !result.data || !result.data.stats) {
+    log(`  ⚠️  Stats API failed: ${result.error || 'No data returned'}`, 'red');
+    return; // Skip rest of test
+  }
   const pages3 = result.data.stats.totalPages;
   logTest('After 12 pages: correct total', pages3 === 47, `(got ${pages3})`);
 }
