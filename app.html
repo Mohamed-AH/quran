@@ -195,9 +195,9 @@
                     }
 
                     // Fetch fresh user data from API
-                    const userData = await api.get('/user/me');
-                    if (userData && userData.name) {
-                        userName.textContent = userData.name;
+                    const userData = await api.get('/auth/me');
+                    if (userData && userData.user && userData.user.name) {
+                        userName.textContent = userData.user.name;
                     }
                 }
             } catch (error) {
