@@ -90,6 +90,8 @@ juzSchema.pre('save', function (next) {
       if (!this.startDate) {
         this.startDate = new Date();
       }
+      // Clear endDate for in-progress Juz
+      this.endDate = null;
     }
   }
   // If ONLY status is changed, update pages accordingly
@@ -103,8 +105,14 @@ juzSchema.pre('save', function (next) {
       this.pages = 0;
       this.startDate = null;
       this.endDate = null;
+    } else if (this.status === 'in-progress') {
+      // For 'in-progress', keep current pages value (1-19)
+      // Clear endDate for in-progress Juz
+      this.endDate = null;
+      if (!this.startDate) {
+        this.startDate = new Date();
+      }
     }
-    // For 'in-progress', keep current pages value (1-19)
   }
   // If ONLY pages are changed, update status accordingly
   else if (pagesWereModified) {
@@ -123,6 +131,8 @@ juzSchema.pre('save', function (next) {
       if (!this.startDate) {
         this.startDate = new Date();
       }
+      // Clear endDate for in-progress Juz
+      this.endDate = null;
     }
   }
 
