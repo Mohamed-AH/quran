@@ -19,29 +19,131 @@
         }
         body[dir="ltr"] { font-family: 'Crimson Pro', serif; }
         .app { max-width: 1400px; margin: 0 auto; padding: 20px; position: relative; z-index: 1; }
-        header { text-align: center; padding: 40px 20px; position: relative; }
+        /* Header Layout */
+        header {
+            position: relative;
+            padding: 1.5rem 1rem;
+            text-align: center;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .header-left,
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-center {
+            margin-top: 0.5rem;
+        }
+
+        /* Language Toggle Button */
         .lang-toggle {
-            position: absolute; top: 20px; right: 20px;
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(212, 175, 55, 0.3);
-            color: var(--cream); padding: 8px 20px;
-            border-radius: 50px; cursor: pointer;
-            transition: all 0.3s; font-weight: 600;
+            color: var(--cream);
+            padding: 8px 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 0.85rem;
         }
-        body[dir="ltr"] .lang-toggle { left: 20px; right: auto; }
-        .lang-toggle:hover { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); }
+        .lang-toggle:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: var(--gold);
+        }
+
+        /* Help Button */
         .help-btn {
-            position: absolute; top: 20px; left: 20px;
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid rgba(212, 175, 55, 0.3);
-            color: var(--cream); width: 40px; height: 40px;
-            border-radius: 50%; cursor: pointer;
-            transition: all 0.3s; font-weight: 700;
-            font-size: 1.2rem; display: flex;
-            align-items: center; justify-content: center;
+            color: var(--cream);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        body[dir="ltr"] .help-btn { right: 20px; left: auto; }
-        .help-btn:hover { background: var(--gold); color: var(--forest-dark); transform: scale(1.1); }
+        .help-btn:hover {
+            background: var(--gold);
+            color: var(--forest-dark);
+            transform: scale(1.1);
+        }
+
+        /* User Profile Section */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        #userName {
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .btn-logout {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            background: rgba(212, 175, 55, 0.1);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        .btn-logout:hover {
+            background: var(--gold);
+            color: var(--dark-bg);
+        }
+
+        /* Responsive Header */
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .user-profile {
+                font-size: 0.9rem;
+            }
+
+            #userName {
+                font-size: 0.85rem;
+            }
+
+            .btn-logout {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #userName {
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
         h1 {
             font-family: 'Rakkas', cursive;
             font-size: clamp(2.5rem, 6vw, 4.5rem);
