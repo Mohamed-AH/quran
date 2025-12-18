@@ -1,7 +1,14 @@
 /**
  * Hafiz App v2.0 - Main Application Logic
  * API-based version (replaces localStorage)
+ * Supports demo mode via ?demo=true query parameter
  */
+
+// ================================
+// DEMO MODE DETECTION
+// ================================
+
+const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
 
 const trans = {
     ar: {
@@ -9,7 +16,10 @@ const trans = {
         labelPages: 'صفحات من الأجزاء', labelJuz: 'أجزاء مكتملة', labelStreak: 'أيام متتالية',
         labelProgress: 'نسبة الإنجاز', tabToday: 'اليوم', tabJuz: 'الأجزاء',
         tabHistory: 'السجل', tabStats: 'الإحصائيات',
-        btnSave: 'حفظ اليوم', btnLogout: 'تسجيل الخروج',
+        btnSave: 'حفظ اليوم', btnLogout: 'تسجيل الخروج', btnBackHome: 'العودة للرئيسية',
+        demoBanner: '📊 جرب التطبيق الآن - البيانات المعروضة للتوضيح فقط',
+        loginModalTitle: 'ابدأ رحلتك الآن', loginModalSubtitle: 'سجّل دخولك لحفظ تقدمك ومزامنته عبر جميع أجهزتك',
+        loginGoogle: 'تسجيل الدخول بحساب Google', loginGithub: 'تسجيل الدخول بحساب GitHub',
         labelNewPages: 'صفحات القرآن المحفوظة اليوم (مثال: 1-5، 10)',
         labelNewQuality: 'جودة الحفظ الجديد', labelReviewPages: 'صفحات المراجعة (مثال: 10-15)',
         labelReviewQuality: 'جودة المراجعة', labelNotes: 'ملاحظات اليوم',
@@ -34,7 +44,10 @@ const trans = {
         labelPages: 'Pages from Juz', labelJuz: 'Juz Completed', labelStreak: 'Day Streak',
         labelProgress: 'Completion', tabToday: 'Today', tabJuz: 'Juz', tabHistory: 'History',
         tabStats: 'Statistics',
-        btnSave: 'Save Today', btnLogout: 'Logout',
+        btnSave: 'Save Today', btnLogout: 'Logout', btnBackHome: 'Back to Home',
+        demoBanner: '📊 Try the App Now - Demo Data for Illustration Only',
+        loginModalTitle: 'Start Your Journey Now', loginModalSubtitle: 'Login to save your progress and sync across all your devices',
+        loginGoogle: 'Continue with Google', loginGithub: 'Continue with GitHub',
         labelNewPages: 'Quran Pages Practiced Today (e.g., 1-5, 10)', labelNewQuality: 'New Memorization Quality',
         labelReviewPages: 'Review Pages (e.g., 10-15)', labelReviewQuality: 'Review Quality',
         labelNotes: 'Notes for Today', placeholderNewPages: 'Enter page numbers: 1-5, 10',
@@ -88,13 +101,121 @@ let data = {
 let currentJuz = null;
 
 // ================================
+// DEMO MODE FUNCTIONS
+// ================================
+
+function loadDemoData() {
+    // Load from localStorage or initialize with demo.js data
+    const stored = localStorage.getItem('hafiz_demo_data');
+    if (stored && typeof demoData !== 'undefined') {
+        try {
+            const parsed = JSON.parse(stored);
+            data.juz = parsed.juz || demoData.juz;
+            data.logs = parsed.logs || demoData.logs;
+            data.stats = parsed.stats || calculateDemoStats();
+            return;
+        } catch (error) {
+            console.error('Error parsing stored demo data:', error);
+        }
+    }
+
+    // Initialize with demo data from demo.js (if available)
+    if (typeof demoData !== 'undefined') {
+        data.juz = JSON.parse(JSON.stringify(demoData.juz));
+        data.logs = JSON.parse(JSON.stringify(demoData.logs));
+        data.stats = calculateDemoStats();
+    } else {
+        // Fallback: create empty structure
+        data.juz = [];
+        for (let i = 1; i <= 30; i++) {
+            data.juz.push({
+                juzNumber: i,
+                status: 'not-started',
+                pages: 0,
+                startDate: null,
+                endDate: null,
+                notes: ''
+            });
+        }
+        data.logs = [];
+        data.stats = calculateDemoStats();
+    }
+}
+
+function calculateDemoStats() {
+    let totalPages = 0, completedJuz = 0, inProgressJuz = 0;
+
+    data.juz.forEach(juz => {
+        totalPages += juz.pages || 0;
+        if (juz.status === 'completed') completedJuz++;
+        else if (juz.status === 'in-progress') inProgressJuz++;
+    });
+
+    const juzCompletionPercentage = ((completedJuz / 30) * 100).toFixed(1);
+
+    let totalDays = data.logs.length;
+    let currentStreak = 0;
+    let avgNewQuality = 0, avgReviewQuality = 0;
+
+    if (totalDays > 0) {
+        let totalNew = 0, totalReview = 0, countNew = 0, countReview = 0;
+
+        data.logs.forEach(log => {
+            if (log.newRating > 0) { totalNew += log.newRating; countNew++; }
+            if (log.reviewRating > 0) { totalReview += log.reviewRating; countReview++; }
+        });
+
+        avgNewQuality = countNew > 0 ? (totalNew / countNew).toFixed(1) : 0;
+        avgReviewQuality = countReview > 0 ? (totalReview / countReview).toFixed(1) : 0;
+    }
+
+    return {
+        totalPages, completedJuz, inProgressJuz,
+        notStartedJuz: 30 - completedJuz - inProgressJuz,
+        juzCompletionPercentage: parseFloat(juzCompletionPercentage),
+        totalDays, currentStreak,
+        avgNewQuality: parseFloat(avgNewQuality),
+        avgReviewQuality: parseFloat(avgReviewQuality)
+    };
+}
+
+function showLoginModal() {
+    const modal = document.getElementById('loginModal');
+    if (modal) modal.classList.add('active');
+}
+
+function closeLoginModal() {
+    const modal = document.getElementById('loginModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function loginWithProvider(provider) {
+    window.location.href = `/app.html?auth=${provider}`;
+}
+
+function handleBackToHome() {
+    window.location.href = '/';
+}
+
+function detectBrowserLanguage() {
+    const browserLang = navigator.language || navigator.languages[0];
+    return browserLang.startsWith('ar') ? 'ar' : 'en';
+}
+
+// ================================
 // INITIALIZATION
 // ================================
 
 async function init() {
     try {
-        // Initialize language from localStorage (takes priority)
-        data.settings.language = storage.getLanguage();
+        // DEMO MODE: Detect browser language
+        if (isDemoMode && !storage.getLanguage()) {
+            data.settings.language = detectBrowserLanguage();
+            storage.setLanguage(data.settings.language);
+        } else {
+            data.settings.language = storage.getLanguage();
+        }
+
         const isArabic = data.settings.language === 'ar';
         ui.showLoader();
 
@@ -107,21 +228,27 @@ async function init() {
         if (historyList) ui.createSkeleton(historyList, 5);
         if (detailedStats) ui.createSkeleton(detailedStats, 4);
 
-        // Load user settings (but preserve localStorage language preference)
-        await loadSettings();
-        applyLanguage();
+        if (isDemoMode) {
+            // DEMO MODE: Load from localStorage or demo.js
+            loadDemoData();
+            applyLanguage();
+        } else {
+            // NORMAL MODE: Load from API
+            await loadSettings();
+            applyLanguage();
 
-        // Load all data in parallel
-        await Promise.all([
-            loadJuz(),
-            loadLogs(),
-            loadStats()
-        ]);
+            await Promise.all([
+                loadJuz(),
+                loadLogs(),
+                loadStats()
+            ]);
+        }
 
         // Update UI
         updateStats();
         displayJuz();
         displayHistory();
+        displayDetailedStats();
         updateCurrentDate();
 
         ui.hideLoader();
@@ -316,6 +443,12 @@ async function saveLog() {
         return;
     }
 
+    // DEMO MODE: Show login modal instead of saving
+    if (isDemoMode) {
+        showLoginModal();
+        return;
+    }
+
     const log = {
         date: new Date().toISOString(),
         newPages,
@@ -363,6 +496,12 @@ async function saveLog() {
 
 async function saveJuz() {
     if (!currentJuz) return;
+
+    // DEMO MODE: Show login modal instead of saving
+    if (isDemoMode) {
+        showLoginModal();
+        return;
+    }
 
     const t = trans[data.settings.language];
     const isArabic = data.settings.language === 'ar';
