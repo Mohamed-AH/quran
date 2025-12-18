@@ -344,6 +344,7 @@ async function saveLog() {
         // Reload stats and history
         await loadStats();
         updateStats();
+        displayDetailedStats(); // Refresh statistics tab
         displayHistory();
 
         ui.hideLoader();
@@ -377,18 +378,20 @@ async function saveJuz() {
     try {
         ui.showLoader();
 
-        // Save to API
-        await api.put(`/juz/${currentJuz}`, juzData);
+        // Save to API and get the synced response
+        const response = await api.put(`/juz/${currentJuz}`, juzData);
 
-        // Update local data
+        // Update local data with synced values from backend
         const index = data.juz.findIndex(j => j.juzNumber === currentJuz);
-        if (index !== -1) {
-            data.juz[index] = juzData;
+        if (index !== -1 && response.juz) {
+            // Use the backend response which includes synced status/pages
+            data.juz[index] = response.juz;
         }
 
-        // Reload stats
+        // Reload stats and refresh UI
         await loadStats();
         updateStats();
+        displayDetailedStats(); // Refresh statistics tab
         displayJuz();
         closeModal();
 
