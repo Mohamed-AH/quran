@@ -806,12 +806,17 @@ function setRating(type, rating) {
 async function toggleLanguage() {
     data.settings.language = data.settings.language === 'ar' ? 'en' : 'ar';
 
-    // Save to API
-    try {
-        await api.put('/user', { settings: { language: data.settings.language } });
+    // Save to API (skip in demo mode)
+    if (!isDemoMode) {
+        try {
+            await api.put('/user', { settings: { language: data.settings.language } });
+            storage.setLanguage(data.settings.language);
+        } catch (error) {
+            console.error('Error saving language:', error);
+        }
+    } else {
+        // Demo mode: just save to localStorage
         storage.setLanguage(data.settings.language);
-    } catch (error) {
-        console.error('Error saving language:', error);
     }
 
     applyLanguage();
