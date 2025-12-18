@@ -172,16 +172,16 @@ body[dir="ltr"] .hero-subtitle {
 /* Demo Juz Grid */
 .demo-juz-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 15px;
   margin-top: 20px;
 }
 
 .demo-juz-card {
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(212, 175, 55, 0.2);
-  border-radius: 12px;
-  padding: 15px;
+  border-radius: 15px;
+  padding: 20px;
   text-align: center;
   cursor: not-allowed;
   transition: all 0.3s;
@@ -204,7 +204,7 @@ body[dir="ltr"] .hero-subtitle {
 }
 
 .demo-juz-number {
-  font-size: 1.8rem;
+  font-size: 2rem;
   font-weight: 700;
   color: var(--gold);
 }
