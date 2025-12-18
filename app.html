@@ -180,9 +180,10 @@
         </div>
     </div>
 
-    <!-- Load modules in order: config -> storage -> auth -> api -> ui -> app -->
+    <!-- Load modules in order: config -> storage -> demo (if needed) -> auth -> api -> ui -> app -->
     <script src="js/config.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/demo.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
@@ -190,9 +191,18 @@
 
     <!-- Authentication initialization -->
     <script>
-        // Check authentication on page load
+        // Check if we're in demo mode (defined in app.js)
+        const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+
+        // Check authentication on page load (skip in demo mode)
         document.addEventListener('DOMContentLoaded', async () => {
-            // Require authentication - redirects to index.html if not authenticated
+            if (isDemoMode) {
+                // DEMO MODE: Skip authentication
+                console.log('Running in demo mode - skipping authentication');
+                return;
+            }
+
+            // NORMAL MODE: Require authentication - redirects to index.html if not authenticated
             auth.requireAuth();
 
             // If we get here, user is authenticated

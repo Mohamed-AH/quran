@@ -12,12 +12,12 @@
 
 .hero-title {
   font-family: 'Rakkas', cursive;
-  font-size: clamp(3rem, 8vw, 5rem);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
   background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   animation: fadeInDown 0.8s ease-out;
 }
 
