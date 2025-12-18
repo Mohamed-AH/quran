@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="تطبيق حافظ - تتبع حفظ القرآن الكريم بطريقة منظمة وفعالة">
-  <meta name="keywords" content="قرآن, حفظ, تتبع, Quran, memorization, tracker">
+  <meta name="description" content="تطبيق حافظ - رحلة حفظ القرآن الكريم">
+  <meta name="keywords" content="قرآن, حفظ, تتبع, Quran, memorization">
   <meta name="author" content="Hafiz App">
-  <title>حافظ - Quran Memorization Tracker</title>
+  <title>حافظ - Hafiz</title>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&family=Rakkas&family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
@@ -27,30 +27,23 @@
   <link rel="apple-touch-icon" href="/assets/icon.svg">
 </head>
 <body>
-  <!-- Hero Section -->
-  <section class="hero">
-    <div class="hero-content">
+  <!-- Main Content -->
+  <main class="landing-main">
+    <!-- Hero Section -->
+    <section class="hero">
       <h1 class="hero-title" id="heroTitle">حافظ</h1>
-      <h2 class="hero-subtitle" id="heroSubtitle">رحلة حفظ القرآن الكريم</h2>
-      <p class="hero-tagline" id="heroTagline">
-        Track your Quran memorization journey efficiently and effectively
-      </p>
+      <p class="hero-subtitle" id="heroSubtitle">رحلة حفظ القرآن الكريم</p>
+
       <div class="hero-actions">
         <a href="app.html?demo=true" class="btn-demo" id="btnDemo">
-          <span class="btn-icon">📊</span>
-          <span id="btnDemoText">جرب التطبيق الآن</span>
+          <span id="btnDemoText">جرب التطبيق</span>
         </a>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Login Section -->
-  <section class="login-section">
-    <div class="container">
-      <h2 class="section-title" id="loginTitle">ابدأ رحلتك الآن</h2>
-      <p class="section-subtitle" id="loginSubtitle">
-        سجّل دخولك لحفظ تقدمك ومزامنته عبر جميع أجهزتك
-      </p>
+    <!-- Login Section -->
+    <section class="login-section">
+      <h2 class="login-title" id="loginTitle">ابدأ رحلتك</h2>
 
       <div class="login-buttons">
         <button class="login-btn login-btn-google" onclick="loginWithGoogle()">
@@ -65,63 +58,8 @@
           <span id="githubBtnText">تسجيل الدخول بحساب GitHub</span>
         </button>
       </div>
-    </div>
-  </section>
-
-  <!-- Features Section -->
-  <section class="features-section">
-    <div class="container">
-      <h2 class="section-title" id="featuresTitle">المميزات</h2>
-
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3 class="feature-title" id="feature1Title">تتبع منظم</h3>
-          <p class="feature-desc" id="feature1Desc">
-            تتبع تقدمك في حفظ الأجزاء والصفحات بطريقة منظمة ومرئية
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📝</div>
-          <h3 class="feature-title" id="feature2Title">سجل يومي</h3>
-          <p class="feature-desc" id="feature2Desc">
-            سجّل جلسات الحفظ والمراجعة اليومية مع تقييم الجودة والملاحظات
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">📈</div>
-          <h3 class="feature-title" id="feature3Title">إحصائيات شاملة</h3>
-          <p class="feature-desc" id="feature3Desc">
-            احصل على إحصائيات تفصيلية عن تقدمك وجودة حفظك ومراجعتك
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">☁️</div>
-          <h3 class="feature-title" id="feature4Title">مزامنة تلقائية</h3>
-          <p class="feature-desc" id="feature4Desc">
-            بياناتك محفوظة في السحابة ومتزامنة عبر جميع أجهزتك تلقائياً
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <p id="footerText">
-        حافظ v2.0 - تطبيق تتبع حفظ القرآن الكريم
-      </p>
-      <div class="footer-badges">
-        <span class="badge">✨ مجاني تماماً</span>
-        <span class="badge">🔒 آمن ومشفر</span>
-        <span class="badge">📱 يعمل على جميع الأجهزة</span>
-      </div>
-    </div>
-  </footer>
+    </section>
+  </main>
 
   <!-- Scripts -->
   <script src="js/config.js"></script>
@@ -133,42 +71,18 @@
       ar: {
         heroTitle: 'حافظ',
         heroSubtitle: 'رحلة حفظ القرآن الكريم',
-        heroTagline: 'تتبع رحلتك في حفظ القرآن الكريم بطريقة منظمة وفعالة',
-        btnDemoText: 'جرب التطبيق الآن',
-        loginTitle: 'ابدأ رحلتك الآن',
-        loginSubtitle: 'سجّل دخولك لحفظ تقدمك ومزامنته عبر جميع أجهزتك',
+        btnDemoText: 'جرب التطبيق',
+        loginTitle: 'ابدأ رحلتك',
         googleBtnText: 'تسجيل الدخول بحساب Google',
-        githubBtnText: 'تسجيل الدخول بحساب GitHub',
-        featuresTitle: 'المميزات',
-        feature1Title: 'تتبع منظم',
-        feature1Desc: 'تتبع تقدمك في حفظ الأجزاء والصفحات بطريقة منظمة ومرئية',
-        feature2Title: 'سجل يومي',
-        feature2Desc: 'سجّل جلسات الحفظ والمراجعة اليومية مع تقييم الجودة والملاحظات',
-        feature3Title: 'إحصائيات شاملة',
-        feature3Desc: 'احصل على إحصائيات تفصيلية عن تقدمك وجودة حفظك ومراجعتك',
-        feature4Title: 'مزامنة تلقائية',
-        feature4Desc: 'بياناتك محفوظة في السحابة ومتزامنة عبر جميع أجهزتك تلقائياً',
-        footerText: 'حافظ v2.0 - تطبيق تتبع حفظ القرآن الكريم'
+        githubBtnText: 'تسجيل الدخول بحساب GitHub'
       },
       en: {
         heroTitle: 'Hafiz',
         heroSubtitle: 'Your Quran Memorization Journey',
-        heroTagline: 'Track your Quran memorization journey efficiently and effectively',
-        btnDemoText: 'Try the App Now',
-        loginTitle: 'Start Your Journey Now',
-        loginSubtitle: 'Login to save your progress and sync across all your devices',
+        btnDemoText: 'Try the App',
+        loginTitle: 'Start Your Journey',
         googleBtnText: 'Continue with Google',
-        githubBtnText: 'Continue with GitHub',
-        featuresTitle: 'Features',
-        feature1Title: 'Organized Tracking',
-        feature1Desc: 'Track your progress in memorizing Juz and pages in an organized visual way',
-        feature2Title: 'Daily Log',
-        feature2Desc: 'Log daily memorization and review sessions with quality ratings and notes',
-        feature3Title: 'Comprehensive Statistics',
-        feature3Desc: 'Get detailed statistics about your progress and memorization quality',
-        feature4Title: 'Auto Sync',
-        feature4Desc: 'Your data is saved in the cloud and synced across all your devices automatically',
-        footerText: 'Hafiz v2.0 - Quran Memorization Tracker'
+        githubBtnText: 'Continue with GitHub'
       }
     };
 
