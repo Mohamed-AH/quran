@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حافظ | Quran Tracker - Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&family=Rakkas&family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/demo-modal.css">
+
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#d4af37">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="حافظ Hafiz">
+    <link rel="apple-touch-icon" href="/assets/icon.svg">
+</head>
+<body>
+    <!-- Demo Banner -->
+    <div class="demo-banner" id="demoBanner">
+        📊 جرب التطبيق الآن - البيانات المعروضة للتوضيح فقط
+    </div>
+
+    <div class="app">
+        <header>
+            <div class="header-top">
+                <div class="header-left">
+                    <button class="help-btn" onclick="openHelp()">?</button>
+                    <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">English</button>
+                </div>
+                <div class="header-right">
+                    <div class="user-profile" id="userProfile">
+                        <span id="userName">أحمد المحمد</span>
+                        <button class="btn-logout" onclick="handleBackToHome()" id="btnBackHome">العودة للرئيسية</button>
+                    </div>
+                </div>
+            </div>
+            <div class="header-center">
+                <h1 id="appTitle">حافظ</h1>
+                <p class="subtitle" id="subtitle">رحلة حفظ القرآن الكريم</p>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalPages">0</div>
+                <div class="stat-label" id="labelPages">صفحات محفوظة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalJuz">0</div>
+                <div class="stat-label" id="labelJuz">أجزاء مكتملة</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="currentStreak">0</div>
+                <div class="stat-label" id="labelStreak">أيام متتالية</div>
+            </div>
+            <div class="stat-card">
+                <svg class="progress-ring" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(212, 175, 55, 0.2)" stroke-width="8"/>
+                    <circle id="progressCircle" class="progress-ring-circle" cx="60" cy="60" r="54" fill="none"
+                            stroke="var(--gold)" stroke-width="8" stroke-linecap="round"
+                            stroke-dasharray="339.292" stroke-dashoffset="339.292"/>
+                    <text x="60" y="60" text-anchor="middle" dy=".3em" fill="var(--gold)" font-size="24" font-weight="700" id="progressPercent">0%</text>
+                </svg>
+                <div class="stat-label" id="labelProgress">نسبة الإنجاز</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('today')" id="tabToday">اليوم</button>
+            <button class="tab" onclick="switchTab('juz')" id="tabJuz">الأجزاء</button>
+            <button class="tab" onclick="switchTab('history')" id="tabHistory">السجل</button>
+            <button class="tab" onclick="switchTab('stats')" id="tabStats">الإحصائيات</button>
+        </div>
+
+        <div class="content">
+            <div id="todayTab">
+                <div class="daily-log">
+                    <div class="log-header">
+                        <div class="log-date" id="currentDate"></div>
+                        <button class="btn" onclick="saveLog()" id="btnSave">حفظ اليوم</button>
+                    </div>
+                    <div class="input-group">
+                        <label id="labelNewPages">الصفحات الجديدة المحفوظة</label>
+                        <input type="text" id="newPages" placeholder="مثال: 1-3، 5">
+                    </div>
+                    <div class="input-group">
+                        <label id="labelNewQuality">جودة الحفظ الجديد</label>
+                        <div class="rating-stars" id="newRating">
+                            <span class="star" onclick="setRating('new', 1)">★</span>
+                            <span class="star" onclick="setRating('new', 2)">★</span>
+                            <span class="star" onclick="setRating('new', 3)">★</span>
+                            <span class="star" onclick="setRating('new', 4)">★</span>
+                            <span class="star" onclick="setRating('new', 5)">★</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label id="labelReviewPages">صفحات المراجعة</label>
+                        <input type="text" id="reviewPages" placeholder="مثال: 10-15">
+                    </div>
+                    <div class="input-group">
+                        <label id="labelReviewQuality">جودة المراجعة</label>
+                        <div class="rating-stars" id="reviewRating">
+                            <span class="star" onclick="setRating('review', 1)">★</span>
+                            <span class="star" onclick="setRating('review', 2)">★</span>
+                            <span class="star" onclick="setRating('review', 3)">★</span>
+                            <span class="star" onclick="setRating('review', 4)">★</span>
+                            <span class="star" onclick="setRating('review', 5)">★</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label id="labelNotes">ملاحظات اليوم</label>
+                        <textarea id="notes" placeholder="آيات صعبة، إنجازات، أو أي ملاحظات..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="juzTab" style="display:none;">
+                <div class="juz-grid" id="juzGrid"></div>
+            </div>
+
+            <div id="historyTab" style="display:none;">
+                <div id="historyList"></div>
+            </div>
+
+            <div id="statsTab" style="display:none;">
+                <h2 style="color: var(--gold); margin-bottom: 20px;" id="statsTitle">إحصائيات مفصلة</h2>
+                <div id="detailedStats"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal" id="juzModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">جزء</h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="input-group">
+                <label id="labelJuzStatus">حالة الجزء</label>
+                <select id="juzStatus">
+                    <option value="not-started">لم يبدأ</option>
+                    <option value="in-progress">جاري الحفظ</option>
+                    <option value="completed">مكتمل</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label id="labelJuzPages">عدد الصفحات المحفوظة (من 20)</label>
+                <input type="number" id="juzPages" min="0" max="20" value="0">
+            </div>
+            <div class="input-group">
+                <label id="labelJuzStart">تاريخ البدء</label>
+                <input type="date" id="juzStartDate">
+            </div>
+            <div class="input-group">
+                <label id="labelJuzEnd">تاريخ الإتمام</label>
+                <input type="date" id="juzEndDate">
+            </div>
+            <div class="input-group">
+                <label id="labelJuzNotes">ملاحظات</label>
+                <textarea id="juzNotes" placeholder="ملاحظات عن هذا الجزء..."></textarea>
+            </div>
+            <div class="button-group">
+                <button class="btn" onclick="saveJuz()" id="btnJuzSave">حفظ</button>
+                <button class="btn btn-secondary" onclick="closeModal()" id="btnJuzCancel">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="helpTitle">كيفية الاستخدام</h2>
+                <button class="close-btn" onclick="closeHelp()">×</button>
+            </div>
+            <div id="helpContent" style="line-height: 1.8; color: var(--cream);"></div>
+        </div>
+    </div>
+
+    <!-- Login Modal for Demo -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content login-modal-content">
+            <button class="close-btn" onclick="closeLoginModal()">×</button>
+            <div class="login-modal-header">
+                <h2 id="loginModalTitle">ابدأ رحلتك الآن</h2>
+                <p id="loginModalSubtitle">سجّل دخولك لحفظ تقدمك ومزامنته عبر جميع أجهزتك</p>
+            </div>
+            <div class="login-buttons">
+                <button class="login-btn google-btn" onclick="loginWithProvider('google')">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="provider-logo">
+                    <span id="loginGoogle">تسجيل الدخول بحساب Google</span>
+                </button>
+                <button class="login-btn github-btn" onclick="loginWithProvider('github')">
+                    <svg class="provider-logo" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    <span id="loginGithub">تسجيل الدخول بحساب GitHub</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load demo data and demo app -->
+    <script src="js/demo.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/demo-app.js"></script>
+</body>
+</html>
