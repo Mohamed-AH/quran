@@ -818,6 +818,34 @@ function closeHelp() {
 // EVENT LISTENERS
 // ================================
 
+// Real-time Juz form sync: status → pages
+document.getElementById('juzStatus').addEventListener('change', (e) => {
+    const status = e.target.value;
+    const pagesInput = document.getElementById('juzPages');
+
+    if (status === 'completed') {
+        pagesInput.value = 20;
+    } else if (status === 'not-started') {
+        pagesInput.value = 0;
+    }
+    // For 'in-progress', keep current value (user can set 1-19)
+});
+
+// Real-time Juz form sync: pages → status
+document.getElementById('juzPages').addEventListener('input', (e) => {
+    const pages = parseInt(e.target.value) || 0;
+    const statusSelect = document.getElementById('juzStatus');
+
+    if (pages >= 20) {
+        statusSelect.value = 'completed';
+        e.target.value = 20; // Cap at 20
+    } else if (pages === 0) {
+        statusSelect.value = 'not-started';
+    } else if (pages > 0 && pages < 20) {
+        statusSelect.value = 'in-progress';
+    }
+});
+
 document.getElementById('juzModal').addEventListener('click', (e) => {
     if (e.target.id === 'juzModal') closeModal();
 });
