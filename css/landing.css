@@ -37,8 +37,46 @@ body[dir="ltr"] .hero-subtitle {
   font-size: 1.1rem;
   color: var(--cream);
   opacity: 0.8;
-  margin-bottom: 40px;
+  margin-bottom: 30px;
   animation: fadeInUp 0.8s ease-out 0.4s both;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 40px;
+  animation: fadeInUp 0.8s ease-out 0.6s both;
+}
+
+.btn-demo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 40px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  color: var(--forest-dark);
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-demo:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(212, 175, 55, 0.4);
+}
+
+.btn-demo:active {
+  transform: translateY(-1px);
+}
+
+.btn-icon {
+  font-size: 1.5rem;
 }
 
 /* Demo Section */
@@ -242,17 +280,17 @@ body[dir="ltr"] .hero-subtitle {
 .login-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 15px;
-  padding: 18px 35px;
+  gap: 12px;
+  padding: 16px 32px;
   border-radius: 50px;
-  font-weight: 700;
-  font-size: 1.1rem;
+  font-weight: 600;
+  font-size: 1.05rem;
   cursor: pointer;
   transition: all 0.3s;
   text-decoration: none;
-  border: none;
+  border: 2px solid transparent;
   font-family: inherit;
+  text-align: left;
 }
 
 .login-btn:hover {
@@ -263,36 +301,35 @@ body[dir="ltr"] .hero-subtitle {
 .login-btn-google {
   background: #fff;
   color: #333;
+  border-color: #e0e0e0;
 }
 
 .login-btn-google:hover {
   background: #f8f8f8;
+  border-color: #d0d0d0;
 }
 
 .login-btn-github {
   background: #24292e;
   color: #fff;
+  border-color: #1b1f23;
 }
 
 .login-btn-github:hover {
   background: #2f363d;
+  border-color: #24292e;
 }
 
-.login-btn::before {
-  content: '';
+.provider-logo {
   width: 24px;
   height: 24px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  flex-shrink: 0;
 }
 
-.login-btn-google::before {
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjIuNTYgMTIuMjVjMC0uNzgtLjA3LTEuNTMtLjItMi4yNUgxMnY0LjI2aDUuOTJjLS4yNiAxLjM3LTEuMDQgMi41My0yLjIxIDMuMzF2Mi43OWgzLjU3YzIuMDgtMS45MiAzLjI4LTQuNzQgMy4yOC04LjA5eiIgZmlsbD0iIzQyODVGNCIvPjxwYXRoIGQ9Ik0xMiAyM2M0LjIgMCA3Ljg0LTEuNDIgMTAuNTQtMy42NWwtMy41Ny0yLjc5Yy0xLjQyLjk2LTMuMjggMS41My01LjA3IDEuNTMtMy44NyAwLTcuMTMtMi42Mi04LjI5LTYuMTVIMi4yOXYyLjc5QzQuOTggMTguMTMgOC4xOSAyMyAxMiAyM3oiIGZpbGw9IiMzNEE4NTMiLz48cGF0aCBkPSJNMy43IDEyLjY2YzAtLjU2LjEtMS4xLjI4LTEuNTlWOC4yOEgyLjI5QS45OC45OCAwIDAgMCAxIDEyYzAgMS4zLjMyIDIuNTMuODkgMy42MWwyLjgtMi4xNnoiIGZpbGw9IiNGQkJDMDQiLz48cGF0aCBkPSJNMTIgNS4zOGMxLjk1IDAgMy43LjY3IDUuMDggMS45OGwyLjgtMi44QzE3LjYzIDIuMDkgMTQuMjguOCAxMiAuOCA4LjE5LjggNC45OCA0LjEzIDIuMjkgOC4yOGwyLjgyIDIuMTlDNi4yNyA3Ljk4IDkuNTMgNS4zOCAxMiA1LjM4eiIgZmlsbD0iI0VBNDMzNSIvPjwvc3ZnPg==');
-}
-
-.login-btn-github::before {
-  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsPSJ3aGl0ZSIgZD0iTTEyIDBDNS4zNyAwIDAgNS4zNyAwIDEyYzAgNS4zMSAzLjQzNSA5LjgyIDguMjA1IDExLjM4NS42LjExLjgyLS4yNi44Mi0uNTc3IDAtLjI4NS0uMDEtMS4wNC0uMDE1LTIuMDQtMy4zMzguNzI0LTQuMDQyLTEuNjEtNC4wNDItMS42MUMzLjc0NCAxNy41OSAyLjU1OCAxNy4wMyAyLjU1OCAxNy4wM2MtMS4wOS0uNzQ1LjA4My0uNzMuMDgzLS43MyAxLjIwNS4wODUgMS44NCAxLjIzNyAxLjg0IDEuMjM3IDEuMDcgMS44MzUgMi44MDkgMS4zMDUgMy40OTUuOTk4LjExLS43NzUuNDE4LTEuMzA1Ljc2LTEuNjA1LTIuNjY1LS4zLTUuNDY2LTEuMzMyLTUuNDY2LTUuOTMgMC0xLjMxLjQ2NS0yLjM4IDEuMjM1LTMuMjItLjEzNS0uMzAzLS41NC0xLjUyMy4xMDUtMy4xNzYgMCAwIDEuMDA1LS4zMjIgMy4zIDEuMjMuOTYtLjI2NyAxLjk4LS4zOTkgMy0uNDA1IDEuMDIuMDA2IDIuMDQuMTM4IDMgLjQwNSAyLjI4LTEuNTUyIDMuMjg1LTEuMjMgMy4yODUtMS4yMy42NDUgMS42NTMuMjQgMi44NzMuMTIgMy4xNzYuNzY1Ljg0IDEuMjMgMS45MSAxLjIzIDMuMjIgMCA0LjYxLTIuODA1IDUuNjI1LTUuNDc1IDUuOTIuNDIuMzYuODEgMS4wOTYuODEgMi4yMiAwIDEuNjA2LS4wMTUgMi44OTYtLjAxNSAzLjI4NiAwIC4zMTUuMjEuNjkuODI1LjU3QzIwLjU2NSAyMS44MiAyNCAxNy4zMSAyNCAxMmMwLTYuNjMtNS4zNy0xMi0xMi0xMnoiLz48L3N2Zz4=');
+/* RTL support for login buttons */
+[dir="rtl"] .login-btn {
+  flex-direction: row-reverse;
+  text-align: right;
 }
 
 /* Features Section */

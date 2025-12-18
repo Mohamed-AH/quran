@@ -1,0 +1,761 @@
+/**
+ * Hafiz Demo App - localStorage-based version
+ * Shows login modal on save operations
+ */
+
+const trans = {
+    ar: {
+        appTitle: 'حافظ', subtitle: 'رحلة حفظ القرآن الكريم', langBtn: 'English',
+        labelPages: 'صفحات من الأجزاء', labelJuz: 'أجزاء مكتملة', labelStreak: 'أيام متتالية',
+        labelProgress: 'نسبة الإنجاز', tabToday: 'اليوم', tabJuz: 'الأجزاء',
+        tabHistory: 'السجل', tabStats: 'الإحصائيات',
+        btnSave: 'حفظ اليوم', btnBackHome: 'العودة للرئيسية',
+        labelNewPages: 'صفحات القرآن المحفوظة اليوم (مثال: 1-5، 10)',
+        labelNewQuality: 'جودة الحفظ الجديد', labelReviewPages: 'صفحات المراجعة (مثال: 10-15)',
+        labelReviewQuality: 'جودة المراجعة', labelNotes: 'ملاحظات اليوم',
+        placeholderNewPages: 'أدخل أرقام الصفحات: 1-5، 10', placeholderReviewPages: 'أدخل أرقام الصفحات: 10-15',
+        placeholderNotes: 'آيات صعبة، إنجازات، أو أي ملاحظات...',
+        statsTitle: 'إحصائيات مفصلة', labelJuzStatus: 'حالة الجزء',
+        labelJuzPages: 'التقدم: ___ صفحة من 20', labelJuzStart: 'تاريخ البدء',
+        labelJuzEnd: 'تاريخ الإتمام', labelJuzNotes: 'ملاحظات',
+        placeholderJuzNotes: 'ملاحظات عن هذا الجزء...', btnJuzSave: 'حفظ', btnJuzCancel: 'إلغاء',
+        statusNotStarted: 'لم يبدأ', statusInProgress: 'جاري الحفظ', statusCompleted: 'مكتمل',
+        emptyHistory: 'لا يوجد سجل بعد. ابدأ بتسجيل يومك الأول!',
+        newMemorization: 'حفظ جديد', review: 'مراجعة', notes: 'ملاحظات', pages: 'صفحات',
+        rating: 'تقييم', totalDays: 'إجمالي أيام التسجيل', avgNewQuality: 'متوسط جودة الحفظ',
+        avgReviewQuality: 'متوسط جودة المراجعة', juzInProgress: 'أجزاء قيد الحفظ',
+        alertEnterPages: 'الرجاء إدخال صفحات الحفظ أو المراجعة', helpTitle: 'كيفية الاستخدام',
+        loginModalTitle: 'ابدأ رحلتك الآن', loginModalSubtitle: 'سجّل دخولك لحفظ تقدمك ومزامنته عبر جميع أجهزتك',
+        loginGoogle: 'تسجيل الدخول بحساب Google', loginGithub: 'تسجيل الدخول بحساب GitHub',
+        demoBanner: '📊 جرب التطبيق الآن - البيانات المعروضة للتوضيح فقط'
+    },
+    en: {
+        appTitle: 'Hafiz', subtitle: 'Your Quran Memorization Journey', langBtn: 'العربية',
+        labelPages: 'Pages from Juz', labelJuz: 'Juz Completed', labelStreak: 'Day Streak',
+        labelProgress: 'Completion', tabToday: 'Today', tabJuz: 'Juz', tabHistory: 'History',
+        tabStats: 'Statistics',
+        btnSave: 'Save Today', btnBackHome: 'Back to Home',
+        labelNewPages: 'Quran Pages Practiced Today (e.g., 1-5, 10)', labelNewQuality: 'New Memorization Quality',
+        labelReviewPages: 'Review Pages (e.g., 10-15)', labelReviewQuality: 'Review Quality',
+        labelNotes: 'Notes for Today', placeholderNewPages: 'Enter page numbers: 1-5, 10',
+        placeholderReviewPages: 'Enter page numbers: 10-15', placeholderNotes: 'Difficult verses, achievements...',
+        statsTitle: 'Detailed Statistics', labelJuzStatus: 'Juz Status',
+        labelJuzPages: 'Progress: ___ pages out of 20', labelJuzStart: 'Start Date',
+        labelJuzEnd: 'Completion Date', labelJuzNotes: 'Notes',
+        placeholderJuzNotes: 'Notes about this Juz...', btnJuzSave: 'Save', btnJuzCancel: 'Cancel',
+        statusNotStarted: 'Not Started', statusInProgress: 'In Progress', statusCompleted: 'Completed',
+        emptyHistory: 'No history yet. Start by logging your first day!',
+        newMemorization: 'New Memorization', review: 'Review', notes: 'Notes', pages: 'pages',
+        rating: 'rating', totalDays: 'Total Days Logged', avgNewQuality: 'Avg New Quality',
+        avgReviewQuality: 'Avg Review Quality', juzInProgress: 'Juz In Progress',
+        alertEnterPages: 'Please enter memorization or review pages', helpTitle: 'How to Use',
+        loginModalTitle: 'Start Your Journey Now', loginModalSubtitle: 'Login to save your progress and sync across all your devices',
+        loginGoogle: 'Continue with Google', loginGithub: 'Continue with GitHub',
+        demoBanner: '📊 Try the App Now - Demo Data for Illustration Only'
+    }
+};
+
+const juzNames = {
+    ar: ['آلم (الفاتحة - البقرة)', 'سَيَقُولُ (البقرة)', 'تِلْكَ الرُّسُلُ (البقرة - آل عمران)',
+        'لَنْ تَنَالُوا (آل عمران - النساء)', 'وَالْمُحْصَنَاتُ (النساء)', 'لَا يُحِبُّ اللَّهُ (النساء - المائدة)',
+        'وَإِذَا سَمِعُوا (المائدة - الأنعام)', 'وَلَوْ أَنَّنَا (الأنعام - الأعراف)', 'قَالَ الْمَلَأُ (الأعراف - الأنفال)',
+        'وَاعْلَمُوا (الأنفال - التوبة)', 'يَتَعَذَّرُونَ (التوبة - هود)', 'وَمَا مِنْ دَآبَّةٍ (هود - يوسف)',
+        'وَمَا أُبَرِّئُ (يوسف - إبراهيم)', 'رُبَمَا (الحجر - النحل)', 'سُبْحَانَ الَّذِي (الإسراء - الكهف)',
+        'قَالَ أَلَمْ (الكهف - طه)', 'اقْتَرَبَ (الأنبياء - الحج)', 'قَدْ أَفْلَحَ (المؤمنون - الفرقان)',
+        'وَقَالَ الَّذِينَ (الفرقان - النمل)', 'أَمَّنْ خَلَقَ (النمل - العنكبوت)', 'اُتْلُ مَا أُوحِيَ (العنكبوت - الأحزاب)',
+        'وَمَنْ يَقْنُتْ (الأحزاب - يس)', 'وَأَنزَلْنَا (يس - الزمر)', 'فَمَنْ أَظْلَمُ (الزمر - فصلت)',
+        'إِلَيْهِ يُرَدُّ (فصلت - الجاثية)', 'حَا مِيمْ (الأحقاف - الذاريات)', 'قَالَ فَمَا خَطْبُكُمْ (الذاريات - الحديد)',
+        'قَدْ سَمِعَ اللَّهُ (المجادلة - التحريم)', 'تَبَارَكَ الَّذِي (الملك - المرسلات)', 'عَمَّ يَتَسَاءَلُونَ (النبأ - الناس)'],
+    en: ['Alif Lam Meem (Al-Fatiha - Al-Baqarah)', 'Sayaqool (Al-Baqarah)', 'Tilkal Rusul (Al-Baqarah - Al-Imran)',
+        'Lan Tana Loo (Al-Imran - An-Nisa)', 'Wal Mohsanat (An-Nisa)', 'La Yuhibbullah (An-Nisa - Al-Ma\'idah)',
+        'Wa Iza Samiu (Al-Ma\'idah - Al-An\'am)', 'Wa Lau Annana (Al-An\'am - Al-A\'raf)', 'Qalal Malao (Al-A\'raf - Al-Anfal)',
+        'Wa A\'lamu (Al-Anfal - At-Tauba)', 'Yatazeroon (At-Tauba - Hud)', 'Wa Mamin Da\'abat (Hud - Yusuf)',
+        'Wa Ma Ubrioo (Yusuf - Ibrahim)', 'Rubama (Al-Hijr - An-Nahl)', 'Subhanallazi (Al-Isra - Al-Kahf)',
+        'Qal Alam (Al-Kahf - Ta-Ha)', 'Aqtarabo (Al-Anbiyaa - Al-Hajj)', 'Qadd Aflaha (Al-Muminun - Al-Furqan)',
+        'Wa Qalallazina (Al-Furqan - An-Naml)', 'A\'man Khalaq (An-Naml - Al-Ankabut)', 'Utlu Ma Oohi (Al-Ankabut - Al-Azhab)',
+        'Wa Manyaqnut (Al-Azhab - Ya-Sin)', 'Wa Anzalna (Ya-Sin - Az-Zumar)', 'Faman Azlam (Az-Zumar - Fussilat)',
+        'Elahe Yuruddo (Fussilat - Al-Jasiyah)', 'Ha\'a Meem (Al-Ahqaf - Az-Dhariyat)', 'Qala Fama Khatbukum (Az-Dhariyat - Al-Hadid)',
+        'Qadd Sami Allah (Al-Mujadilah - At-Tahrim)', 'Tabarakallazi (Al-Mulk - Al-Mursalat)', 'Amma Yatasa\'aloon (An-Naba - An-Nas)']
+};
+
+// Application state
+let data = {
+    juz: [],
+    logs: [],
+    stats: {},
+    settings: { newRating: 0, reviewRating: 0, language: 'ar' }
+};
+let currentJuz = null;
+
+// ================================
+// DEMO-SPECIFIC: Language Detection
+// ================================
+
+function detectBrowserLanguage() {
+    const browserLang = navigator.language || navigator.languages[0];
+    // Default to Arabic for ar-* locales, English for everything else
+    return browserLang.startsWith('ar') ? 'ar' : 'en';
+}
+
+// ================================
+// DEMO-SPECIFIC: localStorage Operations
+// ================================
+
+function loadDemoData() {
+    // Try to load from localStorage first
+    const stored = localStorage.getItem('hafiz_demo_data');
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            data.juz = parsed.juz || demoData.juz;
+            data.logs = parsed.logs || demoData.logs;
+            data.stats = parsed.stats || demoData.stats;
+            return;
+        } catch (error) {
+            console.error('Error parsing stored demo data:', error);
+        }
+    }
+
+    // Initialize with demo data from demo.js
+    data.juz = JSON.parse(JSON.stringify(demoData.juz));
+    data.logs = JSON.parse(JSON.stringify(demoData.logs));
+    data.stats = JSON.parse(JSON.stringify(demoData.stats));
+    saveDemoData();
+}
+
+function saveDemoData() {
+    try {
+        localStorage.setItem('hafiz_demo_data', JSON.stringify({
+            juz: data.juz,
+            logs: data.logs,
+            stats: data.stats
+        }));
+    } catch (error) {
+        console.error('Error saving demo data to localStorage:', error);
+    }
+}
+
+function calculateDemoStats() {
+    // Juz Progress (from Juz records)
+    let totalPages = 0;
+    let completedJuz = 0;
+    let inProgressJuz = 0;
+    let notStartedJuz = 0;
+
+    data.juz.forEach(juz => {
+        totalPages += juz.pages || 0;
+        if (juz.status === 'completed') completedJuz++;
+        else if (juz.status === 'in-progress') inProgressJuz++;
+        else notStartedJuz++;
+    });
+
+    const juzCompletionPercentage = ((completedJuz / 30) * 100).toFixed(1);
+    const pageProgressPercentage = ((totalPages / 600) * 100).toFixed(1);
+
+    // Activity Statistics (from logs)
+    let totalDays = data.logs.length;
+    let currentStreak = calculateStreak();
+    let avgNewQuality = 0;
+    let avgReviewQuality = 0;
+
+    if (totalDays > 0) {
+        let totalNew = 0, totalReview = 0;
+        let countNew = 0, countReview = 0;
+
+        data.logs.forEach(log => {
+            if (log.newRating > 0) {
+                totalNew += log.newRating;
+                countNew++;
+            }
+            if (log.reviewRating > 0) {
+                totalReview += log.reviewRating;
+                countReview++;
+            }
+        });
+
+        avgNewQuality = countNew > 0 ? (totalNew / countNew).toFixed(1) : 0;
+        avgReviewQuality = countReview > 0 ? (totalReview / countReview).toFixed(1) : 0;
+    }
+
+    data.stats = {
+        totalPages,
+        completedJuz,
+        inProgressJuz,
+        notStartedJuz,
+        juzCompletionPercentage: parseFloat(juzCompletionPercentage),
+        pageProgressPercentage: parseFloat(pageProgressPercentage),
+        totalDays,
+        currentStreak,
+        avgNewQuality: parseFloat(avgNewQuality),
+        avgReviewQuality: parseFloat(avgReviewQuality)
+    };
+}
+
+function calculateStreak() {
+    if (data.logs.length === 0) return 0;
+
+    // Sort logs by date (newest first)
+    const sortedLogs = [...data.logs].sort((a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < sortedLogs.length; i++) {
+        const logDate = new Date(sortedLogs[i].date);
+        logDate.setHours(0, 0, 0, 0);
+
+        const expectedDate = new Date(today);
+        expectedDate.setDate(expectedDate.getDate() - i);
+
+        if (logDate.getTime() === expectedDate.getTime()) {
+            streak++;
+        } else {
+            break;
+        }
+    }
+
+    return streak;
+}
+
+// ================================
+// DEMO-SPECIFIC: Login Modal
+// ================================
+
+function showLoginModal() {
+    document.getElementById('loginModal').classList.add('active');
+}
+
+function closeLoginModal() {
+    document.getElementById('loginModal').classList.remove('active');
+}
+
+function loginWithProvider(provider) {
+    // Redirect to real app with login flow
+    window.location.href = `/app.html?auth=${provider}`;
+}
+
+function handleBackToHome() {
+    window.location.href = '/';
+}
+
+// ================================
+// INITIALIZATION
+// ================================
+
+function init() {
+    try {
+        // Detect browser language
+        const browserLang = detectBrowserLanguage();
+        const storedLang = storage.getLanguage();
+        data.settings.language = storedLang || browserLang;
+        storage.setLanguage(data.settings.language);
+
+        // Load demo data from localStorage or initialize with demoData
+        loadDemoData();
+        calculateDemoStats();
+
+        // Update UI
+        applyLanguage();
+        updateStats();
+        displayJuz();
+        displayHistory();
+        displayDetailedStats();
+        updateCurrentDate();
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
+}
+
+// ================================
+// DAILY LOG OPERATIONS (Demo: Show Login Modal)
+// ================================
+
+function validatePages(pageStr, isArabic) {
+    if (!pageStr || pageStr.trim() === '') return { valid: true };
+
+    if (!/^[\d\s,\-]+$/.test(pageStr)) {
+        return {
+            valid: false,
+            error: isArabic
+                ? 'صيغة غير صحيحة. استخدم الأرقام والفواصل والشرطات فقط'
+                : 'Invalid format. Use numbers, commas, and hyphens only'
+        };
+    }
+
+    const parts = pageStr.split(',').map(s => s.trim()).filter(s => s);
+
+    for (const part of parts) {
+        if (part.includes('-')) {
+            const [start, end] = part.split('-').map(n => parseInt(n.trim()));
+
+            if (isNaN(start) || isNaN(end)) {
+                return {
+                    valid: false,
+                    error: isArabic ? `نطاق غير صحيح: ${part}` : `Invalid range: ${part}`
+                };
+            }
+
+            if (start < 1 || end > 604 || start > end) {
+                return {
+                    valid: false,
+                    error: isArabic
+                        ? `الصفحات يجب أن تكون بين 1-604 (وجدنا: ${part})`
+                        : `Pages must be between 1-604 (found: ${part})`
+                };
+            }
+        } else {
+            const page = parseInt(part.trim());
+
+            if (isNaN(page) || page < 1 || page > 604) {
+                return {
+                    valid: false,
+                    error: isArabic
+                        ? `الصفحة يجب أن تكون بين 1-604 (وجدنا: ${page})`
+                        : `Page must be between 1-604 (found: ${page})`
+                };
+            }
+        }
+    }
+
+    return { valid: true };
+}
+
+function saveLog() {
+    const t = trans[data.settings.language];
+    const isArabic = data.settings.language === 'ar';
+
+    const newPages = document.getElementById('newPages').value;
+    const reviewPages = document.getElementById('reviewPages').value;
+
+    if (!newPages && !reviewPages) {
+        ui.showError(t.alertEnterPages, isArabic);
+        return;
+    }
+
+    // Validate pages format
+    const newPagesValidation = validatePages(newPages, isArabic);
+    if (!newPagesValidation.valid) {
+        ui.showError(newPagesValidation.error, isArabic);
+        return;
+    }
+
+    const reviewPagesValidation = validatePages(reviewPages, isArabic);
+    if (!reviewPagesValidation.valid) {
+        ui.showError(reviewPagesValidation.error, isArabic);
+        return;
+    }
+
+    // DEMO: Show login modal instead of saving
+    showLoginModal();
+}
+
+// ================================
+// JUZ OPERATIONS (Demo: Show Login Modal)
+// ================================
+
+function saveJuz() {
+    if (!currentJuz) return;
+
+    // DEMO: Show login modal instead of saving
+    showLoginModal();
+}
+
+function displayJuz() {
+    const lang = data.settings.language;
+    const t = trans[lang];
+    const grid = document.getElementById('juzGrid');
+    grid.innerHTML = '';
+
+    for (let i = 1; i <= 30; i++) {
+        const juz = data.juz.find(j => j.juzNumber === i) || {
+            juzNumber: i,
+            status: 'not-started',
+            pages: 0,
+            startDate: null,
+            endDate: null,
+            notes: ''
+        };
+
+        const card = document.createElement('div');
+        card.className = 'juz-card';
+        if (juz.status === 'completed') card.classList.add('completed');
+        if (juz.status === 'in-progress') card.classList.add('in-progress');
+        card.onclick = () => openJuzModal(i);
+
+        const statusText = {
+            'not-started': t.statusNotStarted,
+            'in-progress': t.statusInProgress,
+            'completed': t.statusCompleted
+        };
+
+        card.innerHTML = `
+            <div class="juz-number">${lang === 'ar' ? convertToArabicNumerals(i) : i}</div>
+            <div class="juz-name">${juzNames[lang][i-1]}</div>
+            <div class="juz-status">${statusText[juz.status]}</div>
+        `;
+        grid.appendChild(card);
+    }
+}
+
+function openJuzModal(juzNumber) {
+    currentJuz = juzNumber;
+    const juz = data.juz.find(j => j.juzNumber === juzNumber) || {
+        juzNumber,
+        status: 'not-started',
+        pages: 0,
+        startDate: null,
+        endDate: null,
+        notes: ''
+    };
+
+    const lang = data.settings.language;
+    document.getElementById('modalTitle').textContent = (lang === 'ar' ? 'جزء ' : 'Juz ') +
+        (lang === 'ar' ? convertToArabicNumerals(juzNumber) : juzNumber);
+    document.getElementById('juzStatus').value = juz.status;
+    document.getElementById('juzPages').value = juz.pages;
+    document.getElementById('juzStartDate').value = formatDateForInput(juz.startDate);
+    document.getElementById('juzEndDate').value = formatDateForInput(juz.endDate);
+    document.getElementById('juzNotes').value = juz.notes || '';
+    document.getElementById('juzModal').classList.add('active');
+}
+
+function formatDateForInput(dateValue) {
+    if (!dateValue) return '';
+
+    try {
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) return '';
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return '';
+    }
+}
+
+function closeModal() {
+    document.getElementById('juzModal').classList.remove('active');
+    currentJuz = null;
+}
+
+// ================================
+// DISPLAY FUNCTIONS
+// ================================
+
+function displayHistory() {
+    const lang = data.settings.language;
+    const t = trans[lang];
+    const list = document.getElementById('historyList');
+
+    if (data.logs.length === 0) {
+        list.innerHTML = `<div class="empty-state"><p>${t.emptyHistory}</p></div>`;
+        return;
+    }
+
+    list.innerHTML = data.logs.map(log => {
+        const date = new Date(log.date);
+        const formattedDate = date.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US',
+            { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        let content = '';
+        if (log.newPages) {
+            content += `<strong>${t.newMemorization}:</strong> ${log.newPages} ${t.pages}`;
+            if (log.newRating) content += ` (${t.rating}: ${'★'.repeat(log.newRating)})`;
+            content += '<br>';
+        }
+        if (log.reviewPages) {
+            content += `<strong>${t.review}:</strong> ${log.reviewPages} ${t.pages}`;
+            if (log.reviewRating) content += ` (${t.rating}: ${'★'.repeat(log.reviewRating)})`;
+            content += '<br>';
+        }
+        if (log.notes) content += `<strong>${t.notes}:</strong> ${log.notes}`;
+
+        return `<div class="history-item">
+            <div class="history-date">${formattedDate}</div>
+            <div class="history-content">${content}</div>
+        </div>`;
+    }).join('');
+}
+
+function updateStats() {
+    document.getElementById('totalPages').textContent = data.stats.totalPages || 0;
+    document.getElementById('totalJuz').textContent = data.stats.completedJuz || 0;
+    document.getElementById('currentStreak').textContent = data.stats.currentStreak || 0;
+
+    const progress = data.stats.juzCompletionPercentage || 0;
+    document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+
+    const circle = document.getElementById('progressCircle');
+    const offset = 339.292 - (progress / 100) * 339.292;
+    circle.style.strokeDashoffset = offset;
+}
+
+function displayDetailedStats() {
+    const lang = data.settings.language;
+    const t = trans[lang];
+    const container = document.getElementById('detailedStats');
+
+    const stats = data.stats || {};
+
+    const juzSection = lang === 'ar'
+        ? `<h3 style="margin-bottom: 1rem;">تقدم الأجزاء</h3>`
+        : `<h3 style="margin-bottom: 1rem;">Juz Progress</h3>`;
+
+    const juzCards = `
+        <div class="stat-card">
+            <div class="stat-number">${stats.completedJuz || 0}/30</div>
+            <div class="stat-label">${lang === 'ar' ? 'أجزاء مكتملة' : 'Juz Completed'}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.inProgressJuz || 0}</div>
+            <div class="stat-label">${t.juzInProgress}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.totalPages || 0}/600</div>
+            <div class="stat-label">${lang === 'ar' ? 'صفحات من الأجزاء' : 'Pages from Juz'}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${Math.round(stats.juzCompletionPercentage || 0)}%</div>
+            <div class="stat-label">${lang === 'ar' ? 'نسبة الإنجاز' : 'Completion'}</div>
+        </div>
+    `;
+
+    const activitySection = lang === 'ar'
+        ? `<h3 style="margin: 2rem 0 1rem 0;">إحصائيات النشاط</h3>`
+        : `<h3 style="margin: 2rem 0 1rem 0;">Activity Statistics</h3>`;
+
+    const activityCards = `
+        <div class="stat-card">
+            <div class="stat-number">${stats.totalDays || 0}</div>
+            <div class="stat-label">${t.totalDays}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.currentStreak || 0}</div>
+            <div class="stat-label">${lang === 'ar' ? 'أيام متتالية' : 'Day Streak'}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.avgNewQuality || 0}</div>
+            <div class="stat-label">${t.avgNewQuality}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">${stats.avgReviewQuality || 0}</div>
+            <div class="stat-label">${t.avgReviewQuality}</div>
+        </div>
+    `;
+
+    container.innerHTML = `
+        ${juzSection}
+        <div class="stats-grid">${juzCards}</div>
+        ${activitySection}
+        <div class="stats-grid">${activityCards}</div>
+    `;
+}
+
+// ================================
+// UI HELPERS
+// ================================
+
+function convertToArabicNumerals(num) {
+    const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return num.toString().split('').map(d => arabicNumerals[parseInt(d)]).join('');
+}
+
+function updateCurrentDate() {
+    const lang = data.settings.language;
+    const date = new Date();
+    const formatted = date.toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US',
+        { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('currentDate').textContent = formatted;
+}
+
+function setRating(type, rating) {
+    const container = document.getElementById(type + 'Rating');
+    container.querySelectorAll('.star').forEach((star, index) => {
+        if (index < rating) star.classList.add('active');
+        else star.classList.remove('active');
+    });
+    data.settings[type + 'Rating'] = rating;
+}
+
+// ================================
+// LANGUAGE & SETTINGS
+// ================================
+
+function toggleLanguage() {
+    data.settings.language = data.settings.language === 'ar' ? 'en' : 'ar';
+    storage.setLanguage(data.settings.language);
+    applyLanguage();
+}
+
+function applyLanguage() {
+    const lang = data.settings.language;
+    const t = trans[lang];
+
+    document.documentElement.lang = lang;
+    document.documentElement.dir = document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+
+    // Update all translated elements
+    Object.keys(t).forEach(key => {
+        const el = document.getElementById(key);
+        if (el) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.placeholder = t[key];
+            } else {
+                el.textContent = t[key];
+            }
+        }
+    });
+
+    // Update select options
+    const statusSelect = document.getElementById('juzStatus');
+    if (statusSelect) {
+        statusSelect.options[0].text = t.statusNotStarted;
+        statusSelect.options[1].text = t.statusInProgress;
+        statusSelect.options[2].text = t.statusCompleted;
+    }
+
+    // Refresh displays
+    displayJuz();
+    displayHistory();
+    displayDetailedStats();
+    updateCurrentDate();
+}
+
+// ================================
+// TAB SWITCHING
+// ================================
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+
+    ['todayTab', 'juzTab', 'historyTab', 'statsTab'].forEach(t =>
+        document.getElementById(t).style.display = 'none'
+    );
+
+    if (tab === 'today') {
+        document.getElementById('todayTab').style.display = 'block';
+    } else if (tab === 'juz') {
+        document.getElementById('juzTab').style.display = 'block';
+    } else if (tab === 'history') {
+        document.getElementById('historyTab').style.display = 'block';
+        displayHistory();
+    } else if (tab === 'stats') {
+        document.getElementById('statsTab').style.display = 'block';
+        displayDetailedStats();
+    }
+}
+
+// ================================
+// HELP MODAL
+// ================================
+
+function openHelp() {
+    const lang = data.settings.language;
+    const helpContent = lang === 'ar' ? `
+        <h3 style="color: var(--gold); margin: 25px 0 15px;">مرحباً بك في حافظ! 🌙</h3>
+        <p><strong>تطبيق حافظ</strong> هو رفيقك في رحلة حفظ القرآن الكريم. يساعدك على تتبع تقدمك اليومي، إدارة أجزائك، ومراقبة إنجازاتك.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">✍️ تسجيل اليومي</h4>
+        <p><strong>تبويب "اليوم":</strong> سجل الصفحات الجديدة والمراجعة. استخدم صيغة: <code>1-5</code> أو <code>1، 3، 5</code></p>
+        <p><strong>تقييم الجودة:</strong> قيّم حفظك من 1-5 نجوم (5 = ممتاز، 1 = يحتاج مراجعة)</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📚 إدارة الأجزاء</h4>
+        <p><strong>تبويب "الأجزاء":</strong> انقر على أي جزء لتحديث حالته (لم يبدأ / جاري الحفظ / مكتمل)</p>
+        <p>كل جزء يحتوي على 20 صفحة. سجل تقدمك وأضف تواريخ البدء والإتمام.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📊 الإحصائيات</h4>
+        <p><strong>البطاقات العلوية:</strong> مجموع الصفحات، الأجزاء المكتملة، الأيام المتتالية، نسبة الإنجاز</p>
+        <p><strong>تبويب "الإحصائيات":</strong> إحصائيات مفصلة عن رحلة حفظك</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📊 وضع التجربة</h4>
+        <p>هذا وضع تجريبي يستخدم البيانات المحلية. للحفظ الفعلي والمزامنة السحابية، سجل دخولك!</p>
+
+        <p style="text-align: center; margin-top: 20px; color: var(--gold);">
+        <strong>جعل الله رحلة حفظك ميسرة وتقبل جهودك</strong>
+        </p>
+    ` : `
+        <h3 style="color: var(--gold); margin: 25px 0 15px;">Welcome to Hafiz! 🌙</h3>
+        <p><strong>Hafiz</strong> is your companion in the journey of Quran memorization. It helps you track daily progress, manage your Juz, and monitor your achievements.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">✍️ Daily Logging</h4>
+        <p><strong>"Today" Tab:</strong> Log new pages and review pages. Use format: <code>1-5</code> or <code>1, 3, 5</code></p>
+        <p><strong>Quality Rating:</strong> Rate your memorization 1-5 stars (5 = excellent, 1 = needs review)</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📚 Juz Management</h4>
+        <p><strong>"Juz" Tab:</strong> Click any Juz to update its status (Not Started / In Progress / Completed)</p>
+        <p>Each Juz contains 20 pages. Track your progress and add start/completion dates.</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📊 Statistics</h4>
+        <p><strong>Top Cards:</strong> Total pages, completed Juz, current streak, completion percentage</p>
+        <p><strong>"Statistics" Tab:</strong> Detailed analytics about your memorization journey</p>
+
+        <h4 style="color: var(--gold); margin: 20px 0 10px;">📊 Demo Mode</h4>
+        <p>This is a demo mode using local data. For actual saving and cloud sync, please login!</p>
+
+        <p style="text-align: center; margin-top: 20px; color: var(--gold);">
+        <strong>May Allah make your memorization journey easy and accept your efforts</strong>
+        </p>
+    `;
+
+    document.getElementById('helpTitle').textContent = trans[lang].helpTitle;
+    document.getElementById('helpContent').innerHTML = helpContent;
+    document.getElementById('helpModal').classList.add('active');
+}
+
+function closeHelp() {
+    document.getElementById('helpModal').classList.remove('active');
+}
+
+// ================================
+// EVENT LISTENERS
+// ================================
+
+// Real-time Juz form sync: status → pages
+document.getElementById('juzStatus').addEventListener('change', (e) => {
+    const status = e.target.value;
+    const pagesInput = document.getElementById('juzPages');
+
+    if (status === 'completed') {
+        pagesInput.value = 20;
+    } else if (status === 'not-started') {
+        pagesInput.value = 0;
+    }
+});
+
+// Real-time Juz form sync: pages → status
+document.getElementById('juzPages').addEventListener('input', (e) => {
+    const pages = parseInt(e.target.value) || 0;
+    const statusSelect = document.getElementById('juzStatus');
+
+    if (pages >= 20) {
+        statusSelect.value = 'completed';
+        e.target.value = 20;
+    } else if (pages === 0) {
+        statusSelect.value = 'not-started';
+    } else if (pages > 0 && pages < 20) {
+        statusSelect.value = 'in-progress';
+    }
+});
+
+document.getElementById('juzModal').addEventListener('click', (e) => {
+    if (e.target.id === 'juzModal') closeModal();
+});
+
+document.getElementById('helpModal').addEventListener('click', (e) => {
+    if (e.target.id === 'helpModal') closeHelp();
+});
+
+document.getElementById('loginModal').addEventListener('click', (e) => {
+    if (e.target.id === 'loginModal') closeLoginModal();
+});
+
+// Initialize demo app
+init();

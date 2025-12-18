@@ -35,46 +35,11 @@
       <p class="hero-tagline" id="heroTagline">
         تتبع رحلتك في حفظ القرآن الكريم بطريقة منظمة وفعالة
       </p>
-    </div>
-  </section>
-
-  <!-- Demo Section -->
-  <section class="demo-section">
-    <div class="container">
-      <!-- Demo Banner -->
-      <div class="demo-banner">
-        <span id="demoBannerText">📊 جرب التطبيق الآن - البيانات المعروضة للتوضيح فقط</span>
-      </div>
-
-      <!-- Demo Tabs -->
-      <div class="demo-tabs">
-        <button class="demo-tab active" data-tab="juz" id="tabJuz">الأجزاء</button>
-        <button class="demo-tab" data-tab="today" id="tabToday">اليوم</button>
-        <button class="demo-tab" data-tab="stats" id="tabStats">الإحصائيات</button>
-      </div>
-
-      <!-- Demo Content -->
-      <div class="demo-container">
-        <!-- Juz Tab -->
-        <div class="demo-content active" id="content-juz">
-          <div class="demo-juz-grid" id="demoJuzGrid">
-            <!-- Will be populated by JavaScript -->
-          </div>
-        </div>
-
-        <!-- Today Tab -->
-        <div class="demo-content" id="content-today">
-          <div class="demo-logs" id="demoLogs">
-            <!-- Will be populated by JavaScript -->
-          </div>
-        </div>
-
-        <!-- Stats Tab -->
-        <div class="demo-content" id="content-stats">
-          <div class="demo-stats-grid" id="demoStats">
-            <!-- Will be populated by JavaScript -->
-          </div>
-        </div>
+      <div class="hero-actions">
+        <a href="demo.html" class="btn-demo" id="btnDemo">
+          <span class="btn-icon">📊</span>
+          <span id="btnDemoText">جرب التطبيق الآن</span>
+        </a>
       </div>
     </div>
   </section>
@@ -89,17 +54,12 @@
 
       <div class="login-buttons">
         <button class="login-btn login-btn-google" onclick="loginWithGoogle()">
-          <svg width="20" height="20" viewBox="0 0 24 24" style="margin-left: 10px;">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-          </svg>
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="provider-logo">
           <span id="googleBtnText">تسجيل الدخول بحساب Google</span>
         </button>
 
         <button class="login-btn login-btn-github" onclick="loginWithGitHub()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-left: 10px;">
+          <svg class="provider-logo" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
           </svg>
           <span id="githubBtnText">تسجيل الدخول بحساب GitHub</span>
@@ -166,9 +126,48 @@
   <!-- Scripts -->
   <script src="js/config.js"></script>
   <script src="js/storage.js"></script>
-  <script src="js/demo.js"></script>
 
   <script>
+    // Translations
+    const translations = {
+      ar: {
+        heroTagline: 'تتبع رحلتك في حفظ القرآن الكريم بطريقة منظمة وفعالة',
+        btnDemoText: 'جرب التطبيق الآن',
+        loginTitle: 'ابدأ رحلتك الآن',
+        loginSubtitle: 'سجّل دخولك لحفظ تقدمك ومزامنته عبر جميع أجهزتك',
+        googleBtnText: 'تسجيل الدخول بحساب Google',
+        githubBtnText: 'تسجيل الدخول بحساب GitHub',
+        featuresTitle: 'المميزات',
+        feature1Title: 'تتبع منظم',
+        feature1Desc: 'تتبع تقدمك في حفظ الأجزاء والصفحات بطريقة منظمة ومرئية',
+        feature2Title: 'سجل يومي',
+        feature2Desc: 'سجّل جلسات الحفظ والمراجعة اليومية مع تقييم الجودة والملاحظات',
+        feature3Title: 'إحصائيات شاملة',
+        feature3Desc: 'احصل على إحصائيات تفصيلية عن تقدمك وجودة حفظك ومراجعتك',
+        feature4Title: 'مزامنة تلقائية',
+        feature4Desc: 'بياناتك محفوظة في السحابة ومتزامنة عبر جميع أجهزتك تلقائياً',
+        footerText: 'حافظ v2.0 - تطبيق تتبع حفظ القرآن الكريم'
+      },
+      en: {
+        heroTagline: 'Track your Quran memorization journey efficiently and effectively',
+        btnDemoText: 'Try the App Now',
+        loginTitle: 'Start Your Journey Now',
+        loginSubtitle: 'Login to save your progress and sync across all your devices',
+        googleBtnText: 'Continue with Google',
+        githubBtnText: 'Continue with GitHub',
+        featuresTitle: 'Features',
+        feature1Title: 'Organized Tracking',
+        feature1Desc: 'Track your progress in memorizing Juz and pages in an organized visual way',
+        feature2Title: 'Daily Log',
+        feature2Desc: 'Log daily memorization and review sessions with quality ratings and notes',
+        feature3Title: 'Comprehensive Statistics',
+        feature3Desc: 'Get detailed statistics about your progress and memorization quality',
+        feature4Title: 'Auto Sync',
+        feature4Desc: 'Your data is saved in the cloud and synced across all your devices automatically',
+        footerText: 'Hafiz v2.0 - Quran Memorization Tracker'
+      }
+    };
+
     // Language management
     let currentLang = storage.getLanguage();
 
@@ -182,31 +181,17 @@
     // Update UI based on language
     function updateLanguage() {
       const isArabic = currentLang === 'ar';
+      const t = translations[currentLang];
 
       // Update HTML attributes
       document.documentElement.lang = currentLang;
       document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
 
-      // Update text content
-      document.getElementById('heroTagline').textContent = demoData.t('heroTagline', currentLang);
-      document.getElementById('demoBannerText').textContent = demoData.t('demoBanner', currentLang);
-      document.getElementById('tabJuz').textContent = demoData.t('tabJuz', currentLang);
-      document.getElementById('tabToday').textContent = demoData.t('tabToday', currentLang);
-      document.getElementById('tabStats').textContent = demoData.t('tabStats', currentLang);
-      document.getElementById('loginTitle').textContent = demoData.t('loginTitle', currentLang);
-      document.getElementById('loginSubtitle').textContent = demoData.t('loginSubtitle', currentLang);
-      document.getElementById('googleBtnText').textContent = demoData.t('loginGoogle', currentLang);
-      document.getElementById('githubBtnText').textContent = demoData.t('loginGithub', currentLang);
-      document.getElementById('featuresTitle').textContent = demoData.t('featuresTitle', currentLang);
-      document.getElementById('feature1Title').textContent = demoData.t('feature1Title', currentLang);
-      document.getElementById('feature1Desc').textContent = demoData.t('feature1Desc', currentLang);
-      document.getElementById('feature2Title').textContent = demoData.t('feature2Title', currentLang);
-      document.getElementById('feature2Desc').textContent = demoData.t('feature2Desc', currentLang);
-      document.getElementById('feature3Title').textContent = demoData.t('feature3Title', currentLang);
-      document.getElementById('feature3Desc').textContent = demoData.t('feature3Desc', currentLang);
-      document.getElementById('feature4Title').textContent = demoData.t('feature4Title', currentLang);
-      document.getElementById('feature4Desc').textContent = demoData.t('feature4Desc', currentLang);
-      document.getElementById('footerText').textContent = demoData.t('footer', currentLang);
+      // Update all text content
+      Object.keys(t).forEach(key => {
+        const el = document.getElementById(key);
+        if (el) el.textContent = t[key];
+      });
 
       // Update language toggle button
       const langToggle = document.getElementById('langToggle');
@@ -215,151 +200,6 @@
         langToggle.style[isArabic ? 'left' : 'right'] = '20px';
         langToggle.style[isArabic ? 'right' : 'left'] = 'auto';
       }
-
-      // Re-render demo content
-      renderActiveTab();
-    }
-
-    // Tab switching
-    function switchTab(tabName) {
-      // Update tab buttons
-      document.querySelectorAll('.demo-tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-      // Update content
-      document.querySelectorAll('.demo-content').forEach(content => {
-        content.classList.remove('active');
-      });
-      document.getElementById(`content-${tabName}`).classList.add('active');
-
-      // Render content
-      renderActiveTab();
-    }
-
-    // Render active tab content
-    function renderActiveTab() {
-      const activeTab = document.querySelector('.demo-tab.active').dataset.tab;
-
-      if (activeTab === 'juz') {
-        renderJuzGrid();
-      } else if (activeTab === 'today') {
-        renderLogs();
-      } else if (activeTab === 'stats') {
-        renderStats();
-      }
-    }
-
-    // Render Juz grid
-    function renderJuzGrid() {
-      const grid = document.getElementById('demoJuzGrid');
-      const isArabic = currentLang === 'ar';
-
-      grid.innerHTML = demoData.juz.map(juz => {
-        const statusClass = juz.status === 'completed' ? 'completed' :
-                           juz.status === 'in-progress' ? 'in-progress' : '';
-        const statusEmoji = juz.status === 'completed' ? '✅' :
-                           juz.status === 'in-progress' ? '📖' : '⭕';
-
-        return `
-          <div class="demo-juz-card ${statusClass}">
-            <div class="juz-number">${isArabic ? juz.juzNumber : juz.juzNumber}</div>
-            <div class="juz-status">${statusEmoji}</div>
-            ${juz.status !== 'not-started' ? `<div class="juz-pages">${juz.pages} ${demoData.t('pages', currentLang)}</div>` : ''}
-          </div>
-        `;
-      }).join('');
-    }
-
-    // Render logs
-    function renderLogs() {
-      const container = document.getElementById('demoLogs');
-      const isArabic = currentLang === 'ar';
-
-      if (demoData.logs.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div style="font-size: 3rem;">📝</div>
-            <p>${demoData.t('noLogs', currentLang)}</p>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = demoData.logs.map(log => {
-        const date = new Date(log.date);
-        const formattedDate = date.toLocaleDateString(isArabic ? 'ar-SA' : 'en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-
-        return `
-          <div class="demo-log-card">
-            <div class="log-date">${formattedDate}</div>
-            <div class="log-details">
-              <div class="log-row">
-                <span class="log-label">${demoData.t('newPages', currentLang)}:</span>
-                <span class="log-value">${log.newPages} ${'⭐'.repeat(log.newRating)}</span>
-              </div>
-              ${log.reviewPages ? `
-                <div class="log-row">
-                  <span class="log-label">${demoData.t('reviewPages', currentLang)}:</span>
-                  <span class="log-value">${log.reviewPages} ${'⭐'.repeat(log.reviewRating)}</span>
-                </div>
-              ` : ''}
-              ${log.notes ? `
-                <div class="log-notes">${log.notes}</div>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // Render stats
-    function renderStats() {
-      const container = document.getElementById('demoStats');
-      const stats = demoData.stats;
-
-      container.innerHTML = `
-        <div class="demo-stat-card">
-          <div class="stat-icon">📄</div>
-          <div class="stat-value">${stats.totalPages}</div>
-          <div class="stat-label">${demoData.t('totalPages', currentLang)}</div>
-        </div>
-
-        <div class="demo-stat-card">
-          <div class="stat-icon">📚</div>
-          <div class="stat-value">${stats.totalJuz}</div>
-          <div class="stat-label">${demoData.t('completedJuz', currentLang)}</div>
-        </div>
-
-        <div class="demo-stat-card">
-          <div class="stat-icon">🔥</div>
-          <div class="stat-value">${stats.currentStreak}</div>
-          <div class="stat-label">${demoData.t('currentStreak', currentLang)}</div>
-        </div>
-
-        <div class="demo-stat-card">
-          <div class="stat-icon">📊</div>
-          <div class="stat-value">${stats.completionPercentage}%</div>
-          <div class="stat-label">${demoData.t('progress', currentLang)}</div>
-        </div>
-
-        <div class="demo-stat-card">
-          <div class="stat-icon">⭐</div>
-          <div class="stat-value">${stats.avgNewQuality.toFixed(1)}</div>
-          <div class="stat-label">${demoData.t('avgNewQuality', currentLang)}</div>
-        </div>
-
-        <div class="demo-stat-card">
-          <div class="stat-icon">🔄</div>
-          <div class="stat-value">${stats.avgReviewQuality.toFixed(1)}</div>
-          <div class="stat-label">${demoData.t('avgReviewQuality', currentLang)}</div>
-        </div>
-      `;
     }
 
     // OAuth login functions
@@ -374,14 +214,6 @@
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
       updateLanguage();
-      renderJuzGrid();
-
-      // Add tab click listeners after DOM is loaded
-      document.querySelectorAll('.demo-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          switchTab(tab.dataset.tab);
-        });
-      });
 
       // Create language toggle button
       const langToggle = document.createElement('button');

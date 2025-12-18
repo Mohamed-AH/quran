@@ -1,0 +1,153 @@
+/* Demo Banner */
+.demo-banner {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.9), rgba(184, 134, 11, 0.9));
+    color: var(--dark-bg);
+    text-align: center;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Login Modal Styles */
+.login-modal-content {
+    max-width: 450px;
+    padding: 2.5rem;
+}
+
+.login-modal-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-modal-header h2 {
+    color: var(--gold);
+    font-size: 1.8rem;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+}
+
+.login-modal-header p {
+    color: var(--cream);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+/* Login Buttons */
+.login-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.login-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1.5rem;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 8px;
+    background: rgba(212, 175, 55, 0.05);
+    color: var(--cream);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    text-align: left;
+    width: 100%;
+}
+
+.login-btn:hover {
+    background: rgba(212, 175, 55, 0.15);
+    border-color: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
+/* Provider Logo */
+.provider-logo {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.github-btn .provider-logo {
+    color: var(--cream);
+}
+
+/* Google Button Specific */
+.google-btn {
+    border-color: rgba(66, 133, 244, 0.3);
+}
+
+.google-btn:hover {
+    border-color: rgba(66, 133, 244, 0.6);
+    background: rgba(66, 133, 244, 0.1);
+}
+
+/* GitHub Button Specific */
+.github-btn {
+    border-color: rgba(88, 166, 255, 0.3);
+}
+
+.github-btn:hover {
+    border-color: rgba(88, 166, 255, 0.6);
+    background: rgba(88, 166, 255, 0.1);
+}
+
+/* RTL Support for Login Buttons */
+[dir="rtl"] .login-btn {
+    text-align: right;
+    flex-direction: row-reverse;
+}
+
+/* Responsive Login Modal */
+@media (max-width: 768px) {
+    .login-modal-content {
+        padding: 2rem 1.5rem;
+        max-width: 90%;
+    }
+
+    .login-modal-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .login-btn {
+        padding: 0.8rem 1.2rem;
+        font-size: 0.95rem;
+    }
+
+    .provider-logo {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-modal-content {
+        padding: 1.5rem 1rem;
+    }
+
+    .login-modal-header h2 {
+        font-size: 1.3rem;
+    }
+
+    .login-modal-header p {
+        font-size: 0.9rem;
+    }
+
+    .login-btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        gap: 0.75rem;
+    }
+}
