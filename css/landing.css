@@ -146,6 +146,14 @@ body[dir="ltr"] .hero-subtitle {
 }
 
 /* Responsive */
+/* Tablets and small desktops */
+@media (max-width: 1024px) {
+  .landing-main {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* Mobile devices */
 @media (max-width: 768px) {
   .landing-main {
     gap: 3rem;
@@ -158,5 +166,40 @@ body[dir="ltr"] .hero-subtitle {
 
   .login-section {
     max-width: 100%;
+  }
+
+  .login-btn {
+    padding: 13px 20px;
+    font-size: 1rem;
+  }
+
+  .provider-logo {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .landing-main {
+    gap: 2rem;
+    padding: 1rem 0.75rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .btn-demo {
+    padding: 12px 28px;
+    font-size: 0.95rem;
+  }
+
+  .login-title {
+    font-size: 1.2rem;
   }
 }
