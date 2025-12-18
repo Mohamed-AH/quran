@@ -58,21 +58,55 @@ juzSchema.pre('save', function (next) {
   const statusWasModified = this.isModified('status');
   const pagesWereModified = this.isModified('pages');
 
-  // If status is explicitly changed, update pages accordingly (takes priority)
-  if (statusWasModified) {
-    if (this.status === 'completed') {
-      this.pages = 20; // Completed = full Juz
+  // If both status and pages are modified, use smart conflict resolution
+  if (statusWasModified && pagesWereModified) {
+    // Priority: Pages at extremes (0 or 20) win, otherwise status wins
+    if (this.pages >= 20) {
+      // pages=20 is definitive → must be completed
+      this.status = 'completed';
+      this.pages = 20;
+      if (!this.endDate) {
+        this.endDate = new Date();
+      }
+    } else if (this.pages === 0) {
+      // pages=0 is definitive → must be not-started
+      this.status = 'not-started';
+      this.startDate = null;
+      this.endDate = null;
+    } else if (this.status === 'completed') {
+      // status=completed wins → force 20 pages
+      this.pages = 20;
       if (!this.endDate) {
         this.endDate = new Date();
       }
     } else if (this.status === 'not-started') {
-      this.pages = 0; // Not started = 0 pages
+      // status=not-started wins → force 0 pages
+      this.pages = 0;
+      this.startDate = null;
+      this.endDate = null;
+    } else {
+      // status=in-progress with pages 1-19 → keep as is
+      this.status = 'in-progress';
+      if (!this.startDate) {
+        this.startDate = new Date();
+      }
+    }
+  }
+  // If ONLY status is changed, update pages accordingly
+  else if (statusWasModified) {
+    if (this.status === 'completed') {
+      this.pages = 20;
+      if (!this.endDate) {
+        this.endDate = new Date();
+      }
+    } else if (this.status === 'not-started') {
+      this.pages = 0;
       this.startDate = null;
       this.endDate = null;
     }
     // For 'in-progress', keep current pages value (1-19)
   }
-  // If ONLY pages are changed (not status), update status accordingly
+  // If ONLY pages are changed, update status accordingly
   else if (pagesWereModified) {
     if (this.pages === 0) {
       this.status = 'not-started';
@@ -80,7 +114,7 @@ juzSchema.pre('save', function (next) {
       this.endDate = null;
     } else if (this.pages >= 20) {
       this.status = 'completed';
-      this.pages = 20; // Cap at 20
+      this.pages = 20;
       if (!this.endDate) {
         this.endDate = new Date();
       }

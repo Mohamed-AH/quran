@@ -69,8 +69,15 @@ const updateJuz = asyncHandler(async (req, res) => {
 
   const { status, pages, startDate, endDate, notes } = req.body;
 
-  if (status !== undefined) juz.status = status;
-  if (pages !== undefined) juz.pages = pages;
+  // Set fields and mark as modified to ensure pre-save hooks detect changes
+  if (status !== undefined) {
+    juz.status = status;
+    juz.markModified('status');
+  }
+  if (pages !== undefined) {
+    juz.pages = pages;
+    juz.markModified('pages');
+  }
 
   // Handle dates gracefully - only set if provided and not empty
   if (startDate !== undefined) {
