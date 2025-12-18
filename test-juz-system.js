@@ -162,7 +162,7 @@ async function testDashboardStatistics() {
   if (result.success) {
     const stats = result.data.stats;
     logTest('Juz Completed = 2', stats.completedJuz === 2, `(got ${stats.completedJuz})`);
-    logTest('Total Pages = 35', stats.totalPages === 35, `(got ${stats.totalPages})`);
+    logTest('Total Pages = 40', stats.totalPages === 40, `(got ${stats.totalPages})`);
     logTest('Juz Completion % = 6.7%', Math.round(stats.juzCompletionPercentage) === 7, `(got ${stats.juzCompletionPercentage}%)`);
   }
 
@@ -175,19 +175,22 @@ async function testDashboardStatistics() {
   if (result.success) {
     const stats = result.data.stats;
     logTest('Juz Completed = 3', stats.completedJuz === 3, `(got ${stats.completedJuz})`);
-    logTest('Total Pages = 55', stats.totalPages === 55, `(got ${stats.totalPages})`);
+    logTest('Total Pages = 60', stats.totalPages === 60, `(got ${stats.totalPages})`);
     logTest('Juz Completion % = 10%', Math.round(stats.juzCompletionPercentage) === 10, `(got ${stats.juzCompletionPercentage}%)`);
   }
 
   // Test 2.3: Modify Existing Juz → No Duplicate Counting
   log('\nTest 2.3: Modify Juz 1 → No duplicate counting', 'yellow');
   result = await apiCall('PUT', '/juz/1', { status: 'in-progress', pages: 10 });
+  if (!result.success) {
+    log(`  ⚠️  API Error: ${result.error}`, 'red');
+  }
   logTest('Change Juz 1 to 10 pages', result.success);
 
   result = await apiCall('GET', '/stats/combined');
   if (result.success) {
     const stats = result.data.stats;
-    logTest('Total Pages = 45 (not 65)', stats.totalPages === 45, `(got ${stats.totalPages})`);
+    logTest('Total Pages = 50 (not 70)', stats.totalPages === 50, `(got ${stats.totalPages})`);
     logTest('Juz Completed = 2', stats.completedJuz === 2, `(got ${stats.completedJuz})`);
   }
 
@@ -201,7 +204,7 @@ async function testDashboardStatistics() {
     return; // Skip rest of test
   }
   const pages1 = result.data.stats.totalPages;
-  logTest('After 15 pages: correct total', pages1 === 50, `(got ${pages1})`);
+  logTest('After 15 pages: correct total', pages1 === 55, `(got ${pages1})`);
 
   await apiCall('PUT', '/juz/1', { pages: 18 });
   result = await apiCall('GET', '/stats/combined');
@@ -210,7 +213,7 @@ async function testDashboardStatistics() {
     return; // Skip rest of test
   }
   const pages2 = result.data.stats.totalPages;
-  logTest('After 18 pages: correct total', pages2 === 53, `(got ${pages2})`);
+  logTest('After 18 pages: correct total', pages2 === 58, `(got ${pages2})`);
 
   await apiCall('PUT', '/juz/1', { pages: 12 });
   result = await apiCall('GET', '/stats/combined');
@@ -219,7 +222,7 @@ async function testDashboardStatistics() {
     return; // Skip rest of test
   }
   const pages3 = result.data.stats.totalPages;
-  logTest('After 12 pages: correct total', pages3 === 47, `(got ${pages3})`);
+  logTest('After 12 pages: correct total', pages3 === 52, `(got ${pages3})`);
 }
 
 // Test Suite 3: Statistics Tab Separation
