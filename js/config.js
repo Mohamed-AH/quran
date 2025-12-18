@@ -6,8 +6,8 @@
 const CONFIG = {
   // API Configuration
   API_BASE_URL: 'http://localhost:5000/api',
-  // Update this when deploying to production:
-  // PRODUCTION_API_URL: 'https://hafiz-api.onrender.com/api',
+  // Production API URL (update with your Render backend URL)
+  PRODUCTION_API_URL: 'https://hafiz-backend.onrender.com/api',
 
   // LocalStorage Keys
   TOKEN_KEY: 'hafiz_jwt_token',
