@@ -10,6 +10,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 
 const connectDatabase = require('./config/database');
 const passport = require('./config/passport');
@@ -104,6 +105,39 @@ app.use('/api/user', require('./routes/user'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/juz', require('./routes/juz'));
 app.use('/api/stats', require('./routes/stats'));
+
+// ============================================
+// STATIC FILES (Production only)
+// ============================================
+
+// Serve static files from parent directory in production (for Railway)
+if (process.env.NODE_ENV === 'production') {
+  const staticPath = path.join(__dirname, '..', '..');
+
+  // Serve static assets (CSS, JS, images)
+  app.use('/css', express.static(path.join(staticPath, 'css')));
+  app.use('/js', express.static(path.join(staticPath, 'js')));
+  app.use('/assets', express.static(path.join(staticPath, 'assets')));
+
+  // Serve HTML files
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(staticPath, 'index.html'));
+  });
+
+  app.get('/app.html', (req, res) => {
+    res.sendFile(path.join(staticPath, 'app.html'));
+  });
+
+  app.get('/callback.html', (req, res) => {
+    res.sendFile(path.join(staticPath, 'callback.html'));
+  });
+
+  app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.join(staticPath, 'manifest.json'));
+  });
+
+  console.log('📁 Serving static files from:', staticPath);
+}
 
 // ============================================
 // ERROR HANDLING
