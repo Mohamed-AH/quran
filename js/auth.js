@@ -119,7 +119,7 @@ const auth = {
   async logout() {
     try {
       // Call logout endpoint (clears refresh token cookie)
-      await api.post('/auth/logout', null, { skipAuth: false });
+      await api.post('/auth/logout', null, { skipAuth: true });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
