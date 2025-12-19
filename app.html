@@ -230,18 +230,6 @@
                 // Continue with JWT data
             }
         });
-
-        // Logout handler
-        function handleLogout() {
-            const currentLang = storage.getLanguage();
-            const confirmMsg = currentLang === 'ar'
-                ? 'هل أنت متأكد من تسجيل الخروج؟'
-                : 'Are you sure you want to logout?';
-
-            if (confirm(confirmMsg)) {
-                auth.logout();
-            }
-        }
     </script>
 
     <!-- Demo Mode UI Script -->

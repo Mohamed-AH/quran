@@ -197,6 +197,17 @@ function handleBackToHome() {
     window.location.href = '/';
 }
 
+function handleLogout() {
+    const currentLang = storage.getLanguage();
+    const confirmMsg = currentLang === 'ar'
+        ? 'هل أنت متأكد من تسجيل الخروج؟'
+        : 'Are you sure you want to logout?';
+
+    if (confirm(confirmMsg)) {
+        auth.logout();
+    }
+}
+
 function detectBrowserLanguage() {
     const browserLang = navigator.language || navigator.languages[0];
     return browserLang.startsWith('ar') ? 'ar' : 'en';
