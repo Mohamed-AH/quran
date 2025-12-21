@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&family=Rakkas&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header>
+            <div class="header-top">
+                <div class="header-left">
+                    <button class="btn-secondary" onclick="window.location.href='/app.html'">
+                        ← <span id="backToAppText">العودة للتطبيق</span>
+                    </button>
+                    <button class="lang-toggle" onclick="toggleLanguage()" id="langBtn">English</button>
+                </div>
+                <div class="header-right">
+                    <div class="admin-badge">
+                        <span id="adminBadgeText">مدير</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-center">
+                <h1 id="adminTitle">لوحة التحكم</h1>
+                <p class="subtitle" id="adminSubtitle">إدارة المستخدمين والإعدادات</p>
+            </div>
+        </header>
+
+        <!-- Settings Section -->
+        <section class="admin-section">
+            <h2 id="settingsTitle">⚙️ الإعدادات العامة</h2>
+            <div class="settings-toggles">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h3 id="signupControlTitle">التحكم في التسجيل</h3>
+                        <p id="signupControlDesc">تفعيل نظام رموز الدعوة للتسجيل</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggleSignupControl" onchange="updateSettings()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h3 id="leaderboardTitle">لوحة المتصدرين</h3>
+                        <p id="leaderboardDesc">إظهار أو إخفاء لوحة المتصدرين للطلاب</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggleLeaderboard" onchange="updateSettings()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Stats -->
+        <section class="admin-section">
+            <h2 id="statsTitle">📊 الإحصائيات</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label" id="labelTotalUsers">إجمالي المستخدمين</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeUsers">0</div>
+                    <div class="stat-label" id="labelActiveUsers">نشط (7 أيام)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPages">0</div>
+                    <div class="stat-label" id="labelTotalPages">صفحات محفوظة</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completedJuz">0</div>
+                    <div class="stat-label" id="labelCompletedJuz">أجزاء مكتملة</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- User Management -->
+        <section class="admin-section">
+            <div class="section-header">
+                <h2 id="usersTitle">👥 إدارة المستخدمين</h2>
+                <div class="search-bar">
+                    <input type="text" id="userSearch" placeholder="بحث..." onkeyup="searchUsers()">
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th id="thName">الاسم</th>
+                            <th id="thEmail">البريد الإلكتروني</th>
+                            <th id="thRole">الدور</th>
+                            <th id="thJoined">تاريخ التسجيل</th>
+                            <th id="thActions">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="5" class="loading" id="loadingText">جاري التحميل...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="usersPagination"></div>
+        </section>
+
+        <!-- Invite Codes Management -->
+        <section class="admin-section">
+            <div class="section-header">
+                <h2 id="inviteCodesTitle">🎟️ رموز الدعوة</h2>
+                <button class="btn" onclick="showCreateInviteModal()" id="btnCreateInvite">
+                    + إنشاء رمز جديد
+                </button>
+            </div>
+            <div class="invite-codes-grid" id="inviteCodesGrid">
+                <p class="loading" id="loadingInvites">جاري التحميل...</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Create Invite Code Modal -->
+    <div class="modal" id="createInviteModal" style="display:none;">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeCreateInviteModal()">×</button>
+            <h2 id="modalTitle">إنشاء رمز دعوة جديد</h2>
+            <div class="form-group">
+                <label id="labelMaxUses">عدد الاستخدامات:</label>
+                <input type="number" id="inviteMaxUses" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label id="labelExpires">تاريخ الانتهاء (اختياري):</label>
+                <input type="date" id="inviteExpires">
+            </div>
+            <div class="form-group">
+                <label id="labelDescription">الوصف (اختياري):</label>
+                <input type="text" id="inviteDescription" placeholder="مثال: الفصل الثاني">
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="createInviteCode()" id="btnCreate">إنشاء</button>
+                <button class="btn-secondary" onclick="closeCreateInviteModal()" id="btnCancel">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Details Modal -->
+    <div class="modal" id="userDetailsModal" style="display:none;">
+        <div class="modal-content modal-large">
+            <button class="close-btn" onclick="closeUserDetailsModal()">×</button>
+            <h2 id="userDetailsTitle">تفاصيل المستخدم</h2>
+            <div id="userDetailsContent"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
