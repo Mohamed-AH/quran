@@ -37,6 +37,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+      index: true,
+    },
     settings: {
       language: {
         type: String,
@@ -47,6 +53,16 @@ const userSchema = new mongoose.Schema(
         type: String,
         enum: ['default', 'dark'],
         default: 'default',
+      },
+      showOnLeaderboard: {
+        type: Boolean,
+        default: true, // Opt-out (visible by default)
+      },
+      leaderboardDisplayName: {
+        type: String,
+        trim: true,
+        maxlength: [50, 'Display name cannot exceed 50 characters'],
+        default: null, // Will use user.name if null
       },
     },
     lastLoginAt: {
@@ -70,6 +86,7 @@ userSchema.methods.toSafeObject = function () {
     name: this.name,
     profilePicture: this.profilePicture,
     authProvider: this.authProvider,
+    role: this.role,
     settings: this.settings,
     createdAt: this.createdAt,
     lastLoginAt: this.lastLoginAt,

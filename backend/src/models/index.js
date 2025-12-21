@@ -6,9 +6,11 @@
 const User = require('./User');
 const Log = require('./Log');
 const Juz = require('./Juz');
+const InviteCode = require('./InviteCode');
 
 module.exports = {
   User,
   Log,
   Juz,
+  InviteCode,
 };

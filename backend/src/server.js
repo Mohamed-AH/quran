@@ -109,6 +109,8 @@ app.use('/api/user', require('./routes/user'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/juz', require('./routes/juz'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/leaderboard', require('./routes/leaderboard'));
 
 // ============================================
 // STATIC FILES (Production only)
