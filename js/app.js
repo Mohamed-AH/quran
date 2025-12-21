@@ -37,7 +37,30 @@ const trans = {
         saveSuccess: 'تم حفظ سجل اليوم بنجاح!', saveJuzSuccess: 'تم حفظ بيانات الجزء بنجاح!',
         alertEnterPages: 'الرجاء إدخال صفحات الحفظ أو المراجعة', helpTitle: 'كيفية الاستخدام',
         loadingData: 'جاري تحميل البيانات...', errorLoading: 'خطأ في تحميل البيانات',
-        savingData: 'جاري الحفظ...', errorSaving: 'خطأ في الحفظ'
+        savingData: 'جاري الحفظ...', errorSaving: 'خطأ في الحفظ',
+        tabLeaderboard: '🏆 المتصدرون', leaderboardTitle: '🏆 لوحة المتصدرين',
+        leaderboardDesc: 'أفضل الطلاب في حفظ القرآن الكريم',
+        myRankTitle: 'ترتيبك', myRankText: 'من أصل', totalUsersText: 'طالب',
+        myPagesText: 'صفحة', myJuzText: 'جزء', myStreakText: 'يوم متتالي',
+        thRank: 'المرتبة', thStudent: 'الطالب', thPages: 'الصفحات',
+        thJuz: 'الأجزاء', thStreak: 'التتالي',
+        leaderboardDisabledText: 'لوحة المتصدرين معطلة حالياً',
+        notOnLeaderboardText: 'لست على لوحة المتصدرين. قم بتفعيلها من الإعدادات أو ابدأ الحفظ!',
+        loadingLeaderboard: 'جاري التحميل...', btnPrivacySettings: '⚙️ إعدادات الخصوصية',
+        showOnLeaderboard: 'إظهاري على لوحة المتصدرين',
+        leaderboardDisplayName: 'اسم العرض على لوحة المتصدرين',
+        leaderboardPrivacyDesc: 'اختر ما إذا كنت تريد الظهور على لوحة المتصدرين وكيف يظهر اسمك',
+        privacyTitle: 'إعدادات الخصوصية',
+        privacyDesc: 'اختر ما إذا كنت تريد الظهور على لوحة المتصدرين وكيف يظهر اسمك',
+        privacyShowLabel: 'إظهاري على لوحة المتصدرين',
+        privacyShowDesc: 'عند التفعيل، سيتم عرض تقدمك على لوحة المتصدرين',
+        privacyNameLabel: 'اسم العرض على لوحة المتصدرين',
+        privacyNameDesc: 'الحد الأقصى: 50 حرفاً',
+        privacyNamePlaceholder: 'اترك فارغاً لاستخدام اسمك الحقيقي',
+        privacySaveBtn: 'حفظ التغييرات',
+        privacyCancelBtn: 'إلغاء',
+        privacySaveSuccess: 'تم حفظ إعدادات الخصوصية بنجاح!',
+        privacyNameTooLong: 'اسم العرض يجب ألا يتجاوز 50 حرفاً'
     },
     en: {
         appTitle: 'Hafiz', subtitle: 'Your Quran Memorization Journey', langBtn: 'العربية',
@@ -64,7 +87,30 @@ const trans = {
         saveSuccess: 'Today\'s log saved successfully!', saveJuzSuccess: 'Juz data saved successfully!',
         alertEnterPages: 'Please enter memorization or review pages', helpTitle: 'How to Use',
         loadingData: 'Loading data...', errorLoading: 'Error loading data',
-        savingData: 'Saving...', errorSaving: 'Error saving'
+        savingData: 'Saving...', errorSaving: 'Error saving',
+        tabLeaderboard: '🏆 Leaderboard', leaderboardTitle: '🏆 Leaderboard',
+        leaderboardDesc: 'Top students in Quran memorization',
+        myRankTitle: 'Your Rank', myRankText: 'out of', totalUsersText: 'students',
+        myPagesText: 'pages', myJuzText: 'juz', myStreakText: 'day streak',
+        thRank: 'Rank', thStudent: 'Student', thPages: 'Pages',
+        thJuz: 'Juz', thStreak: 'Streak',
+        leaderboardDisabledText: 'Leaderboard is currently disabled',
+        notOnLeaderboardText: 'You are not on the leaderboard. Enable it in settings or start memorizing!',
+        loadingLeaderboard: 'Loading...', btnPrivacySettings: '⚙️ Privacy Settings',
+        showOnLeaderboard: 'Show me on leaderboard',
+        leaderboardDisplayName: 'Display name on leaderboard',
+        leaderboardPrivacyDesc: 'Choose if you want to appear on the leaderboard and how your name is displayed',
+        privacyTitle: 'Privacy Settings',
+        privacyDesc: 'Choose if you want to appear on the leaderboard and how your name is displayed',
+        privacyShowLabel: 'Show me on leaderboard',
+        privacyShowDesc: 'When enabled, your progress will be displayed on the leaderboard',
+        privacyNameLabel: 'Display name on leaderboard',
+        privacyNameDesc: 'Maximum: 50 characters',
+        privacyNamePlaceholder: 'Leave empty to use your real name',
+        privacySaveBtn: 'Save Changes',
+        privacyCancelBtn: 'Cancel',
+        privacySaveSuccess: 'Privacy settings saved successfully!',
+        privacyNameTooLong: 'Display name must not exceed 50 characters'
     }
 };
 
@@ -283,6 +329,11 @@ async function loadSettings() {
             const localLanguage = storage.getLanguage();
             data.settings = { ...data.settings, ...response.user.settings };
             data.settings.language = localLanguage; // Keep localStorage preference
+
+            // Store user ID for leaderboard highlighting
+            if (response.user._id) {
+                data.currentUserId = response.user._id;
+            }
         }
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -785,6 +836,196 @@ function displayDetailedStats() {
 }
 
 // ================================
+// LEADERBOARD OPERATIONS
+// ================================
+
+async function loadLeaderboard() {
+    const lang = data.settings.language;
+    const t = trans[lang];
+
+    try {
+        // Load user's rank
+        await loadMyRank();
+
+        // Load top leaderboard
+        const response = await api.get('/leaderboard?limit=25');
+
+        if (!response.success || !response.leaderboard) {
+            throw new Error('Invalid leaderboard response');
+        }
+
+        const leaderboard = response.leaderboard;
+        const tbody = document.getElementById('leaderboardBody');
+
+        if (leaderboard.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${lang === 'ar' ? 'لا يوجد مستخدمين على لوحة المتصدرين بعد' : 'No users on leaderboard yet'}</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = leaderboard.map(user => {
+            // Check if this is the current user
+            const isCurrentUser = user.userId === (data.currentUserId || '');
+            const highlightClass = isCurrentUser ? ' class="highlight"' : '';
+
+            // Get rank display (top 3 get special styling)
+            const rankClass = user.rank <= 3 ? ' class="rank-cell top-3"' : ' class="rank-cell"';
+
+            return `<tr${highlightClass}>
+                <td${rankClass}>${lang === 'ar' ? convertToArabicNumerals(user.rank) : user.rank}</td>
+                <td>${user.name || (lang === 'ar' ? 'طالب' : 'Student')}</td>
+                <td>${lang === 'ar' ? convertToArabicNumerals(user.totalPages) : user.totalPages}</td>
+                <td>${lang === 'ar' ? convertToArabicNumerals(user.completedJuz) : user.completedJuz}</td>
+                <td>${lang === 'ar' ? convertToArabicNumerals(user.streak) : user.streak}</td>
+            </tr>`;
+        }).join('');
+
+        // Show the leaderboard table
+        document.getElementById('leaderboardTable').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading leaderboard:', error);
+
+        // Check if leaderboard is disabled (403 error)
+        if (error.message && error.message.includes('disabled')) {
+            document.getElementById('leaderboardDisabled').style.display = 'block';
+            document.getElementById('leaderboardTable').style.display = 'none';
+            document.getElementById('myRankSection').style.display = 'none';
+            document.getElementById('notOnLeaderboard').style.display = 'none';
+        } else {
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${lang === 'ar' ? 'خطأ في تحميل لوحة المتصدرين' : 'Error loading leaderboard'}</td></tr>`;
+        }
+    }
+}
+
+async function loadMyRank() {
+    const lang = data.settings.language;
+    const t = trans[lang];
+
+    try {
+        const response = await api.get('/leaderboard/me');
+
+        if (!response.success) {
+            throw new Error('Invalid rank response');
+        }
+
+        // Hide all state sections first
+        document.getElementById('leaderboardDisabled').style.display = 'none';
+        document.getElementById('notOnLeaderboard').style.display = 'none';
+        document.getElementById('myRankSection').style.display = 'none';
+
+        if (!response.onLeaderboard) {
+            // User not on leaderboard (opted out or no activity)
+            document.getElementById('notOnLeaderboard').style.display = 'block';
+            document.getElementById('myRankSection').style.display = 'none';
+        } else {
+            // User is on leaderboard, show their rank
+            document.getElementById('myRankSection').style.display = 'block';
+            document.getElementById('myRank').textContent = lang === 'ar' ? convertToArabicNumerals(response.rank) : response.rank;
+            document.getElementById('totalUsers').textContent = lang === 'ar' ? convertToArabicNumerals(response.totalUsers) : response.totalUsers;
+            document.getElementById('myPages').textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.totalPages) : response.stats.totalPages;
+            document.getElementById('myJuz').textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.completedJuz) : response.stats.completedJuz;
+            document.getElementById('myStreak').textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.streak) : response.stats.streak;
+        }
+
+    } catch (error) {
+        console.error('Error loading rank:', error);
+
+        // Check if leaderboard is disabled
+        if (error.message && error.message.includes('disabled')) {
+            document.getElementById('leaderboardDisabled').style.display = 'block';
+            document.getElementById('myRankSection').style.display = 'none';
+            document.getElementById('notOnLeaderboard').style.display = 'none';
+        }
+    }
+}
+
+async function showPrivacySettings() {
+    const lang = data.settings.language;
+    const t = trans[lang];
+
+    // DEMO MODE: Show login modal
+    if (isDemoMode) {
+        showLoginModal();
+        return;
+    }
+
+    try {
+        // Load current user settings
+        const response = await api.get('/user');
+        if (response && response.user && response.user.settings) {
+            // Populate modal with current settings
+            const showOnLeaderboard = response.user.settings.showOnLeaderboard !== false; // Default true
+            const displayName = response.user.settings.leaderboardDisplayName || '';
+
+            document.getElementById('showOnLeaderboardToggle').checked = showOnLeaderboard;
+            document.getElementById('leaderboardDisplayName').value = displayName;
+
+            // Update placeholder based on language
+            const placeholder = lang === 'ar'
+                ? 'اترك فارغاً لاستخدام اسمك الحقيقي'
+                : 'Leave empty to use your real name';
+            document.getElementById('leaderboardDisplayName').placeholder = placeholder;
+        }
+
+        // Open modal
+        document.getElementById('privacyModal').classList.add('active');
+
+    } catch (error) {
+        console.error('Error loading privacy settings:', error);
+        ui.showError(lang === 'ar' ? 'خطأ في تحميل الإعدادات' : 'Error loading settings', lang === 'ar');
+    }
+}
+
+function closePrivacySettings() {
+    document.getElementById('privacyModal').classList.remove('active');
+}
+
+async function savePrivacySettings() {
+    const lang = data.settings.language;
+    const t = trans[lang];
+    const isArabic = lang === 'ar';
+
+    const showOnLeaderboard = document.getElementById('showOnLeaderboardToggle').checked;
+    const displayName = document.getElementById('leaderboardDisplayName').value.trim();
+
+    // Validate display name length
+    if (displayName.length > 50) {
+        ui.showError(t.privacyNameTooLong, isArabic);
+        return;
+    }
+
+    try {
+        ui.showLoader();
+
+        // Update user settings via API
+        await api.put('/user', {
+            settings: {
+                showOnLeaderboard,
+                leaderboardDisplayName: displayName || null
+            }
+        });
+
+        // Close modal
+        closePrivacySettings();
+
+        // Refresh leaderboard if currently on that tab
+        const leaderboardTab = document.getElementById('leaderboardTab');
+        if (leaderboardTab && leaderboardTab.style.display === 'block') {
+            await loadLeaderboard();
+        }
+
+        ui.hideLoader();
+        ui.showSuccess(t.privacySaveSuccess, isArabic);
+
+    } catch (error) {
+        console.error('Error saving privacy settings:', error);
+        ui.hideLoader();
+        ui.showError(t.errorSaving, isArabic);
+    }
+}
+
+// ================================
 // UI HELPERS
 // ================================
 
@@ -874,7 +1115,7 @@ function switchTab(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
 
-    ['todayTab', 'juzTab', 'historyTab', 'statsTab'].forEach(t =>
+    ['todayTab', 'juzTab', 'historyTab', 'statsTab', 'leaderboardTab'].forEach(t =>
         document.getElementById(t).style.display = 'none'
     );
 
@@ -888,6 +1129,15 @@ function switchTab(tab) {
     } else if (tab === 'stats') {
         document.getElementById('statsTab').style.display = 'block';
         displayDetailedStats();
+    } else if (tab === 'leaderboard') {
+        document.getElementById('leaderboardTab').style.display = 'block';
+
+        // DEMO MODE: Show login modal instead of loading leaderboard
+        if (isDemoMode) {
+            showLoginModal();
+        } else {
+            loadLeaderboard();
+        }
     }
 }
 
@@ -1008,6 +1258,10 @@ document.getElementById('juzModal').addEventListener('click', (e) => {
 
 document.getElementById('helpModal').addEventListener('click', (e) => {
     if (e.target.id === 'helpModal') closeHelp();
+});
+
+document.getElementById('privacyModal').addEventListener('click', (e) => {
+    if (e.target.id === 'privacyModal') closePrivacySettings();
 });
 
 // Initialize app

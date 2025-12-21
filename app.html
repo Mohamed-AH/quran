@@ -73,6 +73,7 @@
             <button class="tab" onclick="switchTab('juz')" id="tabJuz">الأجزاء</button>
             <button class="tab" onclick="switchTab('history')" id="tabHistory">السجل</button>
             <button class="tab" onclick="switchTab('stats')" id="tabStats">الإحصائيات</button>
+            <button class="tab" onclick="switchTab('leaderboard')" id="tabLeaderboard">🏆 المتصدرون</button>
         </div>
 
         <div class="content">
@@ -130,6 +131,74 @@
                 <div id="detailedStats"></div>
             </div>
 
+            <div id="leaderboardTab" style="display:none;">
+                <div class="leaderboard-header">
+                    <h2 style="color: var(--gold); margin-bottom: 10px;" id="leaderboardTitle">🏆 لوحة المتصدرين</h2>
+                    <p style="color: var(--sage); margin-bottom: 20px;" id="leaderboardDesc">أفضل الطلاب في حفظ القرآن الكريم</p>
+                </div>
+
+                <!-- Current User Rank -->
+                <div id="myRankSection" style="display:none;">
+                    <div class="my-rank-card">
+                        <h3 style="color: var(--gold); margin-bottom: 15px;" id="myRankTitle">ترتيبك</h3>
+                        <div class="rank-info">
+                            <div class="rank-number" id="myRank">-</div>
+                            <div class="rank-details">
+                                <p id="myRankText">من أصل <span id="totalUsers">0</span> طالب</p>
+                                <div class="my-stats">
+                                    <span id="myPagesText"><span id="myPages">0</span> صفحة</span>
+                                    <span id="myJuzText"><span id="myJuz">0</span> جزء</span>
+                                    <span id="myStreakText"><span id="myStreak">0</span> يوم متتالي</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Disabled Message -->
+                <div id="leaderboardDisabled" style="display:none;">
+                    <div class="empty-state">
+                        <p id="leaderboardDisabledText">لوحة المتصدرين معطلة حالياً</p>
+                    </div>
+                </div>
+
+                <!-- Not on Leaderboard Message -->
+                <div id="notOnLeaderboard" style="display:none;">
+                    <div class="empty-state">
+                        <p id="notOnLeaderboardText">لست على لوحة المتصدرين. قم بتفعيلها من الإعدادات أو ابدأ الحفظ!</p>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Table -->
+                <div id="leaderboardTable" style="display:none;">
+                    <div class="leaderboard-container">
+                        <table class="leaderboard">
+                            <thead>
+                                <tr>
+                                    <th id="thRank">المرتبة</th>
+                                    <th id="thStudent">الطالب</th>
+                                    <th id="thPages">الصفحات</th>
+                                    <th id="thJuz">الأجزاء</th>
+                                    <th id="thStreak">التتالي</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboardBody">
+                                <tr>
+                                    <td colspan="5" class="loading" id="loadingLeaderboard">جاري التحميل...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Privacy Settings Link -->
+                <div class="leaderboard-footer">
+                    <button class="btn-secondary" onclick="showPrivacySettings()" id="btnPrivacySettings">
+                        ⚙️ إعدادات الخصوصية
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -177,6 +246,41 @@
                 <button class="close-btn" onclick="closeHelp()">×</button>
             </div>
             <div id="helpContent" style="line-height: 1.8; color: var(--cream);"></div>
+        </div>
+    </div>
+
+    <!-- Privacy Settings Modal -->
+    <div class="modal" id="privacyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="privacyTitle">إعدادات الخصوصية</h2>
+                <button class="close-btn" onclick="closePrivacySettings()">×</button>
+            </div>
+            <div style="line-height: 1.8; color: var(--cream);">
+                <p id="privacyDesc" style="margin-bottom: 25px; color: var(--sage);">اختر ما إذا كنت تريد الظهور على لوحة المتصدرين وكيف يظهر اسمك</p>
+
+                <div class="setting-item" style="margin-bottom: 20px;">
+                    <div class="setting-info">
+                        <h3 id="privacyShowLabel" style="font-size: 1.1rem; margin-bottom: 5px;">إظهاري على لوحة المتصدرين</h3>
+                        <p id="privacyShowDesc" style="font-size: 0.9rem; color: var(--sage);">عند التفعيل، سيتم عرض تقدمك على لوحة المتصدرين</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showOnLeaderboardToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label for="leaderboardDisplayName" id="privacyNameLabel" style="display: block; color: var(--gold); font-weight: 600; margin-bottom: 8px;">اسم العرض على لوحة المتصدرين</label>
+                    <input type="text" id="leaderboardDisplayName" placeholder="اترك فارغاً لاستخدام اسمك الحقيقي" style="width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 10px; color: var(--text-primary); font-family: 'Cairo', sans-serif; font-size: 0.95rem;">
+                    <p id="privacyNameDesc" style="font-size: 0.85rem; color: var(--sage); margin-top: 5px;">الحد الأقصى: 50 حرفاً</p>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                    <button class="btn" onclick="savePrivacySettings()" id="privacySaveBtn">حفظ التغييرات</button>
+                    <button class="btn-secondary" onclick="closePrivacySettings()" id="privacyCancelBtn">إلغاء</button>
+                </div>
+            </div>
         </div>
     </div>
 
