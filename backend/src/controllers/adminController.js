@@ -1,4 +1,4 @@
-const { User, Log, Juz, InviteCode } = require('../models');
+const { User, Log, Juz, InviteCode, AppSettings } = require('../models');
 const { APIError, asyncHandler } = require('../middleware/errorHandler');
 
 /**
@@ -326,6 +326,53 @@ const deleteInviteCode = asyncHandler(async (req, res) => {
   });
 });
 
+// ============================================
+// APP SETTINGS
+// ============================================
+
+/**
+ * Get app settings
+ * GET /api/admin/settings
+ */
+const getAppSettings = asyncHandler(async (req, res) => {
+  const settings = await AppSettings.getSettings();
+
+  res.status(200).json({
+    success: true,
+    settings: {
+      requireInviteCode: settings.requireInviteCode,
+      leaderboardEnabled: settings.leaderboardEnabled,
+    },
+  });
+});
+
+/**
+ * Update app settings
+ * PATCH /api/admin/settings
+ */
+const updateAppSettings = asyncHandler(async (req, res) => {
+  const { requireInviteCode, leaderboardEnabled } = req.body;
+
+  const updates = {};
+  if (typeof requireInviteCode === 'boolean') {
+    updates.requireInviteCode = requireInviteCode;
+  }
+  if (typeof leaderboardEnabled === 'boolean') {
+    updates.leaderboardEnabled = leaderboardEnabled;
+  }
+
+  const settings = await AppSettings.updateSettings(updates);
+
+  res.status(200).json({
+    success: true,
+    message: 'App settings updated successfully',
+    settings: {
+      requireInviteCode: settings.requireInviteCode,
+      leaderboardEnabled: settings.leaderboardEnabled,
+    },
+  });
+});
+
 module.exports = {
   getDashboardStats,
   getUsers,
@@ -336,4 +383,6 @@ module.exports = {
   createInviteCode,
   deactivateInviteCode,
   deleteInviteCode,
+  getAppSettings,
+  updateAppSettings,
 };

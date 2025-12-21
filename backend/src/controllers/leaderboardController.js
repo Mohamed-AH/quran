@@ -1,5 +1,5 @@
-const { User, Log, Juz } = require('../models');
-const { asyncHandler } = require('../middleware/errorHandler');
+const { User, Log, Juz, AppSettings } = require('../models');
+const { APIError, asyncHandler } = require('../middleware/errorHandler');
 
 /**
  * Leaderboard Controller
@@ -105,6 +105,12 @@ async function calculateLeaderboard() {
  * GET /api/leaderboard
  */
 const getLeaderboard = asyncHandler(async (req, res) => {
+  // Check if leaderboard is enabled
+  const settings = await AppSettings.getSettings();
+  if (!settings.leaderboardEnabled) {
+    throw new APIError('Leaderboard is currently disabled', 403);
+  }
+
   const { limit = 25, forceRefresh = false } = req.query;
 
   // Check if cache is valid
@@ -149,6 +155,12 @@ const getLeaderboard = asyncHandler(async (req, res) => {
  * GET /api/leaderboard/me
  */
 const getMyRank = asyncHandler(async (req, res) => {
+  // Check if leaderboard is enabled
+  const settings = await AppSettings.getSettings();
+  if (!settings.leaderboardEnabled) {
+    throw new APIError('Leaderboard is currently disabled', 403);
+  }
+
   const userId = req.user._id;
 
   // Check cache, refresh if needed

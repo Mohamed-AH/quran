@@ -9,6 +9,8 @@ const {
   createInviteCode,
   deactivateInviteCode,
   deleteInviteCode,
+  getAppSettings,
+  updateAppSettings,
 } = require('../controllers/adminController');
 const { authenticate } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
@@ -99,5 +101,23 @@ router.patch('/invite-codes/:id/deactivate', deactivateInviteCode);
  * @access  Admin
  */
 router.delete('/invite-codes/:id', deleteInviteCode);
+
+// ============================================
+// APP SETTINGS
+// ============================================
+
+/**
+ * @route   GET /api/admin/settings
+ * @desc    Get app settings (signup control, leaderboard toggle)
+ * @access  Admin
+ */
+router.get('/settings', getAppSettings);
+
+/**
+ * @route   PATCH /api/admin/settings
+ * @desc    Update app settings
+ * @access  Admin
+ */
+router.patch('/settings', updateAppSettings);
 
 module.exports = router;
