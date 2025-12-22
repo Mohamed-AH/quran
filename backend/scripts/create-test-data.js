@@ -31,8 +31,8 @@ async function createTestData() {
       {
         name: 'Admin User',
         email: 'admin@test.com',
-        oauthProvider: 'google',
-        oauthId: 'admin-test-id-' + Date.now(),
+        authProvider: 'google',
+        authProviderId: 'admin-test-id-' + Date.now(),
         role: 'admin',
         settings: {
           language: 'en',
@@ -66,8 +66,8 @@ async function createTestData() {
         {
           name: student.name,
           email: student.email,
-          oauthProvider: 'google',
-          oauthId: `test-${student.email}-${Date.now()}`,
+          authProvider: 'google',
+          authProviderId: `test-${student.email}-${Date.now()}`,
           role: 'user',
           settings: {
             language: 'ar',
