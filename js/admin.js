@@ -134,10 +134,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Language
-function toggleLanguage() {
+async function toggleLanguage() {
   currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
   storage.setLanguage(currentLanguage);
   applyLanguage();
+
+  // Save to user profile in database
+  try {
+    console.log('🌐 Admin: Saving language preference:', currentLanguage);
+    await api.put('/user', {
+      settings: {
+        language: currentLanguage
+      }
+    });
+    console.log('✅ Admin: Language preference saved');
+  } catch (error) {
+    console.error('❌ Admin: Error saving language preference:', error);
+  }
 }
 
 function applyLanguage() {
