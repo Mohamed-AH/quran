@@ -19,31 +19,35 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     totalUsers,
     totalAdmins,
     totalLogs,
-    totalPagesMemorized,
     activeUsers,
     newUsersThisWeek,
+    totalJuzData,
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ role: 'admin' }),
     Log.countDocuments(),
-    Log.aggregate([
-      {
-        $group: {
-          _id: null,
-          total: { $sum: { $size: '$newPages' } },
-        },
-      },
-    ]),
     User.countDocuments({
       lastLoginAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     }),
     User.countDocuments({
       createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     }),
+    // Calculate total pages from Juz data across all users
+    Juz.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalPages: { $sum: '$pages' },
+          completedJuz: {
+            $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] },
+          },
+        },
+      },
+    ]),
   ]);
 
-  // Calculate completed Juz across all users
-  const completedJuz = await Juz.countDocuments({ status: 'completed' });
+  const totalPagesMemorized = totalJuzData[0]?.totalPages || 0;
+  const completedJuz = totalJuzData[0]?.completedJuz || 0;
 
   res.status(200).json({
     success: true,
@@ -51,7 +55,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       totalUsers,
       totalAdmins,
       totalLogs,
-      totalPagesMemorized: totalPagesMemorized[0]?.total || 0,
+      totalPagesMemorized,
       completedJuz,
       activeUsers, // Active in last 7 days
       newUsersThisWeek,
@@ -129,23 +133,16 @@ const getUserDetails = asyncHandler(async (req, res) => {
   }
 
   // Get user's stats
-  const [logs, juz, totalPages] = await Promise.all([
+  const [logs, juz] = await Promise.all([
     Log.find({ userId: id })
       .sort({ date: -1 })
       .limit(10)
       .select('-__v'),
     Juz.find({ userId: id }).select('-__v'),
-    Log.aggregate([
-      { $match: { userId: user._id } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: { $size: '$newPages' } },
-        },
-      },
-    ]),
   ]);
 
+  // Calculate total pages from Juz data
+  const totalPages = juz.reduce((sum, j) => sum + (j.pages || 0), 0);
   const completedJuz = juz.filter(j => j.status === 'completed').length;
 
   res.status(200).json({
@@ -153,7 +150,7 @@ const getUserDetails = asyncHandler(async (req, res) => {
     user: user.toSafeObject(),
     stats: {
       totalLogs: logs.length,
-      totalPages: totalPages[0]?.total || 0,
+      totalPages,
       completedJuz,
       inProgressJuz: juz.filter(j => j.status === 'in-progress').length,
     },
