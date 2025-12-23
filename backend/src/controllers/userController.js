@@ -38,18 +38,35 @@ const updateUser = asyncHandler(async (req, res) => {
 
   // Update basic fields
   if (name !== undefined) user.name = name;
-  if (language !== undefined) user.settings.language = language;
-  if (theme !== undefined) user.settings.theme = theme;
+
+  // Track if settings were modified
+  let settingsModified = false;
+
+  if (language !== undefined) {
+    user.settings.language = language;
+    settingsModified = true;
+  }
+  if (theme !== undefined) {
+    user.settings.theme = theme;
+    settingsModified = true;
+  }
 
   // Update leaderboard privacy settings if provided
   if (settings) {
     if (settings.showOnLeaderboard !== undefined) {
       user.settings.showOnLeaderboard = settings.showOnLeaderboard;
+      settingsModified = true;
     }
     if (settings.leaderboardDisplayName !== undefined) {
       // Allow null or empty string to clear custom name
       user.settings.leaderboardDisplayName = settings.leaderboardDisplayName || null;
+      settingsModified = true;
     }
+  }
+
+  // Mark settings as modified so Mongoose saves nested changes
+  if (settingsModified) {
+    user.markModified('settings');
   }
 
   await user.save();
