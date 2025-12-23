@@ -36,6 +36,10 @@ const updateUser = asyncHandler(async (req, res) => {
 
   const { name, language, theme, settings } = req.body;
 
+  // Debug logging - what did we receive?
+  console.log('📥 Backend received req.body:', JSON.stringify(req.body, null, 2));
+  console.log('📥 Extracted settings:', JSON.stringify(settings, null, 2));
+
   // Update basic fields
   if (name !== undefined) user.name = name;
 
