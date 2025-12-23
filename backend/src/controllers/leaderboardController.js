@@ -21,7 +21,13 @@ async function calculateLeaderboard() {
   // Get all users who opted into leaderboard
   const users = await User.find({
     'settings.showOnLeaderboard': true,
-  }).select('_id name settings.leaderboardDisplayName profilePicture createdAt');
+  }).select('_id name settings.leaderboardDisplayName settings.showOnLeaderboard profilePicture createdAt');
+
+  console.log('📊 Calculating leaderboard...');
+  console.log('   Found', users.length, 'users opted into leaderboard:');
+  users.forEach(u => {
+    console.log('   -', u.name, '(show:', u.settings.showOnLeaderboard, ', displayAs:', u.settings.leaderboardDisplayName || 'real name', ')');
+  });
 
   // Calculate stats for each user
   const leaderboardData = await Promise.all(

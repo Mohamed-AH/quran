@@ -69,7 +69,15 @@ const updateUser = asyncHandler(async (req, res) => {
     user.markModified('settings');
   }
 
+  // Debug logging
+  console.log('📝 Saving user settings:');
+  console.log('   User:', user.name, '(' + user.email + ')');
+  console.log('   showOnLeaderboard:', user.settings.showOnLeaderboard);
+  console.log('   leaderboardDisplayName:', user.settings.leaderboardDisplayName || '(using real name)');
+
   await user.save();
+
+  console.log('✅ Settings saved successfully');
 
   res.status(200).json({
     success: true,
