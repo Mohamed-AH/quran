@@ -21,6 +21,12 @@ const updateUserSchema = Joi.object({
     theme: Joi.string().valid('default', 'dark').messages({
       'any.only': 'Theme must be either "default" or "dark"',
     }),
+    showOnLeaderboard: Joi.boolean().messages({
+      'boolean.base': 'showOnLeaderboard must be true or false',
+    }),
+    leaderboardDisplayName: Joi.string().trim().max(50).allow(null, '').messages({
+      'string.max': 'Display name cannot exceed 50 characters',
+    }),
   }),
 }).min(1).messages({
   'object.min': 'At least one field must be provided for update',
