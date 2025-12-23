@@ -153,8 +153,9 @@ const getMyRank = asyncHandler(async (req, res) => {
   }
 
   const userId = req.user._id;
+  const { forceRefresh = false } = req.query;
 
-  // Check cache, refresh if needed
+  // Check cache, refresh if needed or forced
   const now = Date.now();
   const cacheValid =
     leaderboardCache.data &&
@@ -162,7 +163,7 @@ const getMyRank = asyncHandler(async (req, res) => {
     now - leaderboardCache.lastUpdated < leaderboardCache.CACHE_DURATION;
 
   let leaderboardData;
-  if (cacheValid) {
+  if (cacheValid && forceRefresh !== 'true') {
     leaderboardData = leaderboardCache.data;
   } else {
     leaderboardData = await calculateLeaderboard();

@@ -844,8 +844,8 @@ async function loadLeaderboard(forceRefresh = false) {
     const t = trans[lang];
 
     try {
-        // Load user's rank
-        await loadMyRank();
+        // Load user's rank (with optional force refresh)
+        await loadMyRank(forceRefresh);
 
         // Load top leaderboard (with optional force refresh)
         const url = forceRefresh ? '/leaderboard?limit=25&forceRefresh=true' : '/leaderboard?limit=25';
@@ -899,12 +899,13 @@ async function loadLeaderboard(forceRefresh = false) {
     }
 }
 
-async function loadMyRank() {
+async function loadMyRank(forceRefresh = false) {
     const lang = data.settings.language;
     const t = trans[lang];
 
     try {
-        const response = await api.get('/leaderboard/me');
+        const url = forceRefresh ? '/leaderboard/me?forceRefresh=true' : '/leaderboard/me';
+        const response = await api.get(url);
 
         if (!response.success) {
             throw new Error('Invalid rank response');
@@ -1000,21 +1001,25 @@ async function savePrivacySettings() {
         ui.showLoader();
 
         // Update user settings via API
-        await api.put('/user', {
+        const response = await api.put('/user', {
             settings: {
                 showOnLeaderboard,
                 leaderboardDisplayName: displayName || null
             }
         });
 
+        // Update local user data with the saved settings
+        if (response.success && response.user && response.user.settings) {
+            data.user.settings.showOnLeaderboard = response.user.settings.showOnLeaderboard;
+            data.user.settings.leaderboardDisplayName = response.user.settings.leaderboardDisplayName;
+        }
+
         // Close modal
         closePrivacySettings();
 
-        // Refresh leaderboard if currently on that tab (force refresh to bypass cache)
-        const leaderboardTab = document.getElementById('leaderboardTab');
-        if (leaderboardTab && leaderboardTab.style.display === 'block') {
-            await loadLeaderboard(true); // Force refresh to show changes immediately
-        }
+        // Always refresh leaderboard (force refresh to bypass cache)
+        // This ensures changes are visible immediately, even if user switches tabs later
+        await loadLeaderboard(true);
 
         ui.hideLoader();
         ui.showSuccess(t.privacySaveSuccess, isArabic);
