@@ -106,7 +106,7 @@ const translations = {
 };
 
 // State
-let currentLanguage = storage.getLanguage() || 'ar';
+let currentLanguage = 'en'; // Default to English for admin panel
 let currentPage = 1;
 let searchQuery = '';
 let allUsers = [];
@@ -122,6 +122,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = '/app.html';
     return;
   }
+
+  // Get user's language preference
+  currentLanguage = user.user.settings?.language || storage.getLanguage() || 'en';
+  console.log('🌐 Admin: User language:', currentLanguage);
 
   applyLanguage();
   await loadDashboard();
@@ -157,14 +161,16 @@ function applyLanguage() {
 // Load Dashboard
 async function loadDashboard() {
   try {
+    console.log('🔄 Admin: Loading dashboard components...');
     await Promise.all([
       loadSettings(),
       loadStats(),
       loadUsers(),
       loadInviteCodes(),
     ]);
+    console.log('✅ Admin: Dashboard loaded successfully');
   } catch (error) {
-    console.error('Error loading dashboard:', error);
+    console.error('❌ Admin: Error loading dashboard:', error);
     const t = translations[currentLanguage];
     alert(t.errorLoad);
   }
@@ -201,30 +207,41 @@ async function updateSettings() {
 // Stats
 async function loadStats() {
   try {
+    console.log('📊 Admin: Loading dashboard stats...');
     const response = await api.get('/admin/stats');
+    console.log('📊 Admin: Stats response:', response);
+
     if (response.success) {
       const stats = response.stats;
+      console.log('📊 Admin: Stats data:', stats);
       document.getElementById('totalUsers').textContent = stats.totalUsers;
       document.getElementById('activeUsers').textContent = stats.activeUsers;
       document.getElementById('totalPages').textContent = stats.totalPagesMemorized;
       document.getElementById('completedJuz').textContent = stats.completedJuz;
+      console.log('✅ Admin: Stats loaded successfully');
+    } else {
+      console.error('❌ Admin: Stats response not successful');
     }
   } catch (error) {
-    console.error('Error loading stats:', error);
+    console.error('❌ Admin: Error loading stats:', error);
   }
 }
 
 // Users
 async function loadUsers(page = 1) {
   try {
+    console.log('👥 Admin: Loading users (page', page, ')...');
     const response = await api.get(`/admin/users?page=${page}&limit=20&search=${searchQuery}`);
+    console.log('👥 Admin: Users response:', response);
+
     if (response.success) {
       allUsers = response.users;
+      console.log('👥 Admin: Loaded', response.users.length, 'users');
       renderUsers(response.users);
       renderPagination(response.pagination);
     }
   } catch (error) {
-    console.error('Error loading users:', error);
+    console.error('❌ Admin: Error loading users:', error);
   }
 }
 
