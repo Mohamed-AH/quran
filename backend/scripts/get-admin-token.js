@@ -43,7 +43,7 @@ async function generateAdminToken() {
     const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     const token = jwt.sign(
       {
-        _id: admin._id.toString(),
+        userId: admin._id.toString(),
         email: admin.email,
         name: admin.name,
         role: admin.role
