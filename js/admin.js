@@ -196,12 +196,16 @@ async function updateSettings() {
     const requireInviteCode = document.getElementById('toggleSignupControl').checked;
     const leaderboardEnabled = document.getElementById('toggleLeaderboard').checked;
 
-    await api.patch('/admin/settings', {
+    console.log('⚙️ Admin: Updating settings:', { requireInviteCode, leaderboardEnabled });
+
+    await api.put('/admin/settings', {
       requireInviteCode,
       leaderboardEnabled,
     });
+
+    console.log('✅ Admin: Settings updated successfully');
   } catch (error) {
-    console.error('Error updating settings:', error);
+    console.error('❌ Admin: Error updating settings:', error);
     alert('Failed to update settings');
   }
 }
