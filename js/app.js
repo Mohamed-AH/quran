@@ -858,6 +858,8 @@ async function loadLeaderboard(forceRefresh = false) {
         const leaderboard = response.leaderboard;
         const tbody = document.getElementById('leaderboardBody');
 
+        if (!tbody) return; // Exit if element doesn't exist
+
         if (leaderboard.length === 0) {
             tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${lang === 'ar' ? 'لا يوجد مستخدمين على لوحة المتصدرين بعد' : 'No users on leaderboard yet'}</td></tr>`;
             return;
@@ -881,20 +883,28 @@ async function loadLeaderboard(forceRefresh = false) {
         }).join('');
 
         // Show the leaderboard table
-        document.getElementById('leaderboardTable').style.display = 'block';
+        const lbTable = document.getElementById('leaderboardTable');
+        if (lbTable) lbTable.style.display = 'block';
 
     } catch (error) {
         console.error('Error loading leaderboard:', error);
 
         // Check if leaderboard is disabled (403 error)
         if (error.message && error.message.includes('disabled')) {
-            document.getElementById('leaderboardDisabled').style.display = 'block';
-            document.getElementById('leaderboardTable').style.display = 'none';
-            document.getElementById('myRankSection').style.display = 'none';
-            document.getElementById('notOnLeaderboard').style.display = 'none';
+            const lbDisabled = document.getElementById('leaderboardDisabled');
+            const lbTable = document.getElementById('leaderboardTable');
+            const myRankSec = document.getElementById('myRankSection');
+            const notOnLB = document.getElementById('notOnLeaderboard');
+
+            if (lbDisabled) lbDisabled.style.display = 'block';
+            if (lbTable) lbTable.style.display = 'none';
+            if (myRankSec) myRankSec.style.display = 'none';
+            if (notOnLB) notOnLB.style.display = 'none';
         } else {
             const tbody = document.getElementById('leaderboardBody');
-            tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${lang === 'ar' ? 'خطأ في تحميل لوحة المتصدرين' : 'Error loading leaderboard'}</td></tr>`;
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="5" class="empty-state">${lang === 'ar' ? 'خطأ في تحميل لوحة المتصدرين' : 'Error loading leaderboard'}</td></tr>`;
+            }
         }
     }
 }
@@ -912,22 +922,35 @@ async function loadMyRank(forceRefresh = false) {
         }
 
         // Hide all state sections first
-        document.getElementById('leaderboardDisabled').style.display = 'none';
-        document.getElementById('notOnLeaderboard').style.display = 'none';
-        document.getElementById('myRankSection').style.display = 'none';
+        const lbDisabled = document.getElementById('leaderboardDisabled');
+        const notOnLB = document.getElementById('notOnLeaderboard');
+        const myRankSec = document.getElementById('myRankSection');
+
+        if (lbDisabled) lbDisabled.style.display = 'none';
+        if (notOnLB) notOnLB.style.display = 'none';
+        if (myRankSec) myRankSec.style.display = 'none';
 
         if (!response.onLeaderboard) {
             // User not on leaderboard (opted out or no activity)
-            document.getElementById('notOnLeaderboard').style.display = 'block';
-            document.getElementById('myRankSection').style.display = 'none';
+            const notOnLB = document.getElementById('notOnLeaderboard');
+            const myRankSec = document.getElementById('myRankSection');
+            if (notOnLB) notOnLB.style.display = 'block';
+            if (myRankSec) myRankSec.style.display = 'none';
         } else {
             // User is on leaderboard, show their rank
-            document.getElementById('myRankSection').style.display = 'block';
-            document.getElementById('myRank').textContent = lang === 'ar' ? convertToArabicNumerals(response.rank) : response.rank;
-            document.getElementById('totalUsers').textContent = lang === 'ar' ? convertToArabicNumerals(response.totalUsers) : response.totalUsers;
-            document.getElementById('myPages').textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.totalPages) : response.stats.totalPages;
-            document.getElementById('myJuz').textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.completedJuz) : response.stats.completedJuz;
-            document.getElementById('myStreak').textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.streak) : response.stats.streak;
+            const myRankSec = document.getElementById('myRankSection');
+            const myRank = document.getElementById('myRank');
+            const totalUsers = document.getElementById('totalUsers');
+            const myPages = document.getElementById('myPages');
+            const myJuz = document.getElementById('myJuz');
+            const myStreak = document.getElementById('myStreak');
+
+            if (myRankSec) myRankSec.style.display = 'block';
+            if (myRank) myRank.textContent = lang === 'ar' ? convertToArabicNumerals(response.rank) : response.rank;
+            if (totalUsers) totalUsers.textContent = lang === 'ar' ? convertToArabicNumerals(response.totalUsers) : response.totalUsers;
+            if (myPages) myPages.textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.totalPages) : response.stats.totalPages;
+            if (myJuz) myJuz.textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.completedJuz) : response.stats.completedJuz;
+            if (myStreak) myStreak.textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.streak) : response.stats.streak;
         }
 
     } catch (error) {
@@ -935,9 +958,13 @@ async function loadMyRank(forceRefresh = false) {
 
         // Check if leaderboard is disabled
         if (error.message && error.message.includes('disabled')) {
-            document.getElementById('leaderboardDisabled').style.display = 'block';
-            document.getElementById('myRankSection').style.display = 'none';
-            document.getElementById('notOnLeaderboard').style.display = 'none';
+            const lbDisabled = document.getElementById('leaderboardDisabled');
+            const myRankSec = document.getElementById('myRankSection');
+            const notOnLB = document.getElementById('notOnLeaderboard');
+
+            if (lbDisabled) lbDisabled.style.display = 'block';
+            if (myRankSec) myRankSec.style.display = 'none';
+            if (notOnLB) notOnLB.style.display = 'none';
         }
     }
 }
@@ -1001,18 +1028,12 @@ async function savePrivacySettings() {
         ui.showLoader();
 
         // Update user settings via API
-        const response = await api.put('/user', {
+        await api.put('/user', {
             settings: {
                 showOnLeaderboard,
                 leaderboardDisplayName: displayName || null
             }
         });
-
-        // Update local user data with the saved settings
-        if (response.success && response.user && response.user.settings) {
-            data.user.settings.showOnLeaderboard = response.user.settings.showOnLeaderboard;
-            data.user.settings.leaderboardDisplayName = response.user.settings.leaderboardDisplayName;
-        }
 
         // Close modal
         closePrivacySettings();
