@@ -117,14 +117,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!auth.requireAuth()) return;
 
   const user = await auth.getCurrentUser();
-  if (!user || user.user.role !== 'admin') {
+  console.log('👤 Admin: Current user:', user);
+
+  if (!user || user.role !== 'admin') {
     alert('Access denied. Admin only.');
     window.location.href = '/app.html';
     return;
   }
 
   // Get user's language preference
-  currentLanguage = user.user.settings?.language || storage.getLanguage() || 'en';
+  currentLanguage = user.settings?.language || storage.getLanguage() || 'en';
   console.log('🌐 Admin: User language:', currentLanguage);
 
   applyLanguage();
