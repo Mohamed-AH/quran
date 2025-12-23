@@ -143,9 +143,7 @@ async function toggleLanguage() {
   try {
     console.log('🌐 Admin: Saving language preference:', currentLanguage);
     await api.put('/user', {
-      settings: {
-        language: currentLanguage
-      }
+      language: currentLanguage  // Send at top level, not nested in settings
     });
     console.log('✅ Admin: Language preference saved');
   } catch (error) {
