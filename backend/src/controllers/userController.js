@@ -34,11 +34,23 @@ const updateUser = asyncHandler(async (req, res) => {
     throw new APIError('User not found', 404);
   }
 
-  const { name, language, theme } = req.body;
+  const { name, language, theme, settings } = req.body;
 
+  // Update basic fields
   if (name !== undefined) user.name = name;
   if (language !== undefined) user.settings.language = language;
   if (theme !== undefined) user.settings.theme = theme;
+
+  // Update leaderboard privacy settings if provided
+  if (settings) {
+    if (settings.showOnLeaderboard !== undefined) {
+      user.settings.showOnLeaderboard = settings.showOnLeaderboard;
+    }
+    if (settings.leaderboardDisplayName !== undefined) {
+      // Allow null or empty string to clear custom name
+      user.settings.leaderboardDisplayName = settings.leaderboardDisplayName || null;
+    }
+  }
 
   await user.save();
 

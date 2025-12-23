@@ -839,7 +839,7 @@ function displayDetailedStats() {
 // LEADERBOARD OPERATIONS
 // ================================
 
-async function loadLeaderboard() {
+async function loadLeaderboard(forceRefresh = false) {
     const lang = data.settings.language;
     const t = trans[lang];
 
@@ -847,8 +847,9 @@ async function loadLeaderboard() {
         // Load user's rank
         await loadMyRank();
 
-        // Load top leaderboard
-        const response = await api.get('/leaderboard?limit=25');
+        // Load top leaderboard (with optional force refresh)
+        const url = forceRefresh ? '/leaderboard?limit=25&forceRefresh=true' : '/leaderboard?limit=25';
+        const response = await api.get(url);
 
         if (!response.success || !response.leaderboard) {
             throw new Error('Invalid leaderboard response');
@@ -1009,10 +1010,10 @@ async function savePrivacySettings() {
         // Close modal
         closePrivacySettings();
 
-        // Refresh leaderboard if currently on that tab
+        // Refresh leaderboard if currently on that tab (force refresh to bypass cache)
         const leaderboardTab = document.getElementById('leaderboardTab');
         if (leaderboardTab && leaderboardTab.style.display === 'block') {
-            await loadLeaderboard();
+            await loadLeaderboard(true); // Force refresh to show changes immediately
         }
 
         ui.hideLoader();
