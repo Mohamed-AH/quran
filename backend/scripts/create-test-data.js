@@ -83,9 +83,9 @@ async function createTestData() {
       const completedJuzCount = student.juz;
       for (let i = 1; i <= completedJuzCount; i++) {
         await Juz.findOneAndUpdate(
-          { user: user._id, juzNumber: i },
+          { userId: user._id, juzNumber: i },
           {
-            user: user._id,
+            userId: user._id,
             juzNumber: i,
             status: 'completed',
             pages: 20,
@@ -104,14 +104,14 @@ async function createTestData() {
 
         await Log.findOneAndUpdate(
           {
-            user: user._id,
+            userId: user._id,
             date: {
               $gte: new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate(), 0, 0, 0),
               $lt: new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate(), 23, 59, 59)
             }
           },
           {
-            user: user._id,
+            userId: user._id,
             date: logDate,
             newPages: `${Math.floor(Math.random() * 5) + 1}-${Math.floor(Math.random() * 5) + 6}`,
             newRating: Math.floor(Math.random() * 2) + 4,
