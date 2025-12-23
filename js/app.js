@@ -987,6 +987,12 @@ async function showPrivacySettings() {
             const showOnLeaderboard = response.user.settings.showOnLeaderboard !== false; // Default true
             const displayName = response.user.settings.leaderboardDisplayName || '';
 
+            console.log('🔍 Frontend: Loading privacy settings into modal:');
+            console.log('   From API - showOnLeaderboard:', response.user.settings.showOnLeaderboard);
+            console.log('   From API - leaderboardDisplayName:', response.user.settings.leaderboardDisplayName);
+            console.log('   Setting toggle to:', showOnLeaderboard);
+            console.log('   Setting display name to:', displayName);
+
             document.getElementById('showOnLeaderboardToggle').checked = showOnLeaderboard;
             document.getElementById('leaderboardDisplayName').value = displayName;
 
@@ -1017,6 +1023,14 @@ async function savePrivacySettings() {
 
     const showOnLeaderboard = document.getElementById('showOnLeaderboardToggle').checked;
     const displayName = document.getElementById('leaderboardDisplayName').value.trim();
+
+    // Debug logging
+    console.log('🔍 Frontend: Reading privacy settings from DOM:');
+    console.log('   Toggle element:', document.getElementById('showOnLeaderboardToggle'));
+    console.log('   Toggle checked:', showOnLeaderboard);
+    console.log('   Display name element:', document.getElementById('leaderboardDisplayName'));
+    console.log('   Display name value:', displayName);
+    console.log('   Sending to API:', { showOnLeaderboard, leaderboardDisplayName: displayName || null });
 
     // Validate display name length
     if (displayName.length > 50) {
