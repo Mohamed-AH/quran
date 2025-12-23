@@ -125,7 +125,7 @@ test_app_settings() {
 test_dashboard() {
   print_header "Dashboard API Tests"
 
-  run_test "Get Dashboard Stats" "GET" "/admin/dashboard/stats"
+  run_test "Get Dashboard Stats" "GET" "/admin/stats"
 }
 
 ###############################################################################

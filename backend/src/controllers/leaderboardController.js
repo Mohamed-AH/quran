@@ -26,25 +26,16 @@ async function calculateLeaderboard() {
   // Calculate stats for each user
   const leaderboardData = await Promise.all(
     users.map(async (user) => {
-      const [totalPagesResult, juzData, logsData] = await Promise.all([
-        // Total pages memorized
-        Log.aggregate([
-          { $match: { userId: user._id } },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: { $size: '$newPages' } },
-            },
-          },
-        ]),
-        // Juz completed
-        Juz.find({ userId: user._id, status: 'completed' }),
+      const [juzData, logsData] = await Promise.all([
+        // Get all Juz data for this user
+        Juz.find({ userId: user._id }),
         // Get logs for streak calculation
         Log.find({ userId: user._id }).sort({ date: -1 }).select('date'),
       ]);
 
-      const totalPages = totalPagesResult[0]?.total || 0;
-      const completedJuz = juzData.length;
+      // Calculate total pages from Juz (sum of pages across all Juz)
+      const totalPages = juzData.reduce((sum, juz) => sum + (juz.pages || 0), 0);
+      const completedJuz = juzData.filter((juz) => juz.status === 'completed').length;
 
       // Calculate current streak
       let streak = 0;
