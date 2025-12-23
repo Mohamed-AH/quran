@@ -120,4 +120,11 @@ router.get('/settings', getAppSettings);
  */
 router.patch('/settings', updateAppSettings);
 
+/**
+ * @route   PUT /api/admin/settings
+ * @desc    Update app settings (same as PATCH)
+ * @access  Admin
+ */
+router.put('/settings', updateAppSettings);
+
 module.exports = router;
