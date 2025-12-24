@@ -51,6 +51,7 @@ const translations = {
     confirmPromote: 'هل تريد ترقية هذا المستخدم إلى مدير؟',
     confirmDemote: 'هل تريد تخفيض هذا المستخدم إلى مستخدم عادي؟',
     confirmDeactivate: 'هل تريد تعطيل هذا الرمز؟',
+    confirmDeleteCode: 'هل تريد حذف هذا الرمز نهائياً؟',
     successCopied: 'تم نسخ الرمز!',
     errorLoad: 'خطأ في تحميل البيانات',
   },
@@ -100,6 +101,7 @@ const translations = {
     confirmPromote: 'Do you want to promote this user to admin?',
     confirmDemote: 'Do you want to demote this user to regular user?',
     confirmDeactivate: 'Do you want to deactivate this code?',
+    confirmDeleteCode: 'Do you want to permanently delete this invite code?',
     successCopied: 'Code copied!',
     errorLoad: 'Error loading data',
   },
@@ -469,6 +471,7 @@ function renderInviteCodes(codes) {
           <div class="code-actions">
             <button class="copy-btn" onclick="copyCode('${code.code}')">${t.btnCopy}</button>
             ${code.isActive ? `<button class="deactivate-btn" onclick="deactivateCode('${code._id}')">${t.btnDeactivate}</button>` : ''}
+            <button class="action-btn delete" onclick="deleteInviteCode('${code._id}')">${t.btnDelete}</button>
           </div>
         </div>
       `;
@@ -517,6 +520,20 @@ async function deactivateCode(codeId) {
   } catch (error) {
     console.error('Error deactivating code:', error);
     alert('Failed to deactivate code');
+  }
+}
+
+async function deleteInviteCode(codeId) {
+  const t = translations[currentLanguage];
+
+  if (!confirm(t.confirmDeleteCode)) return;
+
+  try {
+    await api.delete(`/admin/invite-codes/${codeId}`);
+    await loadInviteCodes();
+  } catch (error) {
+    console.error('Error deleting invite code:', error);
+    alert('Failed to delete invite code');
   }
 }
 

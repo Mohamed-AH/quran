@@ -6,6 +6,7 @@ const {
   refreshAccessToken,
   logout,
   oauthFailure,
+  getPublicSettings,
 } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 
@@ -27,10 +28,18 @@ const router = express.Router();
  */
 router.get(
   '/google',
-  passport.authenticate('google', {
-    scope: ['profile', 'email'],
-    session: false,
-  })
+  (req, res, next) => {
+    // Pass invite code through OAuth state
+    const state = req.query.inviteCode
+      ? JSON.stringify({ inviteCode: req.query.inviteCode })
+      : undefined;
+
+    passport.authenticate('google', {
+      scope: ['profile', 'email'],
+      session: false,
+      state,
+    })(req, res, next);
+  }
 );
 
 /**
@@ -58,10 +67,18 @@ router.get(
  */
 router.get(
   '/github',
-  passport.authenticate('github', {
-    scope: ['user:email'],
-    session: false,
-  })
+  (req, res, next) => {
+    // Pass invite code through OAuth state
+    const state = req.query.inviteCode
+      ? JSON.stringify({ inviteCode: req.query.inviteCode })
+      : undefined;
+
+    passport.authenticate('github', {
+      scope: ['user:email'],
+      session: false,
+      state,
+    })(req, res, next);
+  }
 );
 
 /**
@@ -117,5 +134,16 @@ router.get('/me', authenticate, getCurrentUser);
  * @access  Public
  */
 router.get('/failure', oauthFailure);
+
+// ============================================
+// PUBLIC SETTINGS
+// ============================================
+
+/**
+ * @route   GET /api/auth/settings
+ * @desc    Get public app settings (for login page)
+ * @access  Public
+ */
+router.get('/settings', getPublicSettings);
 
 module.exports = router;

@@ -45,6 +45,36 @@
     <section class="login-section">
       <h2 class="login-title" id="loginTitle">ابدأ رحلتك</h2>
 
+      <!-- Invite Code Input (shown when required) -->
+      <div id="inviteCodeSection" style="display: none; margin-bottom: 20px;">
+        <input
+          type="text"
+          id="inviteCodeInput"
+          placeholder="أدخل رمز الدعوة / Enter invite code"
+          style="
+            width: 100%;
+            max-width: 400px;
+            padding: 15px 20px;
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            background: rgba(212, 175, 55, 0.05);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            text-align: center;
+            margin: 0 auto;
+            display: block;
+          "
+        />
+        <p id="inviteCodeError" style="
+          color: #ff6b6b;
+          text-align: center;
+          margin-top: 10px;
+          font-size: 0.9rem;
+          display: none;
+        "></p>
+      </div>
+
       <div class="login-buttons">
         <button class="login-btn login-btn-google" onclick="loginWithGoogle()">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="provider-logo">
@@ -88,6 +118,7 @@
 
     // Language management
     let currentLang = storage.getLanguage();
+    let requireInviteCode = false;
 
     // Toggle language
     function toggleLanguage() {
@@ -122,15 +153,60 @@
 
     // OAuth login functions
     function loginWithGoogle() {
-      window.location.href = `${CONFIG.API_BASE_URL}/auth/google`;
+      const inviteCode = validateInviteCode();
+      if (inviteCode === null) return;
+      const url = inviteCode
+        ? `${CONFIG.API_BASE_URL}/auth/google?inviteCode=${encodeURIComponent(inviteCode)}`
+        : `${CONFIG.API_BASE_URL}/auth/google`;
+      window.location.href = url;
     }
 
     function loginWithGitHub() {
-      window.location.href = `${CONFIG.API_BASE_URL}/auth/github`;
+      const inviteCode = validateInviteCode();
+      if (inviteCode === null) return;
+      const url = inviteCode
+        ? `${CONFIG.API_BASE_URL}/auth/github?inviteCode=${encodeURIComponent(inviteCode)}`
+        : `${CONFIG.API_BASE_URL}/auth/github`;
+      window.location.href = url;
+    }
+
+    // Validate invite code before OAuth
+    function validateInviteCode() {
+      if (!requireInviteCode) return '';
+
+      const inviteCode = document.getElementById('inviteCodeInput').value.trim();
+      const errorEl = document.getElementById('inviteCodeError');
+
+      if (!inviteCode) {
+        errorEl.textContent = currentLang === 'ar'
+          ? 'الرجاء إدخال رمز الدعوة'
+          : 'Please enter an invite code';
+        errorEl.style.display = 'block';
+        return null; // Return null to indicate validation failure
+      }
+
+      errorEl.style.display = 'none';
+      return inviteCode;
+    }
+
+    // Check app settings on page load
+    async function checkAppSettings() {
+      try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/auth/settings`);
+        const data = await response.json();
+
+        if (data.success && data.settings.requireInviteCode) {
+          requireInviteCode = true;
+          document.getElementById('inviteCodeSection').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error checking app settings:', error);
+      }
     }
 
     // Initialize on page load
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAppSettings();
       updateLanguage();
 
       // Create language toggle button
