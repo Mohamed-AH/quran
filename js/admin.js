@@ -393,7 +393,7 @@ async function toggleUserRole(userId, newRole) {
   if (!confirm(confirmMsg)) return;
 
   try {
-    await api.patch(`/admin/users/${userId}/role`, { role: newRole });
+    await api.put(`/admin/users/${userId}/role`, { role: newRole });
     await loadUsers(currentPage);
   } catch (error) {
     console.error('Error updating user role:', error);
@@ -500,7 +500,7 @@ async function deactivateCode(codeId) {
   if (!confirm(t.confirmDeactivate)) return;
 
   try {
-    await api.patch(`/admin/invite-codes/${codeId}/deactivate`);
+    await api.put(`/admin/invite-codes/${codeId}/deactivate`);
     await loadInviteCodes();
   } catch (error) {
     console.error('Error deactivating code:', error);

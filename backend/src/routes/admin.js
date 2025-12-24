@@ -64,6 +64,13 @@ router.get('/users/:id', getUserDetails);
 router.patch('/users/:id/role', updateUserRole);
 
 /**
+ * @route   PUT /api/admin/users/:id/role
+ * @desc    Update user role (same as PATCH)
+ * @access  Admin
+ */
+router.put('/users/:id/role', updateUserRole);
+
+/**
  * @route   DELETE /api/admin/users/:id
  * @desc    Delete user and all associated data
  * @access  Admin
@@ -94,6 +101,13 @@ router.post('/invite-codes', createInviteCode);
  * @access  Admin
  */
 router.patch('/invite-codes/:id/deactivate', deactivateInviteCode);
+
+/**
+ * @route   PUT /api/admin/invite-codes/:id/deactivate
+ * @desc    Deactivate invite code (same as PATCH)
+ * @access  Admin
+ */
+router.put('/invite-codes/:id/deactivate', deactivateInviteCode);
 
 /**
  * @route   DELETE /api/admin/invite-codes/:id
