@@ -169,6 +169,16 @@ function applyLanguage() {
       element.textContent = t[key];
     }
   });
+
+  // Re-render dynamic content with new language
+  if (allUsers && allUsers.length > 0) {
+    renderUsers(allUsers);
+  }
+  // Re-render invite codes if loaded
+  const inviteCodesBody = document.getElementById('inviteCodesBody');
+  if (inviteCodesBody && inviteCodesBody.children.length > 0) {
+    loadInviteCodes();
+  }
 }
 
 // Load Dashboard
