@@ -313,24 +313,41 @@
             // Display user information
             try {
                 const token = storage.getToken();
+                const userName = document.getElementById('userName');
+                const userProfile = document.getElementById('userProfile');
+
                 if (token) {
                     // Parse JWT to get user info
                     const payload = auth.parseJWT(token);
 
-                    // Display user name/email
-                    const userName = document.getElementById('userName');
+                    // Display user name/email immediately from JWT
                     if (userName && payload) {
-                        userName.textContent = payload.name || payload.email || 'User';
+                        const displayName = payload.name || payload.email || 'User';
+                        userName.textContent = displayName;
+                        userName.style.display = 'inline';
+                        console.log('✅ Set userName from JWT:', displayName);
+                    }
+
+                    // Make userProfile visible
+                    if (userProfile) {
+                        userProfile.style.display = 'flex';
                     }
 
                     // Fetch fresh user data from API
-                    const userData = await api.get('/auth/me');
-                    if (userData && userData.user && userData.user.name) {
-                        userName.textContent = userData.user.name;
+                    try {
+                        const userData = await api.get('/auth/me');
+                        console.log('👤 Fresh user data:', userData);
+                        if (userData && userData.user && userData.user.name) {
+                            userName.textContent = userData.user.name;
+                            console.log('✅ Updated userName from API:', userData.user.name);
+                        }
+                    } catch (apiError) {
+                        console.warn('⚠️ Could not fetch fresh user data, using JWT data:', apiError);
+                        // Keep using JWT data
                     }
                 }
             } catch (error) {
-                console.error('Error loading user data:', error);
+                console.error('❌ Error loading user data:', error);
                 // Continue with JWT data
             }
         });
@@ -353,13 +370,20 @@
 
                 // Set demo user name
                 const userName = document.getElementById('userName');
-                if (userName) userName.textContent = 'Demo User';
+                const userProfile = document.getElementById('userProfile');
+                if (userName) {
+                    userName.textContent = 'Demo User';
+                    userName.style.display = 'inline';
+                }
+                if (userProfile) userProfile.style.display = 'flex';
             } else {
                 // Normal mode - show logout button
                 const btnLogout = document.getElementById('btnLogout');
                 const btnBackHome = document.getElementById('btnBackHome');
+                const userProfile = document.getElementById('userProfile');
                 if (btnLogout) btnLogout.style.display = 'inline-block';
                 if (btnBackHome) btnBackHome.style.display = 'none';
+                if (userProfile) userProfile.style.display = 'flex';
             }
         });
     </script>
