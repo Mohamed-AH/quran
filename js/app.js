@@ -32,6 +32,10 @@ const trans = {
         statusNotStarted: 'لم يبدأ', statusInProgress: 'جاري الحفظ', statusCompleted: 'مكتمل',
         emptyHistory: 'لا يوجد سجل بعد. ابدأ بتسجيل يومك الأول!',
         newMemorization: 'حفظ جديد', review: 'مراجعة', notes: 'ملاحظات', pages: 'صفحات',
+        newPagesPlaceholder: 'مثال: 1-3، 5',
+        reviewPagesPlaceholder: 'مثال: 10-15',
+        notesPlaceholder: 'آيات صعبة، إنجازات، أو أي ملاحظات...',
+        juzNotesPlaceholder: 'ملاحظات عن هذا الجزء...',
         rating: 'تقييم', totalDays: 'إجمالي أيام التسجيل', avgNewQuality: 'متوسط جودة الحفظ',
         avgReviewQuality: 'متوسط جودة المراجعة', juzInProgress: 'أجزاء قيد الحفظ',
         saveSuccess: 'تم حفظ سجل اليوم بنجاح!', saveJuzSuccess: 'تم حفظ بيانات الجزء بنجاح!',
@@ -82,6 +86,10 @@ const trans = {
         statusNotStarted: 'Not Started', statusInProgress: 'In Progress', statusCompleted: 'Completed',
         emptyHistory: 'No history yet. Start by logging your first day!',
         newMemorization: 'New Memorization', review: 'Review', notes: 'Notes', pages: 'pages',
+        newPagesPlaceholder: 'Example: 1-3, 5',
+        reviewPagesPlaceholder: 'Example: 10-15',
+        notesPlaceholder: 'Difficult verses, achievements, or any notes...',
+        juzNotesPlaceholder: 'Notes about this Juz...',
         rating: 'rating', totalDays: 'Total Days Logged', avgNewQuality: 'Avg New Quality',
         avgReviewQuality: 'Avg Review Quality', juzInProgress: 'Juz In Progress',
         saveSuccess: 'Today\'s log saved successfully!', saveJuzSuccess: 'Juz data saved successfully!',
@@ -940,6 +948,7 @@ async function loadMyRank(forceRefresh = false) {
             // User is on leaderboard, show their rank
             const myRankSec = document.getElementById('myRankSection');
             const myRank = document.getElementById('myRank');
+            const myRankTextEl = document.getElementById('myRankText');
             const totalUsers = document.getElementById('totalUsers');
             const myPages = document.getElementById('myPages');
             const myJuz = document.getElementById('myJuz');
@@ -947,7 +956,14 @@ async function loadMyRank(forceRefresh = false) {
 
             if (myRankSec) myRankSec.style.display = 'block';
             if (myRank) myRank.textContent = lang === 'ar' ? convertToArabicNumerals(response.rank) : response.rank;
-            if (totalUsers) totalUsers.textContent = lang === 'ar' ? convertToArabicNumerals(response.totalUsers) : response.totalUsers;
+
+            // Update rank text and total users dynamically
+            const totalUsersValue = lang === 'ar' ? convertToArabicNumerals(response.totalUsers) : response.totalUsers;
+            if (totalUsers) totalUsers.textContent = totalUsersValue;
+            if (myRankTextEl) {
+                myRankTextEl.innerHTML = `${t.myRankText} <span id="totalUsers">${totalUsersValue}</span> ${t.totalUsersText}`;
+            }
+
             if (myPages) myPages.textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.totalPages) : response.stats.totalPages;
             if (myJuz) myJuz.textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.completedJuz) : response.stats.completedJuz;
             if (myStreak) myStreak.textContent = lang === 'ar' ? convertToArabicNumerals(response.stats.streak) : response.stats.streak;
@@ -1118,6 +1134,7 @@ async function toggleLanguage() {
 function applyLanguage() {
     const lang = data.settings.language;
     const t = trans[lang];
+    const isArabic = lang === 'ar';
 
     document.documentElement.lang = lang;
     document.documentElement.dir = document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
@@ -1134,6 +1151,22 @@ function applyLanguage() {
         }
     });
 
+    // Update elements with data-translate-placeholder attribute
+    document.querySelectorAll('[data-translate-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-translate-placeholder');
+        if (t[key]) {
+            el.placeholder = t[key];
+        }
+    });
+
+    // Update leaderboard rank text dynamically
+    const myRankTextEl = document.getElementById('myRankText');
+    const totalUsersEl = document.getElementById('totalUsers');
+    if (myRankTextEl && totalUsersEl) {
+        const totalUsers = totalUsersEl.textContent || '0';
+        myRankTextEl.innerHTML = `${t.myRankText} <span id="totalUsers">${totalUsers}</span> ${t.totalUsersText}`;
+    }
+
     // Update select options
     const statusSelect = document.getElementById('juzStatus');
     if (statusSelect) {
@@ -1146,6 +1179,12 @@ function applyLanguage() {
     displayJuz();
     displayHistory();
     updateCurrentDate();
+
+    // Reload leaderboard to update rank text if on leaderboard tab
+    const leaderboardTab = document.getElementById('leaderboardTab');
+    if (leaderboardTab && leaderboardTab.style.display !== 'none') {
+        loadMyRank();
+    }
 }
 
 // ================================
