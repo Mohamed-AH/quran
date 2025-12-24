@@ -201,6 +201,12 @@
   padding: 40px;
 }
 
+/* Actions column - center align header and content */
+.admin-table th:last-child,
+.admin-table td:last-child {
+  text-align: center;
+}
+
 /* Role Badge */
 .role-badge {
   display: inline-block;
@@ -225,7 +231,7 @@
 .action-buttons {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .action-btn {
