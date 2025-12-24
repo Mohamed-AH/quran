@@ -96,8 +96,9 @@ userSchema.methods.toSafeObject = function () {
 // Static method: Find or create user from OAuth profile
 userSchema.statics.findOrCreateFromOAuth = async function (profile, provider) {
   const { id, emails, displayName, photos } = profile;
+  const email = emails && emails[0] ? emails[0].value : null;
 
-  // Find existing user
+  // Find existing user by provider and provider ID
   let user = await this.findOne({
     authProvider: provider,
     authProviderId: id,
@@ -110,9 +111,19 @@ userSchema.statics.findOrCreateFromOAuth = async function (profile, provider) {
     return user;
   }
 
+  // Check if user with same email exists with different provider
+  if (email) {
+    const existingUser = await this.findOne({ email });
+    if (existingUser) {
+      // Email already registered with different provider
+      const providerName = existingUser.authProvider === 'google' ? 'Google' : 'GitHub';
+      throw new Error(`This email is already registered using ${providerName}. Please sign in with ${providerName} instead.`);
+    }
+  }
+
   // Create new user
   user = await this.create({
-    email: emails && emails[0] ? emails[0].value : `${provider}_${id}@hafiz.app`,
+    email: email || `${provider}_${id}@hafiz.app`,
     name: displayName || 'User',
     profilePicture: photos && photos[0] ? photos[0].value : null,
     authProvider: provider,
