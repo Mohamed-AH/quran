@@ -49,10 +49,23 @@ router.get(
  */
 router.get(
   '/google/callback',
-  passport.authenticate('google', {
-    session: false,
-    failureRedirect: '/api/auth/failure',
-  }),
+  (req, res, next) => {
+    passport.authenticate('google', {
+      session: false,
+      failureRedirect: '/api/auth/failure',
+    }, (err, user, info) => {
+      if (err || !user) {
+        // Handle authentication errors gracefully
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const errorMsg = err?.message || info?.message || 'Authentication failed';
+        return res.redirect(`${frontendUrl}/callback.html?error=${encodeURIComponent(errorMsg)}`);
+      }
+
+      // Authentication successful, attach user to request
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   oauthSuccess
 );
 
@@ -88,10 +101,23 @@ router.get(
  */
 router.get(
   '/github/callback',
-  passport.authenticate('github', {
-    session: false,
-    failureRedirect: '/api/auth/failure',
-  }),
+  (req, res, next) => {
+    passport.authenticate('github', {
+      session: false,
+      failureRedirect: '/api/auth/failure',
+    }, (err, user, info) => {
+      if (err || !user) {
+        // Handle authentication errors gracefully
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const errorMsg = err?.message || info?.message || 'Authentication failed';
+        return res.redirect(`${frontendUrl}/callback.html?error=${encodeURIComponent(errorMsg)}`);
+      }
+
+      // Authentication successful, attach user to request
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
   oauthSuccess
 );
 

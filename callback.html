@@ -98,7 +98,12 @@
                 error: 'فشل تسجيل الدخول',
                 errorMsg: 'حدث خطأ أثناء تسجيل الدخول. الرجاء المحاولة مرة أخرى.',
                 noToken: 'لم يتم استلام رمز المصادقة',
-                backToHome: 'العودة إلى الصفحة الرئيسية'
+                backToHome: 'العودة إلى الصفحة الرئيسية',
+                inviteCodeRequired: 'رمز الدعوة مطلوب للتسجيل',
+                inviteCodeRequiredMsg: 'التسجيل يتطلب رمز دعوة صالح. الرجاء طلب رمز من المسؤول.',
+                inviteCodeInvalid: 'رمز الدعوة غير صالح',
+                inviteCodeExpired: 'رمز الدعوة منتهي الصلاحية',
+                inviteCodeUsed: 'رمز الدعوة مستخدم بالكامل'
             },
             en: {
                 loading: 'Signing in...',
@@ -108,7 +113,12 @@
                 error: 'Sign in failed',
                 errorMsg: 'An error occurred during sign-in. Please try again.',
                 noToken: 'No authentication token received',
-                backToHome: 'Back to Home'
+                backToHome: 'Back to Home',
+                inviteCodeRequired: 'Invite code required',
+                inviteCodeRequiredMsg: 'New user signup requires a valid invite code. Please request one from the admin.',
+                inviteCodeInvalid: 'Invalid invite code',
+                inviteCodeExpired: 'Invite code has expired',
+                inviteCodeUsed: 'Invite code has been fully used'
             }
         };
 
@@ -121,9 +131,41 @@
         document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
         document.body.style.fontFamily = currentLang === 'ar' ? 'Cairo, sans-serif' : 'Crimson Pro, serif';
 
+        // Get user-friendly error message
+        function getUserFriendlyError(errorMsg) {
+            if (!errorMsg) return t.errorMsg;
+
+            // Map error messages to translations
+            const errorLower = errorMsg.toLowerCase();
+
+            if (errorLower.includes('invite code required')) {
+                return t.inviteCodeRequiredMsg;
+            } else if (errorLower.includes('code not found') || errorLower.includes('invalid')) {
+                return t.inviteCodeInvalid + ': ' + errorMsg;
+            } else if (errorLower.includes('expired')) {
+                return t.inviteCodeExpired + ': ' + errorMsg;
+            } else if (errorLower.includes('fully used') || errorLower.includes('has been fully used')) {
+                return t.inviteCodeUsed + ': ' + errorMsg;
+            } else if (errorLower.includes('inactive')) {
+                return t.inviteCodeInvalid + ': ' + errorMsg;
+            }
+
+            // Return original error message if no match
+            return errorMsg;
+        }
+
         // Process OAuth callback
         async function processCallback() {
             try {
+                // Check for error parameter in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const errorParam = urlParams.get('error');
+
+                if (errorParam) {
+                    // OAuth error occurred
+                    throw new Error(decodeURIComponent(errorParam));
+                }
+
                 // Update initial UI
                 document.getElementById('title').textContent = t.loading;
                 document.getElementById('message').textContent = t.loadingMsg;
@@ -152,13 +194,16 @@
                 document.getElementById('icon').textContent = '❌';
                 document.getElementById('icon').style.animation = 'none';
                 document.getElementById('title').textContent = t.error;
-                document.getElementById('message').textContent = t.errorMsg;
+                document.getElementById('message').textContent = '';
+
+                // Get user-friendly error message
+                const friendlyError = getUserFriendlyError(error.message);
 
                 // Show detailed error
                 const errorContainer = document.getElementById('errorContainer');
                 errorContainer.innerHTML = `
                     <div class="error-message">
-                        <strong>${error.message || t.errorMsg}</strong>
+                        <strong>${friendlyError}</strong>
                     </div>
                     <a href="/" class="back-link">${t.backToHome}</a>
                 `;
