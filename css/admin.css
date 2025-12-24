@@ -172,7 +172,7 @@
 
 .admin-table th {
   padding: 15px 20px;
-  text-align: right;
+  text-align: start; /* Automatically adjusts: left for LTR, right for RTL */
   color: var(--gold);
   font-weight: 700;
   font-size: 0.95rem;
@@ -181,6 +181,7 @@
 
 .admin-table td {
   padding: 15px 20px;
+  text-align: start; /* Automatically adjusts: left for LTR, right for RTL */
   color: var(--text-primary);
   border-bottom: 1px solid rgba(212, 175, 55, 0.1);
   font-size: 0.95rem;
