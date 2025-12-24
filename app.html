@@ -32,6 +32,7 @@
                 <div class="header-right">
                     <div class="user-profile" id="userProfile">
                         <span id="userName"></span>
+                        <button class="btn-admin" onclick="goToAdminPanel()" id="btnAdmin" style="display:none;">لوحة الإدارة</button>
                         <button class="btn-logout" onclick="handleLogout()" id="btnLogout" style="display:none;">تسجيل الخروج</button>
                         <button class="btn-logout" onclick="handleBackToHome()" id="btnBackHome" style="display:none;">العودة للرئيسية</button>
                     </div>
@@ -359,6 +360,20 @@
                         if (userData && userData.user && userData.user.name) {
                             userName.textContent = userData.user.name;
                             console.log('✅ Updated userName from API:', userData.user.name);
+                        }
+
+                        // Check if user is admin and show admin button
+                        const btnAdmin = document.getElementById('btnAdmin');
+                        if (userData && userData.user && userData.user.role === 'admin') {
+                            console.log('👑 User is admin - showing admin button');
+                            if (btnAdmin) {
+                                btnAdmin.style.display = 'inline-block';
+                            }
+                        } else {
+                            console.log('👤 User is not admin - hiding admin button');
+                            if (btnAdmin) {
+                                btnAdmin.style.display = 'none';
+                            }
                         }
                     } catch (apiError) {
                         console.warn('⚠️ Could not fetch fresh user data, using JWT data:', apiError);

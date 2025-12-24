@@ -99,7 +99,7 @@
             font-size: 0.95rem;
         }
 
-        .btn-logout {
+        .btn-logout, .btn-admin {
             padding: 0.5rem 1rem;
             font-size: 0.85rem;
             background: rgba(212, 175, 55, 0.1);
@@ -109,9 +109,21 @@
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: inherit;
+            margin-left: 0.5rem;
         }
-        .btn-logout:hover {
+        .btn-logout:hover, .btn-admin:hover {
             background: var(--gold);
+            color: var(--dark-bg);
+        }
+
+        /* Admin button gets a distinct color */
+        .btn-admin {
+            background: rgba(147, 112, 219, 0.1);
+            border: 1px solid #9370DB;
+            color: #9370DB;
+        }
+        .btn-admin:hover {
+            background: #9370DB;
             color: var(--dark-bg);
         }
 
@@ -130,7 +142,7 @@
                 font-size: 0.85rem;
             }
 
-            .btn-logout {
+            .btn-logout, .btn-admin {
                 padding: 0.4rem 0.8rem;
                 font-size: 0.8rem;
             }

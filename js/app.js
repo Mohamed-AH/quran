@@ -16,7 +16,7 @@ const trans = {
         labelPages: 'صفحات من الأجزاء', labelJuz: 'أجزاء مكتملة', labelStreak: 'أيام متتالية',
         labelProgress: 'نسبة الإنجاز', tabToday: 'اليوم', tabJuz: 'الأجزاء',
         tabHistory: 'السجل', tabStats: 'الإحصائيات',
-        btnSave: 'حفظ اليوم', btnLogout: 'تسجيل الخروج', btnBackHome: 'العودة للرئيسية',
+        btnSave: 'حفظ اليوم', btnLogout: 'تسجيل الخروج', btnAdmin: 'لوحة الإدارة', btnBackHome: 'العودة للرئيسية',
         demoBanner: '📊 جرب التطبيق الآن - البيانات المعروضة للتوضيح فقط',
         loginModalTitle: 'ابدأ رحلتك الآن', loginModalSubtitle: 'سجّل دخولك لحفظ تقدمك ومزامنته عبر جميع أجهزتك',
         loginGoogle: 'تسجيل الدخول بحساب Google', loginGithub: 'تسجيل الدخول بحساب GitHub',
@@ -71,7 +71,7 @@ const trans = {
         labelPages: 'Pages from Juz', labelJuz: 'Juz Completed', labelStreak: 'Day Streak',
         labelProgress: 'Completion', tabToday: 'Today', tabJuz: 'Juz', tabHistory: 'History',
         tabStats: 'Statistics',
-        btnSave: 'Save Today', btnLogout: 'Logout', btnBackHome: 'Back to Home',
+        btnSave: 'Save Today', btnLogout: 'Logout', btnAdmin: 'Admin Panel', btnBackHome: 'Back to Home',
         demoBanner: '📊 Try the App Now - Demo Data for Illustration Only',
         loginModalTitle: 'Start Your Journey Now', loginModalSubtitle: 'Login to save your progress and sync across all your devices',
         loginGoogle: 'Continue with Google', loginGithub: 'Continue with GitHub',
@@ -249,6 +249,10 @@ function loginWithProvider(provider) {
 
 function handleBackToHome() {
     window.location.href = '/';
+}
+
+function goToAdminPanel() {
+    window.location.href = '/admin.html';
 }
 
 function handleLogout() {
