@@ -295,8 +295,7 @@
 
     <!-- Authentication initialization -->
     <script>
-        // Check if we're in demo mode (defined in app.js)
-        const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+        // isDemoMode is already defined in app.js, so we can use it directly
 
         // Check authentication on page load (skip in demo mode)
         document.addEventListener('DOMContentLoaded', async () => {
