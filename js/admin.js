@@ -110,23 +110,24 @@ let currentLanguage = 'en'; // Default to English for admin panel
 let currentPage = 1;
 let searchQuery = '';
 let allUsers = [];
+let currentUser = null; // Store current admin user
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   // Check if user is admin
   if (!auth.requireAuth()) return;
 
-  const user = await auth.getCurrentUser();
-  console.log('👤 Admin: Current user:', user);
+  currentUser = await auth.getCurrentUser();
+  console.log('👤 Admin: Current user:', currentUser);
 
-  if (!user || user.role !== 'admin') {
+  if (!currentUser || currentUser.role !== 'admin') {
     alert('Access denied. Admin only.');
     window.location.href = '/app.html';
     return;
   }
 
   // Get user's language preference
-  currentLanguage = user.settings?.language || storage.getLanguage() || 'en';
+  currentLanguage = currentUser.settings?.language || storage.getLanguage() || 'en';
   console.log('🌐 Admin: User language:', currentLanguage);
 
   applyLanguage();
@@ -286,6 +287,7 @@ function renderUsers(users) {
       const roleClass = user.role === 'admin' ? 'admin' : 'user';
       const roleText = user.role === 'admin' ? t.roleAdmin : t.roleUser;
       const joinedDate = new Date(user.createdAt).toLocaleDateString(currentLanguage === 'ar' ? 'ar-SA' : 'en-US');
+      const isCurrentUser = currentUser && user.id === currentUser.id;
 
       return `
         <tr>
@@ -296,9 +298,9 @@ function renderUsers(users) {
           <td>
             <div class="action-buttons">
               <button class="action-btn view" onclick="viewUser('${user.id}')">${t.btnView}</button>
-              ${user.role === 'user' ? `<button class="action-btn promote" onclick="toggleUserRole('${user.id}', 'admin')">${t.btnPromote}</button>` : ''}
-              ${user.role === 'admin' ? `<button class="action-btn promote" onclick="toggleUserRole('${user.id}', 'user')">${t.btnDemote}</button>` : ''}
-              <button class="action-btn delete" onclick="deleteUser('${user.id}')">${t.btnDelete}</button>
+              ${!isCurrentUser && user.role === 'user' ? `<button class="action-btn promote" onclick="toggleUserRole('${user.id}', 'admin')">${t.btnPromote}</button>` : ''}
+              ${!isCurrentUser && user.role === 'admin' ? `<button class="action-btn promote" onclick="toggleUserRole('${user.id}', 'user')">${t.btnDemote}</button>` : ''}
+              ${!isCurrentUser ? `<button class="action-btn delete" onclick="deleteUser('${user.id}')">${t.btnDelete}</button>` : ''}
             </div>
           </td>
         </tr>

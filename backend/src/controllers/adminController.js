@@ -170,6 +170,11 @@ const updateUserRole = asyncHandler(async (req, res) => {
     throw new APIError('Invalid role. Must be "user" or "admin"', 400);
   }
 
+  // Prevent admin from demoting themselves
+  if (req.user._id.toString() === id && role === 'user') {
+    throw new APIError('You cannot demote yourself', 400);
+  }
+
   const user = await User.findById(id);
   if (!user) {
     throw new APIError('User not found', 404);
@@ -199,6 +204,11 @@ const updateUserRole = asyncHandler(async (req, res) => {
  */
 const deleteUser = asyncHandler(async (req, res) => {
   const { id } = req.params;
+
+  // Prevent admin from deleting themselves
+  if (req.user._id.toString() === id) {
+    throw new APIError('You cannot delete your own account', 400);
+  }
 
   const user = await User.findById(id);
   if (!user) {
