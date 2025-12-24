@@ -67,6 +67,8 @@ async function calculateLeaderboard() {
       return {
         userId: user._id,
         name: user.settings.leaderboardDisplayName || user.name,
+        realName: user.name,
+        isCustomDisplayName: !!(user.settings.leaderboardDisplayName && user.settings.leaderboardDisplayName.trim() !== ''),
         profilePicture: user.profilePicture,
         totalPages,
         completedJuz,

@@ -881,9 +881,13 @@ async function loadLeaderboard(forceRefresh = false) {
             // Get rank display (top 3 get special styling)
             const rankClass = user.rank <= 3 ? ' class="rank-cell top-3"' : ' class="rank-cell"';
 
+            // Add asterisk if using custom display name
+            const displayName = user.name || (lang === 'ar' ? 'طالب' : 'Student');
+            const nameWithIndicator = user.isCustomDisplayName ? `${displayName} *` : displayName;
+
             return `<tr${highlightClass}>
                 <td${rankClass}>${lang === 'ar' ? convertToArabicNumerals(user.rank) : user.rank}</td>
-                <td>${user.name || (lang === 'ar' ? 'طالب' : 'Student')}</td>
+                <td>${nameWithIndicator}</td>
                 <td>${lang === 'ar' ? convertToArabicNumerals(user.totalPages) : user.totalPages}</td>
                 <td>${lang === 'ar' ? convertToArabicNumerals(user.completedJuz) : user.completedJuz}</td>
                 <td>${lang === 'ar' ? convertToArabicNumerals(user.streak) : user.streak}</td>
