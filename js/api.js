@@ -59,9 +59,9 @@ const api = {
       if (data && (method === 'POST' || method === 'PUT')) {
         config.body = JSON.stringify(data);
         // Debug logging
-        console.log('🌐 API: Sending', method, 'request to', endpoint);
-        console.log('🌐 API: Request body (stringified):', config.body);
-        console.log('🌐 API: Request data (before stringify):', JSON.stringify(data, null, 2));
+        debug.log('🌐 API: Sending', method, 'request to', endpoint);
+        debug.log('🌐 API: Request body (stringified):', config.body);
+        debug.log('🌐 API: Request data (before stringify):', JSON.stringify(data, null, 2));
       }
 
       // Make request with timeout
