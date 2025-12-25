@@ -169,7 +169,7 @@ function loadDemoData() {
             data.stats = parsed.stats || calculateDemoStats();
             return;
         } catch (error) {
-            console.error('Error parsing stored demo data:', error);
+            debug.error('Error parsing stored demo data:', error);
         }
     }
 
@@ -322,7 +322,7 @@ async function init() {
 
         ui.hideLoader();
     } catch (error) {
-        console.error('Initialization error:', error);
+        debug.error('Initialization error:', error);
         ui.hideLoader();
         const t = trans[data.settings.language];
         ui.showError(t.errorLoading, data.settings.language === 'ar');
@@ -348,7 +348,7 @@ async function loadSettings() {
             }
         }
     } catch (error) {
-        console.error('Error loading settings:', error);
+        debug.error('Error loading settings:', error);
         // Use default settings (language already set from localStorage)
     }
 }
@@ -373,7 +373,7 @@ async function loadJuz() {
             }
         }
     } catch (error) {
-        console.error('Error loading juz:', error);
+        debug.error('Error loading juz:', error);
         // Initialize empty juz array
         data.juz = [];
         for (let i = 1; i <= 30; i++) {
@@ -394,7 +394,7 @@ async function loadLogs() {
         const response = await api.get('/logs');
         data.logs = response.logs || [];
     } catch (error) {
-        console.error('Error loading logs:', error);
+        debug.error('Error loading logs:', error);
         data.logs = [];
     }
 }
@@ -404,7 +404,7 @@ async function loadStats() {
         const response = await api.get('/stats/combined');
         data.stats = response.stats || {};
     } catch (error) {
-        console.error('Error loading stats:', error);
+        debug.error('Error loading stats:', error);
         data.stats = {};
     }
 }
@@ -558,7 +558,7 @@ async function saveLog() {
         ui.hideLoader();
         ui.showSuccess(t.saveSuccess, isArabic);
     } catch (error) {
-        console.error('Error saving log:', error);
+        debug.error('Error saving log:', error);
         ui.hideLoader();
         ui.showError(t.errorSaving, isArabic);
     }
@@ -612,7 +612,7 @@ async function saveJuz() {
         ui.hideLoader();
         ui.showSuccess(t.saveJuzSuccess, isArabic);
     } catch (error) {
-        console.error('Error saving juz:', error);
+        debug.error('Error saving juz:', error);
         ui.hideLoader();
         ui.showError(t.errorSaving, isArabic);
     }
@@ -693,7 +693,7 @@ function formatDateForInput(dateValue) {
 
         return `${year}-${month}-${day}`;
     } catch (error) {
-        console.error('Error formatting date:', error);
+        debug.error('Error formatting date:', error);
         return '';
     }
 }
@@ -903,7 +903,7 @@ async function loadLeaderboard(forceRefresh = false) {
         if (lbTable) lbTable.style.display = 'block';
 
     } catch (error) {
-        console.error('Error loading leaderboard:', error);
+        debug.error('Error loading leaderboard:', error);
 
         // Check if leaderboard is disabled (403 error)
         if (error.message && error.message.includes('disabled')) {
@@ -978,7 +978,7 @@ async function loadMyRank(forceRefresh = false) {
         }
 
     } catch (error) {
-        console.error('Error loading rank:', error);
+        debug.error('Error loading rank:', error);
 
         // Check if leaderboard is disabled
         if (error.message && error.message.includes('disabled')) {
@@ -1011,11 +1011,11 @@ async function showPrivacySettings() {
             const showOnLeaderboard = response.user.settings.showOnLeaderboard !== false; // Default true
             const displayName = response.user.settings.leaderboardDisplayName || '';
 
-            console.log('🔍 Frontend: Loading privacy settings into modal:');
-            console.log('   From API - showOnLeaderboard:', response.user.settings.showOnLeaderboard);
-            console.log('   From API - leaderboardDisplayName:', response.user.settings.leaderboardDisplayName);
-            console.log('   Setting toggle to:', showOnLeaderboard);
-            console.log('   Setting display name to:', displayName);
+            debug.log('🔍 Frontend: Loading privacy settings into modal:');
+            debug.log('   From API - showOnLeaderboard:', response.user.settings.showOnLeaderboard);
+            debug.log('   From API - leaderboardDisplayName:', response.user.settings.leaderboardDisplayName);
+            debug.log('   Setting toggle to:', showOnLeaderboard);
+            debug.log('   Setting display name to:', displayName);
 
             document.getElementById('showOnLeaderboardToggle').checked = showOnLeaderboard;
             document.getElementById('leaderboardDisplayName').value = displayName;
@@ -1031,7 +1031,7 @@ async function showPrivacySettings() {
         document.getElementById('privacyModal').classList.add('active');
 
     } catch (error) {
-        console.error('Error loading privacy settings:', error);
+        debug.error('Error loading privacy settings:', error);
         ui.showError(lang === 'ar' ? 'خطأ في تحميل الإعدادات' : 'Error loading settings', lang === 'ar');
     }
 }
@@ -1049,12 +1049,12 @@ async function savePrivacySettings() {
     const displayName = document.getElementById('leaderboardDisplayName').value.trim();
 
     // Debug logging
-    console.log('🔍 Frontend: Reading privacy settings from DOM:');
-    console.log('   Toggle element:', document.getElementById('showOnLeaderboardToggle'));
-    console.log('   Toggle checked:', showOnLeaderboard);
-    console.log('   Display name element:', document.getElementById('leaderboardDisplayName'));
-    console.log('   Display name value:', displayName);
-    console.log('   Sending to API:', { showOnLeaderboard, leaderboardDisplayName: displayName || null });
+    debug.log('🔍 Frontend: Reading privacy settings from DOM:');
+    debug.log('   Toggle element:', document.getElementById('showOnLeaderboardToggle'));
+    debug.log('   Toggle checked:', showOnLeaderboard);
+    debug.log('   Display name element:', document.getElementById('leaderboardDisplayName'));
+    debug.log('   Display name value:', displayName);
+    debug.log('   Sending to API:', { showOnLeaderboard, leaderboardDisplayName: displayName || null });
 
     // Validate display name length
     if (displayName.length > 50) {
@@ -1084,7 +1084,7 @@ async function savePrivacySettings() {
         ui.showSuccess(t.privacySaveSuccess, isArabic);
 
     } catch (error) {
-        console.error('Error saving privacy settings:', error);
+        debug.error('Error saving privacy settings:', error);
         ui.hideLoader();
         ui.showError(t.errorSaving, isArabic);
     }
@@ -1129,7 +1129,7 @@ async function toggleLanguage() {
             await api.put('/user', { settings: { language: data.settings.language } });
             storage.setLanguage(data.settings.language);
         } catch (error) {
-            console.error('Error saving language:', error);
+            debug.error('Error saving language:', error);
         }
     } else {
         // Demo mode: just save to localStorage

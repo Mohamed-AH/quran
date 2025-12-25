@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!auth.requireAuth()) return;
 
   currentUser = await auth.getCurrentUser();
-  console.log('👤 Admin: Current user:', currentUser);
+  debug.log('👤 Admin: Current user:', currentUser);
 
   if (!currentUser || currentUser.role !== 'admin') {
     alert('Access denied. Admin only.');
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Get user's language preference
   currentLanguage = currentUser.settings?.language || storage.getLanguage() || 'en';
-  console.log('🌐 Admin: User language:', currentLanguage);
+  debug.log('🌐 Admin: User language:', currentLanguage);
 
   applyLanguage();
   await loadDashboard();
@@ -144,13 +144,13 @@ async function toggleLanguage() {
 
   // Save to user profile in database
   try {
-    console.log('🌐 Admin: Saving language preference:', currentLanguage);
+    debug.log('🌐 Admin: Saving language preference:', currentLanguage);
     await api.put('/user', {
       language: currentLanguage  // Send at top level, not nested in settings
     });
-    console.log('✅ Admin: Language preference saved');
+    debug.log('✅ Admin: Language preference saved');
   } catch (error) {
-    console.error('❌ Admin: Error saving language preference:', error);
+    debug.error('❌ Admin: Error saving language preference:', error);
   }
 }
 
@@ -187,16 +187,16 @@ function applyLanguage() {
 // Load Dashboard
 async function loadDashboard() {
   try {
-    console.log('🔄 Admin: Loading dashboard components...');
+    debug.log('🔄 Admin: Loading dashboard components...');
     await Promise.all([
       loadSettings(),
       loadStats(),
       loadUsers(),
       loadInviteCodes(),
     ]);
-    console.log('✅ Admin: Dashboard loaded successfully');
+    debug.log('✅ Admin: Dashboard loaded successfully');
   } catch (error) {
-    console.error('❌ Admin: Error loading dashboard:', error);
+    debug.error('❌ Admin: Error loading dashboard:', error);
     const t = translations[currentLanguage];
     alert(t.errorLoad);
   }
@@ -211,7 +211,7 @@ async function loadSettings() {
       document.getElementById('toggleLeaderboard').checked = response.settings.leaderboardEnabled;
     }
   } catch (error) {
-    console.error('Error loading settings:', error);
+    debug.error('Error loading settings:', error);
   }
 }
 
@@ -220,16 +220,16 @@ async function updateSettings() {
     const requireInviteCode = document.getElementById('toggleSignupControl').checked;
     const leaderboardEnabled = document.getElementById('toggleLeaderboard').checked;
 
-    console.log('⚙️ Admin: Updating settings:', { requireInviteCode, leaderboardEnabled });
+    debug.log('⚙️ Admin: Updating settings:', { requireInviteCode, leaderboardEnabled });
 
     await api.put('/admin/settings', {
       requireInviteCode,
       leaderboardEnabled,
     });
 
-    console.log('✅ Admin: Settings updated successfully');
+    debug.log('✅ Admin: Settings updated successfully');
   } catch (error) {
-    console.error('❌ Admin: Error updating settings:', error);
+    debug.error('❌ Admin: Error updating settings:', error);
     alert('Failed to update settings');
   }
 }
@@ -237,41 +237,41 @@ async function updateSettings() {
 // Stats
 async function loadStats() {
   try {
-    console.log('📊 Admin: Loading dashboard stats...');
+    debug.log('📊 Admin: Loading dashboard stats...');
     const response = await api.get('/admin/stats');
-    console.log('📊 Admin: Stats response:', response);
+    debug.log('📊 Admin: Stats response:', response);
 
     if (response.success) {
       const stats = response.stats;
-      console.log('📊 Admin: Stats data:', stats);
+      debug.log('📊 Admin: Stats data:', stats);
       document.getElementById('totalUsers').textContent = stats.totalUsers;
       document.getElementById('activeUsers').textContent = stats.activeUsers;
       document.getElementById('totalPages').textContent = stats.totalPagesMemorized;
       document.getElementById('completedJuz').textContent = stats.completedJuz;
-      console.log('✅ Admin: Stats loaded successfully');
+      debug.log('✅ Admin: Stats loaded successfully');
     } else {
-      console.error('❌ Admin: Stats response not successful');
+      debug.error('❌ Admin: Stats response not successful');
     }
   } catch (error) {
-    console.error('❌ Admin: Error loading stats:', error);
+    debug.error('❌ Admin: Error loading stats:', error);
   }
 }
 
 // Users
 async function loadUsers(page = 1) {
   try {
-    console.log('👥 Admin: Loading users (page', page, ')...');
+    debug.log('👥 Admin: Loading users (page', page, ')...');
     const response = await api.get(`/admin/users?page=${page}&limit=20&search=${searchQuery}`);
-    console.log('👥 Admin: Users response:', response);
+    debug.log('👥 Admin: Users response:', response);
 
     if (response.success) {
       allUsers = response.users;
-      console.log('👥 Admin: Loaded', response.users.length, 'users');
+      debug.log('👥 Admin: Loaded', response.users.length, 'users');
       renderUsers(response.users);
       renderPagination(response.pagination);
     }
   } catch (error) {
-    console.error('❌ Admin: Error loading users:', error);
+    debug.error('❌ Admin: Error loading users:', error);
   }
 }
 
@@ -343,7 +343,7 @@ async function viewUser(userId) {
       showUserDetailsModal(response.user, response.stats);
     }
   } catch (error) {
-    console.error('Error loading user details:', error);
+    debug.error('Error loading user details:', error);
   }
 }
 
@@ -410,7 +410,7 @@ async function toggleUserRole(userId, newRole) {
     await api.put(`/admin/users/${userId}/role`, { role: newRole });
     await loadUsers(currentPage);
   } catch (error) {
-    console.error('Error updating user role:', error);
+    debug.error('Error updating user role:', error);
     alert('Failed to update role');
   }
 }
@@ -425,7 +425,7 @@ async function deleteUser(userId) {
     await loadUsers(currentPage);
     await loadStats(); // Refresh stats
   } catch (error) {
-    console.error('Error deleting user:', error);
+    debug.error('Error deleting user:', error);
     alert('Failed to delete user');
   }
 }
@@ -438,7 +438,7 @@ async function loadInviteCodes() {
       renderInviteCodes(response.inviteCodes);
     }
   } catch (error) {
-    console.error('Error loading invite codes:', error);
+    debug.error('Error loading invite codes:', error);
   }
 }
 
@@ -504,7 +504,7 @@ async function createInviteCode() {
     closeCreateInviteModal();
     await loadInviteCodes();
   } catch (error) {
-    console.error('Error creating invite code:', error);
+    debug.error('Error creating invite code:', error);
     alert('Failed to create invite code');
   }
 }
@@ -518,7 +518,7 @@ async function deactivateCode(codeId) {
     await api.put(`/admin/invite-codes/${codeId}/deactivate`);
     await loadInviteCodes();
   } catch (error) {
-    console.error('Error deactivating code:', error);
+    debug.error('Error deactivating code:', error);
     alert('Failed to deactivate code');
   }
 }
@@ -532,7 +532,7 @@ async function deleteInviteCode(codeId) {
     await api.delete(`/admin/invite-codes/${codeId}`);
     await loadInviteCodes();
   } catch (error) {
-    console.error('Error deleting invite code:', error);
+    debug.error('Error deleting invite code:', error);
     alert('Failed to delete invite code');
   }
 }

@@ -188,7 +188,7 @@
                     throw new Error(t.noToken);
                 }
             } catch (error) {
-                console.error('Callback error:', error);
+                debug.error('Callback error:', error);
 
                 // Show error message
                 document.getElementById('icon').textContent = '❌';

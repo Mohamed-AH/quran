@@ -42,7 +42,27 @@ if (isProduction && CONFIG.PRODUCTION_API_URL) {
   CONFIG.API_BASE_URL = CONFIG.PRODUCTION_API_URL;
 }
 
-// Make CONFIG globally accessible
+// Debug Utility - Only logs in development environment
+const debug = {
+  log: (...args) => {
+    if (!isProduction) console.log(...args);
+  },
+  warn: (...args) => {
+    if (!isProduction) console.warn(...args);
+  },
+  error: (...args) => {
+    // Always log errors, even in production
+    console.error(...args);
+  },
+  info: (...args) => {
+    if (!isProduction) console.info(...args);
+  },
+  table: (...args) => {
+    if (!isProduction) console.table(...args);
+  }
+};
+
+// Make CONFIG and debug globally accessible
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = CONFIG;
 }

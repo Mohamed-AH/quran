@@ -306,7 +306,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             if (isDemoMode) {
                 // DEMO MODE: Skip authentication
-                console.log('Running in demo mode - skipping authentication');
+                debug.log('Running in demo mode - skipping authentication');
                 return;
             }
 
@@ -315,76 +315,76 @@
 
             // If we get here, user is authenticated
             // Display user information
-            console.log('🔍 Starting user info display...');
+            debug.log('🔍 Starting user info display...');
             try {
                 const token = storage.getToken();
-                console.log('🔑 Token:', token ? 'Found' : 'NOT FOUND');
+                debug.log('🔑 Token:', token ? 'Found' : 'NOT FOUND');
 
                 const userName = document.getElementById('userName');
                 const userProfile = document.getElementById('userProfile');
-                console.log('📍 userName element:', userName ? 'Found' : 'NOT FOUND');
-                console.log('📍 userProfile element:', userProfile ? 'Found' : 'NOT FOUND');
+                debug.log('📍 userName element:', userName ? 'Found' : 'NOT FOUND');
+                debug.log('📍 userProfile element:', userProfile ? 'Found' : 'NOT FOUND');
 
                 if (token) {
                     // Parse JWT to get user info
                     const payload = auth.parseJWT(token);
-                    console.log('📦 JWT payload:', payload);
+                    debug.log('📦 JWT payload:', payload);
 
                     // Display user name/email immediately from JWT
                     if (userName && payload) {
                         const displayName = payload.name || payload.email || 'User';
-                        console.log('👤 Setting userName to:', displayName);
+                        debug.log('👤 Setting userName to:', displayName);
                         userName.textContent = displayName;
                         userName.style.display = 'inline';
                         userName.style.color = 'var(--gold)';
-                        console.log('✅ userName innerHTML after setting:', userName.innerHTML);
-                        console.log('✅ userName textContent after setting:', userName.textContent);
-                        console.log('✅ userName display style:', userName.style.display);
+                        debug.log('✅ userName innerHTML after setting:', userName.innerHTML);
+                        debug.log('✅ userName textContent after setting:', userName.textContent);
+                        debug.log('✅ userName display style:', userName.style.display);
                     } else {
-                        console.error('❌ Missing userName element or payload:', { userName: !!userName, payload: !!payload });
+                        debug.error('❌ Missing userName element or payload:', { userName: !!userName, payload: !!payload });
                     }
 
                     // Make userProfile visible
                     if (userProfile) {
                         userProfile.style.display = 'flex';
-                        console.log('✅ userProfile display set to flex');
+                        debug.log('✅ userProfile display set to flex');
                     } else {
-                        console.error('❌ userProfile element not found');
+                        debug.error('❌ userProfile element not found');
                     }
 
                     // Fetch fresh user data from API
                     try {
-                        console.log('🌐 Fetching user data from API...');
+                        debug.log('🌐 Fetching user data from API...');
                         const userData = await api.get('/auth/me');
-                        console.log('👤 Fresh user data:', userData);
+                        debug.log('👤 Fresh user data:', userData);
                         if (userData && userData.user && userData.user.name) {
                             userName.textContent = userData.user.name;
-                            console.log('✅ Updated userName from API:', userData.user.name);
+                            debug.log('✅ Updated userName from API:', userData.user.name);
                         }
 
                         // Check if user is admin and show admin button
                         const btnAdmin = document.getElementById('btnAdmin');
                         if (userData && userData.user && userData.user.role === 'admin') {
-                            console.log('👑 User is admin - showing admin button');
+                            debug.log('👑 User is admin - showing admin button');
                             if (btnAdmin) {
                                 btnAdmin.style.display = 'inline-block';
                             }
                         } else {
-                            console.log('👤 User is not admin - hiding admin button');
+                            debug.log('👤 User is not admin - hiding admin button');
                             if (btnAdmin) {
                                 btnAdmin.style.display = 'none';
                             }
                         }
                     } catch (apiError) {
-                        console.warn('⚠️ Could not fetch fresh user data, using JWT data:', apiError);
+                        debug.warn('⚠️ Could not fetch fresh user data, using JWT data:', apiError);
                         // Keep using JWT data
                     }
                 } else {
-                    console.error('❌ No token found - user not authenticated');
+                    debug.error('❌ No token found - user not authenticated');
                 }
             } catch (error) {
-                console.error('❌ Error loading user data:', error);
-                console.error('❌ Error stack:', error.stack);
+                debug.error('❌ Error loading user data:', error);
+                debug.error('❌ Error stack:', error.stack);
             }
         });
     </script>
