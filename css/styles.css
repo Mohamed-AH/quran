@@ -99,7 +99,7 @@
             font-size: 0.95rem;
         }
 
-        .btn-logout {
+        .btn-logout, .btn-admin {
             padding: 0.5rem 1rem;
             font-size: 0.85rem;
             background: rgba(212, 175, 55, 0.1);
@@ -109,9 +109,21 @@
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: inherit;
+            margin-left: 0.5rem;
         }
-        .btn-logout:hover {
+        .btn-logout:hover, .btn-admin:hover {
             background: var(--gold);
+            color: var(--dark-bg);
+        }
+
+        /* Admin button gets a distinct color */
+        .btn-admin {
+            background: rgba(147, 112, 219, 0.1);
+            border: 1px solid #9370DB;
+            color: #9370DB;
+        }
+        .btn-admin:hover {
+            background: #9370DB;
             color: var(--dark-bg);
         }
 
@@ -130,7 +142,7 @@
                 font-size: 0.85rem;
             }
 
-            .btn-logout {
+            .btn-logout, .btn-admin {
                 padding: 0.4rem 0.8rem;
                 font-size: 0.8rem;
             }
@@ -360,6 +372,122 @@
         .button-group { display: flex; gap: 15px; margin-top: 25px; flex-wrap: wrap; }
         .empty-state { text-align: center; padding: 60px 20px; color: var(--sage); }
 
+        /* Leaderboard Styles */
+        .leaderboard-header { text-align: center; margin-bottom: 30px; }
+
+        .my-rank-card {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
+            border: 2px solid var(--gold);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .rank-info {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .rank-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            font-family: 'Rakkas', cursive;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .rank-details { flex: 1; }
+        .rank-details p { color: var(--sage); margin-bottom: 10px; font-size: 1.1rem; }
+
+        .my-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .my-stats span {
+            color: var(--text-primary);
+            font-weight: 600;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            font-size: 0.95rem;
+        }
+
+        .leaderboard-container {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .leaderboard {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard thead {
+            background: rgba(212, 175, 55, 0.15);
+        }
+
+        .leaderboard th {
+            padding: 15px 20px;
+            text-align: center;
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 1rem;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .leaderboard td {
+            padding: 15px 20px;
+            text-align: center;
+            color: var(--text-primary);
+            border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+            font-size: 0.95rem;
+        }
+
+        .leaderboard tbody tr {
+            transition: all 0.3s;
+        }
+
+        .leaderboard tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .leaderboard tbody tr.highlight {
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+            border-left: 4px solid var(--gold);
+        }
+
+        .leaderboard .rank-cell {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--gold);
+        }
+
+        .leaderboard .rank-cell.top-3 {
+            font-size: 1.5rem;
+        }
+
+        .leaderboard .name-cell {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .leaderboard td.loading {
+            text-align: center;
+            color: var(--sage);
+            padding: 40px;
+        }
+
+        .leaderboard-footer {
+            text-align: center;
+            margin-top: 25px;
+        }
+
         /* Responsive - Tablets and mobile */
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
@@ -370,6 +498,10 @@
             .tab { padding: 10px 20px; font-size: 0.9rem; }
             .content { padding: 20px; border-radius: 20px; }
             .daily-log { padding: 20px; }
+            .rank-info { flex-direction: column; text-align: center; }
+            .my-stats { justify-content: center; }
+            .leaderboard { font-size: 0.9rem; }
+            .leaderboard th, .leaderboard td { padding: 10px 12px; }
         }
 
         /* Responsive - Small mobile */

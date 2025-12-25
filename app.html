@@ -32,6 +32,7 @@
                 <div class="header-right">
                     <div class="user-profile" id="userProfile">
                         <span id="userName"></span>
+                        <button class="btn-admin" onclick="goToAdminPanel()" id="btnAdmin" style="display:none;">لوحة الإدارة</button>
                         <button class="btn-logout" onclick="handleLogout()" id="btnLogout" style="display:none;">تسجيل الخروج</button>
                         <button class="btn-logout" onclick="handleBackToHome()" id="btnBackHome" style="display:none;">العودة للرئيسية</button>
                     </div>
@@ -73,6 +74,7 @@
             <button class="tab" onclick="switchTab('juz')" id="tabJuz">الأجزاء</button>
             <button class="tab" onclick="switchTab('history')" id="tabHistory">السجل</button>
             <button class="tab" onclick="switchTab('stats')" id="tabStats">الإحصائيات</button>
+            <button class="tab" onclick="switchTab('leaderboard')" id="tabLeaderboard">🏆 المتصدرون</button>
         </div>
 
         <div class="content">
@@ -84,7 +86,7 @@
                     </div>
                     <div class="input-group">
                         <label id="labelNewPages">الصفحات الجديدة المحفوظة</label>
-                        <input type="text" id="newPages" placeholder="مثال: 1-3، 5">
+                        <input type="text" id="newPages" placeholder="مثال: 1-3، 5" data-translate-placeholder="newPagesPlaceholder">
                     </div>
                     <div class="input-group">
                         <label id="labelNewQuality">جودة الحفظ الجديد</label>
@@ -98,7 +100,7 @@
                     </div>
                     <div class="input-group">
                         <label id="labelReviewPages">صفحات المراجعة</label>
-                        <input type="text" id="reviewPages" placeholder="مثال: 10-15">
+                        <input type="text" id="reviewPages" placeholder="مثال: 10-15" data-translate-placeholder="reviewPagesPlaceholder">
                     </div>
                     <div class="input-group">
                         <label id="labelReviewQuality">جودة المراجعة</label>
@@ -112,7 +114,7 @@
                     </div>
                     <div class="input-group">
                         <label id="labelNotes">ملاحظات اليوم</label>
-                        <textarea id="notes" placeholder="آيات صعبة، إنجازات، أو أي ملاحظات..."></textarea>
+                        <textarea id="notes" placeholder="آيات صعبة، إنجازات، أو أي ملاحظات..." data-translate-placeholder="notesPlaceholder"></textarea>
                     </div>
                 </div>
             </div>
@@ -128,6 +130,78 @@
             <div id="statsTab" style="display:none;">
                 <h2 style="color: var(--gold); margin-bottom: 20px;" id="statsTitle">إحصائيات مفصلة</h2>
                 <div id="detailedStats"></div>
+            </div>
+
+            <div id="leaderboardTab" style="display:none;">
+                <div class="leaderboard-header">
+                    <h2 style="color: var(--gold); margin-bottom: 10px;" id="leaderboardTitle">🏆 لوحة المتصدرين</h2>
+                    <p style="color: var(--sage); margin-bottom: 20px;" id="leaderboardDesc">أفضل الطلاب في حفظ القرآن الكريم</p>
+                </div>
+
+                <!-- Current User Rank -->
+                <div id="myRankSection" style="display:none;">
+                    <div class="my-rank-card">
+                        <h3 style="color: var(--gold); margin-bottom: 15px;" id="myRankTitle">ترتيبك</h3>
+                        <div class="rank-info">
+                            <div class="rank-number" id="myRank">-</div>
+                            <div class="rank-details">
+                                <p id="myRankText">من أصل <span id="totalUsers">0</span> طالب</p>
+                                <div class="my-stats">
+                                    <span id="myPagesText"><span id="myPages">0</span> صفحة</span>
+                                    <span id="myJuzText"><span id="myJuz">0</span> جزء</span>
+                                    <span id="myStreakText"><span id="myStreak">0</span> يوم متتالي</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Disabled Message -->
+                <div id="leaderboardDisabled" style="display:none;">
+                    <div class="empty-state">
+                        <p id="leaderboardDisabledText">لوحة المتصدرين معطلة حالياً</p>
+                    </div>
+                </div>
+
+                <!-- Not on Leaderboard Message -->
+                <div id="notOnLeaderboard" style="display:none;">
+                    <div class="empty-state">
+                        <p id="notOnLeaderboardText">لست على لوحة المتصدرين. قم بتفعيلها من الإعدادات أو ابدأ الحفظ!</p>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Table -->
+                <div id="leaderboardTable" style="display:none;">
+                    <div class="leaderboard-container">
+                        <table class="leaderboard">
+                            <thead>
+                                <tr>
+                                    <th id="thRank">المرتبة</th>
+                                    <th id="thStudent">الطالب</th>
+                                    <th id="thPages">الصفحات</th>
+                                    <th id="thJuz">الأجزاء</th>
+                                    <th id="thStreak">التتالي</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboardBody">
+                                <tr>
+                                    <td colspan="5" class="loading" id="loadingLeaderboard">جاري التحميل...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Legend for asterisk -->
+                    <p style="margin-top: 15px; color: var(--sage); font-size: 0.85rem; text-align: center;" id="leaderboardLegend">
+                        * يشير إلى اسم مستعار / * Indicates custom display name
+                    </p>
+                </div>
+
+                <!-- Privacy Settings Link -->
+                <div class="leaderboard-footer">
+                    <button class="btn-secondary" onclick="showPrivacySettings()" id="btnPrivacySettings">
+                        ⚙️ إعدادات الخصوصية
+                    </button>
+                </div>
             </div>
 
         </div>
@@ -161,7 +235,7 @@
             </div>
             <div class="input-group">
                 <label id="labelJuzNotes">ملاحظات</label>
-                <textarea id="juzNotes" placeholder="ملاحظات عن هذا الجزء..."></textarea>
+                <textarea id="juzNotes" placeholder="ملاحظات عن هذا الجزء..." data-translate-placeholder="juzNotesPlaceholder"></textarea>
             </div>
             <div class="button-group">
                 <button class="btn" onclick="saveJuz()" id="btnJuzSave">حفظ</button>
@@ -180,6 +254,41 @@
         </div>
     </div>
 
+    <!-- Privacy Settings Modal -->
+    <div class="modal" id="privacyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="privacyTitle">إعدادات الخصوصية</h2>
+                <button class="close-btn" onclick="closePrivacySettings()">×</button>
+            </div>
+            <div style="line-height: 1.8; color: var(--cream);">
+                <p id="privacyDesc" style="margin-bottom: 25px; color: var(--sage);">اختر ما إذا كنت تريد الظهور على لوحة المتصدرين وكيف يظهر اسمك</p>
+
+                <div class="setting-item" style="margin-bottom: 20px;">
+                    <div class="setting-info">
+                        <h3 id="privacyShowLabel" style="font-size: 1.1rem; margin-bottom: 5px;">إظهاري على لوحة المتصدرين</h3>
+                        <p id="privacyShowDesc" style="font-size: 0.9rem; color: var(--sage);">عند التفعيل، سيتم عرض تقدمك على لوحة المتصدرين</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="showOnLeaderboardToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label for="leaderboardDisplayName" id="privacyNameLabel" style="display: block; color: var(--gold); font-weight: 600; margin-bottom: 8px;">اسم العرض على لوحة المتصدرين</label>
+                    <input type="text" id="leaderboardDisplayName" placeholder="اترك فارغاً لاستخدام اسمك الحقيقي" data-translate-placeholder="privacyNamePlaceholder" style="width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 10px; color: var(--text-primary); font-family: 'Cairo', sans-serif; font-size: 0.95rem;">
+                    <p id="privacyNameDesc" style="font-size: 0.85rem; color: var(--sage); margin-top: 5px;">الحد الأقصى: 50 حرفاً</p>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                    <button class="btn" onclick="savePrivacySettings()" id="privacySaveBtn">حفظ التغييرات</button>
+                    <button class="btn-secondary" onclick="closePrivacySettings()" id="privacyCancelBtn">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Load modules in order: config -> storage -> demo (if needed) -> auth -> api -> ui -> app -->
     <script src="js/config.js"></script>
     <script src="js/storage.js"></script>
@@ -191,8 +300,7 @@
 
     <!-- Authentication initialization -->
     <script>
-        // Check if we're in demo mode (defined in app.js)
-        const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
+        // isDemoMode is already defined in app.js, so we can use it directly
 
         // Check authentication on page load (skip in demo mode)
         document.addEventListener('DOMContentLoaded', async () => {
@@ -207,27 +315,76 @@
 
             // If we get here, user is authenticated
             // Display user information
+            console.log('🔍 Starting user info display...');
             try {
                 const token = storage.getToken();
+                console.log('🔑 Token:', token ? 'Found' : 'NOT FOUND');
+
+                const userName = document.getElementById('userName');
+                const userProfile = document.getElementById('userProfile');
+                console.log('📍 userName element:', userName ? 'Found' : 'NOT FOUND');
+                console.log('📍 userProfile element:', userProfile ? 'Found' : 'NOT FOUND');
+
                 if (token) {
                     // Parse JWT to get user info
                     const payload = auth.parseJWT(token);
+                    console.log('📦 JWT payload:', payload);
 
-                    // Display user name/email
-                    const userName = document.getElementById('userName');
+                    // Display user name/email immediately from JWT
                     if (userName && payload) {
-                        userName.textContent = payload.name || payload.email || 'User';
+                        const displayName = payload.name || payload.email || 'User';
+                        console.log('👤 Setting userName to:', displayName);
+                        userName.textContent = displayName;
+                        userName.style.display = 'inline';
+                        userName.style.color = 'var(--gold)';
+                        console.log('✅ userName innerHTML after setting:', userName.innerHTML);
+                        console.log('✅ userName textContent after setting:', userName.textContent);
+                        console.log('✅ userName display style:', userName.style.display);
+                    } else {
+                        console.error('❌ Missing userName element or payload:', { userName: !!userName, payload: !!payload });
+                    }
+
+                    // Make userProfile visible
+                    if (userProfile) {
+                        userProfile.style.display = 'flex';
+                        console.log('✅ userProfile display set to flex');
+                    } else {
+                        console.error('❌ userProfile element not found');
                     }
 
                     // Fetch fresh user data from API
-                    const userData = await api.get('/auth/me');
-                    if (userData && userData.user && userData.user.name) {
-                        userName.textContent = userData.user.name;
+                    try {
+                        console.log('🌐 Fetching user data from API...');
+                        const userData = await api.get('/auth/me');
+                        console.log('👤 Fresh user data:', userData);
+                        if (userData && userData.user && userData.user.name) {
+                            userName.textContent = userData.user.name;
+                            console.log('✅ Updated userName from API:', userData.user.name);
+                        }
+
+                        // Check if user is admin and show admin button
+                        const btnAdmin = document.getElementById('btnAdmin');
+                        if (userData && userData.user && userData.user.role === 'admin') {
+                            console.log('👑 User is admin - showing admin button');
+                            if (btnAdmin) {
+                                btnAdmin.style.display = 'inline-block';
+                            }
+                        } else {
+                            console.log('👤 User is not admin - hiding admin button');
+                            if (btnAdmin) {
+                                btnAdmin.style.display = 'none';
+                            }
+                        }
+                    } catch (apiError) {
+                        console.warn('⚠️ Could not fetch fresh user data, using JWT data:', apiError);
+                        // Keep using JWT data
                     }
+                } else {
+                    console.error('❌ No token found - user not authenticated');
                 }
             } catch (error) {
-                console.error('Error loading user data:', error);
-                // Continue with JWT data
+                console.error('❌ Error loading user data:', error);
+                console.error('❌ Error stack:', error.stack);
             }
         });
     </script>
@@ -249,13 +406,20 @@
 
                 // Set demo user name
                 const userName = document.getElementById('userName');
-                if (userName) userName.textContent = 'Demo User';
+                const userProfile = document.getElementById('userProfile');
+                if (userName) {
+                    userName.textContent = 'Demo User';
+                    userName.style.display = 'inline';
+                }
+                if (userProfile) userProfile.style.display = 'flex';
             } else {
                 // Normal mode - show logout button
                 const btnLogout = document.getElementById('btnLogout');
                 const btnBackHome = document.getElementById('btnBackHome');
+                const userProfile = document.getElementById('userProfile');
                 if (btnLogout) btnLogout.style.display = 'inline-block';
                 if (btnBackHome) btnBackHome.style.display = 'none';
+                if (userProfile) userProfile.style.display = 'flex';
             }
         });
     </script>

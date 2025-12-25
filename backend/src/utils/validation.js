@@ -14,12 +14,26 @@ const updateUserSchema = Joi.object({
     'string.empty': 'Name cannot be empty',
     'string.max': 'Name cannot exceed 100 characters',
   }),
+  // Allow language and theme at top level (for direct updates)
+  language: Joi.string().valid('ar', 'en').messages({
+    'any.only': 'Language must be either "ar" or "en"',
+  }),
+  theme: Joi.string().valid('default', 'dark').messages({
+    'any.only': 'Theme must be either "default" or "dark"',
+  }),
+  // Also allow settings object (for nested updates)
   settings: Joi.object({
     language: Joi.string().valid('ar', 'en').messages({
       'any.only': 'Language must be either "ar" or "en"',
     }),
     theme: Joi.string().valid('default', 'dark').messages({
       'any.only': 'Theme must be either "default" or "dark"',
+    }),
+    showOnLeaderboard: Joi.boolean().messages({
+      'boolean.base': 'showOnLeaderboard must be true or false',
+    }),
+    leaderboardDisplayName: Joi.string().trim().max(50).allow(null, '').messages({
+      'string.max': 'Display name cannot exceed 50 characters',
     }),
   }),
 }).min(1).messages({

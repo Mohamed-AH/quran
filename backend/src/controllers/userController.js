@@ -34,13 +34,54 @@ const updateUser = asyncHandler(async (req, res) => {
     throw new APIError('User not found', 404);
   }
 
-  const { name, language, theme } = req.body;
+  const { name, language, theme, settings } = req.body;
 
+  // Debug logging - what did we receive?
+  console.log('📥 Backend received req.body:', JSON.stringify(req.body, null, 2));
+  console.log('📥 Extracted settings:', JSON.stringify(settings, null, 2));
+
+  // Update basic fields
   if (name !== undefined) user.name = name;
-  if (language !== undefined) user.settings.language = language;
-  if (theme !== undefined) user.settings.theme = theme;
+
+  // Track if settings were modified
+  let settingsModified = false;
+
+  if (language !== undefined) {
+    user.settings.language = language;
+    settingsModified = true;
+  }
+  if (theme !== undefined) {
+    user.settings.theme = theme;
+    settingsModified = true;
+  }
+
+  // Update leaderboard privacy settings if provided
+  if (settings) {
+    if (settings.showOnLeaderboard !== undefined) {
+      user.settings.showOnLeaderboard = settings.showOnLeaderboard;
+      settingsModified = true;
+    }
+    if (settings.leaderboardDisplayName !== undefined) {
+      // Allow null or empty string to clear custom name
+      user.settings.leaderboardDisplayName = settings.leaderboardDisplayName || null;
+      settingsModified = true;
+    }
+  }
+
+  // Mark settings as modified so Mongoose saves nested changes
+  if (settingsModified) {
+    user.markModified('settings');
+  }
+
+  // Debug logging
+  console.log('📝 Saving user settings:');
+  console.log('   User:', user.name, '(' + user.email + ')');
+  console.log('   showOnLeaderboard:', user.settings.showOnLeaderboard);
+  console.log('   leaderboardDisplayName:', user.settings.leaderboardDisplayName || '(using real name)');
 
   await user.save();
+
+  console.log('✅ Settings saved successfully');
 
   res.status(200).json({
     success: true,

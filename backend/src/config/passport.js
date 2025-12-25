@@ -1,7 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
-const { User, Juz } = require('../models');
+const { User, Juz, AppSettings, InviteCode } = require('../models');
 
 /**
  * Passport.js Configuration
@@ -39,11 +39,67 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+        passReqToCallback: true,
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (req, accessToken, refreshToken, profile, done) => {
         try {
-          // Find or create user from Google profile
-          const user = await User.findOrCreateFromOAuth(profile, 'google');
+          // Check if user already exists
+          let user = await User.findOne({
+            authProvider: 'google',
+            authProviderId: profile.id,
+          });
+
+          // If user exists, just update last login and return
+          if (user) {
+            user.lastLoginAt = new Date();
+            await user.save();
+            return done(null, user);
+          }
+
+          // New user - check if invite codes are required
+          const settings = await AppSettings.getSettings();
+          if (settings.requireInviteCode) {
+            // Extract invite code from state parameter
+            let inviteCodeValue = null;
+            try {
+              const state = req.query.state ? JSON.parse(req.query.state) : null;
+              inviteCodeValue = state?.inviteCode;
+            } catch (e) {
+              // Ignore JSON parse errors
+            }
+
+            if (!inviteCodeValue) {
+              return done(new Error('Invite code required for signup'), null);
+            }
+
+            // Validate invite code
+            const inviteCode = await InviteCode.findOne({ code: inviteCodeValue });
+            const validation = inviteCode ? inviteCode.isValid() : { valid: false, reason: 'Code not found' };
+
+            if (!validation.valid) {
+              return done(new Error(validation.reason || 'Invalid invite code'), null);
+            }
+          }
+
+          // Create new user
+          user = await User.findOrCreateFromOAuth(profile, 'google');
+
+          // Mark invite code as used
+          if (settings.requireInviteCode) {
+            try {
+              const state = req.query.state ? JSON.parse(req.query.state) : null;
+              const inviteCodeValue = state?.inviteCode;
+              if (inviteCodeValue) {
+                const inviteCode = await InviteCode.findOne({ code: inviteCodeValue });
+                if (inviteCode) {
+                  await inviteCode.markAsUsed(user._id);
+                }
+              }
+            } catch (e) {
+              // Ignore errors updating invite code usage
+              console.error('Error marking invite code as used:', e);
+            }
+          }
 
           // Initialize Juz for new users
           const juzCount = await Juz.countDocuments({ userId: user._id });
@@ -73,11 +129,67 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
         callbackURL: process.env.GITHUB_CALLBACK_URL || '/api/auth/github/callback',
         scope: ['user:email'], // Request email access
+        passReqToCallback: true,
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (req, accessToken, refreshToken, profile, done) => {
         try {
-          // Find or create user from GitHub profile
-          const user = await User.findOrCreateFromOAuth(profile, 'github');
+          // Check if user already exists
+          let user = await User.findOne({
+            authProvider: 'github',
+            authProviderId: profile.id,
+          });
+
+          // If user exists, just update last login and return
+          if (user) {
+            user.lastLoginAt = new Date();
+            await user.save();
+            return done(null, user);
+          }
+
+          // New user - check if invite codes are required
+          const settings = await AppSettings.getSettings();
+          if (settings.requireInviteCode) {
+            // Extract invite code from state parameter
+            let inviteCodeValue = null;
+            try {
+              const state = req.query.state ? JSON.parse(req.query.state) : null;
+              inviteCodeValue = state?.inviteCode;
+            } catch (e) {
+              // Ignore JSON parse errors
+            }
+
+            if (!inviteCodeValue) {
+              return done(new Error('Invite code required for signup'), null);
+            }
+
+            // Validate invite code
+            const inviteCode = await InviteCode.findOne({ code: inviteCodeValue });
+            const validation = inviteCode ? inviteCode.isValid() : { valid: false, reason: 'Code not found' };
+
+            if (!validation.valid) {
+              return done(new Error(validation.reason || 'Invalid invite code'), null);
+            }
+          }
+
+          // Create new user
+          user = await User.findOrCreateFromOAuth(profile, 'github');
+
+          // Mark invite code as used
+          if (settings.requireInviteCode) {
+            try {
+              const state = req.query.state ? JSON.parse(req.query.state) : null;
+              const inviteCodeValue = state?.inviteCode;
+              if (inviteCodeValue) {
+                const inviteCode = await InviteCode.findOne({ code: inviteCodeValue });
+                if (inviteCode) {
+                  await inviteCode.markAsUsed(user._id);
+                }
+              }
+            } catch (e) {
+              // Ignore errors updating invite code usage
+              console.error('Error marking invite code as used:', e);
+            }
+          }
 
           // Initialize Juz for new users
           const juzCount = await Juz.countDocuments({ userId: user._id });

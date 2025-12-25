@@ -45,6 +45,35 @@
     <section class="login-section">
       <h2 class="login-title" id="loginTitle">ابدأ رحلتك</h2>
 
+      <!-- Invite Code Input (shown when required) -->
+      <div id="inviteCodeSection" style="display: none; margin-bottom: 20px;">
+        <p id="inviteCodeHint" style="
+          color: var(--text-secondary);
+          text-align: center;
+          margin-bottom: 10px;
+          font-size: 0.9rem;
+        "></p>
+        <input
+          type="text"
+          id="inviteCodeInput"
+          placeholder="أدخل رمز الدعوة / Enter invite code"
+          style="
+            width: 100%;
+            max-width: 400px;
+            padding: 15px 20px;
+            border: 2px solid var(--gold);
+            border-radius: 12px;
+            background: rgba(212, 175, 55, 0.05);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            text-align: center;
+            margin: 0 auto;
+            display: block;
+          "
+        />
+      </div>
+
       <div class="login-buttons">
         <button class="login-btn login-btn-google" onclick="loginWithGoogle()">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="provider-logo">
@@ -74,7 +103,8 @@
         btnDemoText: 'جرب التطبيق',
         loginTitle: 'ابدأ رحلتك',
         googleBtnText: 'تسجيل الدخول بحساب Google',
-        githubBtnText: 'تسجيل الدخول بحساب GitHub'
+        githubBtnText: 'تسجيل الدخول بحساب GitHub',
+        inviteCodeHint: 'للمستخدمين الجدد فقط: أدخل رمز الدعوة. المستخدمون الحاليون يمكنهم تسجيل الدخول مباشرة.'
       },
       en: {
         heroTitle: 'Hafiz',
@@ -82,12 +112,14 @@
         btnDemoText: 'Try the App',
         loginTitle: 'Start Your Journey',
         googleBtnText: 'Continue with Google',
-        githubBtnText: 'Continue with GitHub'
+        githubBtnText: 'Continue with GitHub',
+        inviteCodeHint: 'For new users only: Enter invite code. Existing users can login directly.'
       }
     };
 
     // Language management
     let currentLang = storage.getLanguage();
+    let requireInviteCode = false;
 
     // Toggle language
     function toggleLanguage() {
@@ -118,19 +150,63 @@
         langToggle.style[isArabic ? 'left' : 'right'] = '20px';
         langToggle.style[isArabic ? 'right' : 'left'] = 'auto';
       }
+
+      // Update invite code hint if visible
+      if (requireInviteCode) {
+        const hintEl = document.getElementById('inviteCodeHint');
+        if (hintEl) {
+          hintEl.textContent = t.inviteCodeHint;
+        }
+      }
     }
 
     // OAuth login functions
     function loginWithGoogle() {
-      window.location.href = `${CONFIG.API_BASE_URL}/auth/google`;
+      const inviteCode = getInviteCode();
+      const url = inviteCode
+        ? `${CONFIG.API_BASE_URL}/auth/google?inviteCode=${encodeURIComponent(inviteCode)}`
+        : `${CONFIG.API_BASE_URL}/auth/google`;
+      window.location.href = url;
     }
 
     function loginWithGitHub() {
-      window.location.href = `${CONFIG.API_BASE_URL}/auth/github`;
+      const inviteCode = getInviteCode();
+      const url = inviteCode
+        ? `${CONFIG.API_BASE_URL}/auth/github?inviteCode=${encodeURIComponent(inviteCode)}`
+        : `${CONFIG.API_BASE_URL}/auth/github`;
+      window.location.href = url;
+    }
+
+    // Get invite code value (if provided)
+    function getInviteCode() {
+      if (!requireInviteCode) return '';
+      const inviteCodeInput = document.getElementById('inviteCodeInput');
+      return inviteCodeInput ? inviteCodeInput.value.trim() : '';
+    }
+
+    // Check app settings on page load
+    async function checkAppSettings() {
+      try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/auth/settings`);
+        const data = await response.json();
+
+        if (data.success && data.settings.requireInviteCode) {
+          requireInviteCode = true;
+          document.getElementById('inviteCodeSection').style.display = 'block';
+          // Set hint text based on current language
+          const hintEl = document.getElementById('inviteCodeHint');
+          if (hintEl) {
+            hintEl.textContent = translations[currentLang].inviteCodeHint;
+          }
+        }
+      } catch (error) {
+        console.error('Error checking app settings:', error);
+      }
     }
 
     // Initialize on page load
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAppSettings();
       updateLanguage();
 
       // Create language toggle button

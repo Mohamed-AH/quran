@@ -1,4 +1,4 @@
-const { User } = require('../models');
+const { User, AppSettings } = require('../models');
 const {
   generateTokenPair,
   verifyRefreshToken,
@@ -116,10 +116,27 @@ const oauthFailure = (req, res) => {
   res.redirect(`${frontendUrl}/callback.html?error=authentication_failed`);
 };
 
+/**
+ * Get public app settings
+ * GET /api/auth/settings
+ */
+const getPublicSettings = asyncHandler(async (req, res) => {
+  const settings = await AppSettings.getSettings();
+
+  res.status(200).json({
+    success: true,
+    settings: {
+      requireInviteCode: settings.requireInviteCode,
+      leaderboardEnabled: settings.leaderboardEnabled,
+    },
+  });
+});
+
 module.exports = {
   oauthSuccess,
   getCurrentUser,
   refreshAccessToken,
   logout,
   oauthFailure,
+  getPublicSettings,
 };
