@@ -31,6 +31,25 @@ const CONFIG = {
     OFFLINE_MODE: false, // Phase 8
     EXPORT_DATA: false, // Removed as per decision
     PROFILES: false, // Removed as per decision
+    RECITATION: true, // Tilawa recitation practice tab
+  },
+
+  // Tilawa recitation engine assets (https://github.com/Mohamed-AH/tilawa)
+  // Pinned to the commit the vendored core was built from (see tilawa-build/).
+  // The ONNX model lives in that repo as Git LFS, served by media.githubusercontent;
+  // the JSON assets are regular files served by raw.githubusercontent. Both send
+  // Access-Control-Allow-Origin: * so the browser can fetch them cross-origin.
+  TILAWA: {
+    CACHE_NAME: 'tilawa-v1',
+    MODEL_URL: 'https://media.githubusercontent.com/media/Mohamed-AH/tilawa/ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793/web/frontend/public/fastconformer_full_mixed.onnx',
+    MODEL_BYTES: 88307366, // verified before caching to reject truncated downloads
+    ASSET_BASE: 'https://raw.githubusercontent.com/Mohamed-AH/tilawa/ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793/web/frontend/public/',
+    ASSETS: {
+      vocab: 'vocab.json',
+      quranCtcTokens: 'quran_ctc_tokens.json',
+      quran: 'quran.json',
+    },
+    WORKER_PATH: 'js/vendor/tilawa-worker.js',
   }
 };
 
