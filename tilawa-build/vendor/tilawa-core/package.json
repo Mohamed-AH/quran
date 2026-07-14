@@ -1,0 +1,11 @@
+{
+  "name": "@tilawa/core",
+  "version": "0.2.0-vendored",
+  "description": "Vendored source of https://github.com/Mohamed-AH/tilawa packages/core (commit ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793). MIT licensed. esbuild consumes the TypeScript entry directly.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "sideEffects": false
+}

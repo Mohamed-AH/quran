@@ -1,0 +1,18 @@
+{
+  "name": "hafiz-tilawa-build",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Builds the tilawa inference Web Worker bundle for the Hafiz recitation feature. Output is committed to js/vendor/ so the app stays build-free.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "@tilawa/core": "file:vendor/tilawa-core",
+    "onnxruntime-web": "1.24.2"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}
