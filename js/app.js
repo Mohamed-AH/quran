@@ -64,7 +64,20 @@ const trans = {
         privacySaveBtn: 'حفظ التغييرات',
         privacyCancelBtn: 'إلغاء',
         privacySaveSuccess: 'تم حفظ إعدادات الخصوصية بنجاح!',
-        privacyNameTooLong: 'اسم العرض يجب ألا يتجاوز 50 حرفاً'
+        privacyNameTooLong: 'اسم العرض يجب ألا يتجاوز 50 حرفاً',
+        tabRecite: '🎙️ التلاوة',
+        reciteTitle: '🎙️ التلاوة',
+        reciteDesc: 'اختر سورة واتلُها — سأستمع إليك وأتابع تلاوتك كلمة كلمة',
+        reciteUnsupportedText: 'متصفحك لا يدعم ميزة التلاوة (يتطلب ميكروفون و WebAssembly)',
+        reciteSetupTitle: 'تجهيز المستمع الذكي',
+        reciteSetupNote: 'يتم تنزيل نموذج التعرف على التلاوة (≈ ٨٨ م.ب) لمرة واحدة فقط — يعمل بعدها على جهازك دون إنترنت',
+        btnReciteSetupCancel: 'إلغاء',
+        labelReciteFrom: 'من آية',
+        labelReciteTo: 'إلى آية',
+        btnReciteStart: '🎙️ ابدأ التلاوة',
+        btnReciteCancel: 'إلغاء',
+        btnReciteStop: '⏹ إنهاء',
+        reciteLeaveConfirm: 'جلسة التلاوة ما زالت جارية — هل تريد إنهاءها والمغادرة؟'
     },
     en: {
         appTitle: 'Hafiz', subtitle: 'Your Quran Memorization Journey', langBtn: 'العربية',
@@ -118,7 +131,20 @@ const trans = {
         privacySaveBtn: 'Save Changes',
         privacyCancelBtn: 'Cancel',
         privacySaveSuccess: 'Privacy settings saved successfully!',
-        privacyNameTooLong: 'Display name must not exceed 50 characters'
+        privacyNameTooLong: 'Display name must not exceed 50 characters',
+        tabRecite: '🎙️ Recite',
+        reciteTitle: '🎙️ Recitation',
+        reciteDesc: 'Pick a surah and recite — I will listen and follow your recitation word by word',
+        reciteUnsupportedText: 'Your browser does not support the recitation feature (microphone and WebAssembly required)',
+        reciteSetupTitle: 'Preparing your listening coach',
+        reciteSetupNote: 'The recitation-recognition model (≈ 88 MB) is downloaded once — afterwards it runs on your device, no internet needed',
+        btnReciteSetupCancel: 'Cancel',
+        labelReciteFrom: 'From ayah',
+        labelReciteTo: 'To ayah',
+        btnReciteStart: '🎙️ Start Reciting',
+        btnReciteCancel: 'Cancel',
+        btnReciteStop: '⏹ Stop',
+        reciteLeaveConfirm: 'A recitation session is still running — end it and leave?'
     }
 };
 
@@ -1187,6 +1213,7 @@ function applyLanguage() {
     displayJuz();
     displayHistory();
     updateCurrentDate();
+    if (typeof recitationUI !== 'undefined') recitationUI.onLanguageChange();
 
     // Reload leaderboard to update rank text if on leaderboard tab
     const leaderboardTab = document.getElementById('leaderboardTab');
@@ -1200,10 +1227,17 @@ function applyLanguage() {
 // ================================
 
 function switchTab(tab) {
+    // Leaving mid-recitation ends the session — confirm first.
+    if (typeof recitationUI !== 'undefined' && recitationUI.isSessionActive() && tab !== 'recite') {
+        const t = trans[data.settings.language];
+        if (!confirm(t.reciteLeaveConfirm)) return;
+        recitationUI.abandonSession();
+    }
+
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
 
-    ['todayTab', 'juzTab', 'historyTab', 'statsTab', 'leaderboardTab'].forEach(t =>
+    ['todayTab', 'juzTab', 'historyTab', 'statsTab', 'leaderboardTab', 'reciteTab'].forEach(t =>
         document.getElementById(t).style.display = 'none'
     );
 
@@ -1226,6 +1260,9 @@ function switchTab(tab) {
         } else {
             loadLeaderboard();
         }
+    } else if (tab === 'recite') {
+        document.getElementById('reciteTab').style.display = 'block';
+        if (typeof recitationUI !== 'undefined') recitationUI.init();
     }
 }
 

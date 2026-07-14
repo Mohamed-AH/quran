@@ -98,6 +98,7 @@
       this.stopRequested = false;
       this.offTrackStrikes = 0;
       this.pendingJump = null; // {ayah} — forward-jump hysteresis
+      this.pendingBack = null; // {ayah} — backward-repetition hysteresis
       this.confidences = [];
 
       this.perVerse = {};
@@ -106,6 +107,12 @@
           ayah: v.ayah,
           text: v.text,
           totalWords: countWords(v.text),
+          // Tilawa's word_progress carries `word_index` (the alignment
+          // position — first unmatched word, a high-water mark) and
+          // `matched_indices` (INCREMENTAL matches for the cycle, often a
+          // single index). Coverage is therefore progress-based; the
+          // matched set only adds stragglers beyond the high-water mark.
+          progress: 0,
           matched: new Set(),
           repeats: 0,
           sawCommit: false,
@@ -120,16 +127,44 @@
       );
     }
 
+    /** Words considered recited: everything below the alignment high-water
+     *  mark, plus explicit matches beyond it. */
+    coveredCount(ayah) {
+      const v = this.perVerse[ayah];
+      if (!v) return 0;
+      let covered = Math.min(v.progress, v.totalWords);
+      for (const i of v.matched) {
+        if (i >= v.progress && i < v.totalWords) covered++;
+      }
+      return covered;
+    }
+
+    /** Indices treated as recited (for live highlighting). */
+    coveredIndices(ayah) {
+      const v = this.perVerse[ayah];
+      const out = [];
+      for (let i = 0; i < v.totalWords; i++) {
+        if (i < v.progress || v.matched.has(i)) out.push(i);
+      }
+      return out;
+    }
+
     coverage(ayah) {
       const v = this.perVerse[ayah];
       if (!v || v.totalWords === 0) return 0;
-      return v.matched.size / v.totalWords;
+      return this.coveredCount(ayah) / v.totalWords;
     }
 
+    /**
+     * Only positive evidence counts as a miss: words beyond the alignment
+     * high-water mark were provably never reached. Gaps below it are NOT
+     * reported — tilawa's incremental match reports are too sparse to
+     * accuse the reciter of skipping individual mid-verse words.
+     */
     missedWordIndices(ayah) {
       const v = this.perVerse[ayah];
       const missed = [];
-      for (let i = 0; i < v.totalWords; i++) {
+      for (let i = v.progress; i < v.totalWords; i++) {
         if (!v.matched.has(i)) missed.push(i);
       }
       return missed;
@@ -180,29 +215,38 @@
       const target = this.perVerse[A];
 
       if (A === this.cursor) {
-        // First verse_match for the cursor verse is its commit signal;
-        // subsequent ones are intentional repetition — never an error.
-        if (cur.sawCommit) {
-          cur.repeats++;
-          effects.push({ type: 'repetition', ayah: A, count: cur.repeats });
-        } else {
-          cur.sawCommit = true;
-        }
+        // First verse_match for the cursor verse is its commit signal.
+        // The tracker re-emits verse_match for the same verse during
+        // confirm/flush cycles, so duplicates are silently absorbed
+        // (repeating the current verse aloud is a no-op anyway — the
+        // alignment high-water mark never decreases).
+        cur.sawCommit = true;
         this.pendingJump = null;
+        this.pendingBack = null;
         return effects;
       }
 
       if (A < this.cursor) {
-        // Going back to an earlier verse = contemplation/re-recitation.
-        target.repeats++;
-        target.sawCommit = true;
+        // Going back to an earlier verse = contemplation/re-recitation —
+        // never an error. The final flush can re-emit a stale verse_match
+        // for an earlier verse, so require a second consistent event
+        // (hysteresis, like forward jumps) before counting a repetition.
         this.pendingJump = null;
-        effects.push({ type: 'repetition', ayah: A, count: target.repeats });
+        if (this.stopRequested) return effects; // flush artifacts
+        if (this.pendingBack && this.pendingBack.ayah === A) {
+          this.pendingBack = null;
+          target.repeats++;
+          target.sawCommit = true;
+          effects.push({ type: 'repetition', ayah: A, count: target.repeats });
+        } else {
+          this.pendingBack = { ayah: A };
+        }
         return effects;
       }
 
       if (A === this.cursor + 1) {
         this.pendingJump = null;
+        this.pendingBack = null;
         effects.push(...this._commitAndAdvance(A));
         return effects;
       }
@@ -236,28 +280,34 @@
       const A = msg.ayah;
       const v = this.perVerse[A];
 
-      // Hysteresis confirmation: word progress on the jump target is the
-      // "second consistent event" that makes a forward jump real.
+      // Hysteresis confirmations: word progress on a pending jump/backward
+      // target is the "second consistent event" that makes it real.
       if (this.pendingJump && this.pendingJump.ayah === A) {
         this.pendingJump = null;
         effects.push(...this._commitAndAdvance(A));
+      } else if (this.pendingBack && this.pendingBack.ayah === A && !this.stopRequested) {
+        this.pendingBack = null;
+        v.repeats++;
+        v.sawCommit = true;
+        effects.push({ type: 'repetition', ayah: A, count: v.repeats });
       }
 
       if (A === this.cursor || v.status === 'done' || v.repeats > 0) {
-        // Union over time: repeated words only add coverage (word-level
-        // repetition tolerance), and re-reciting an earlier verse may even
-        // clear previously-missed words — generous by design.
-        const before = v.matched.size;
+        // Progress only ever grows (word-level repetition tolerance), and
+        // re-reciting an earlier verse may even clear previously-missed
+        // tail words — generous by design.
+        const beforeCovered = this.coveredCount(A);
+        if (typeof msg.word_index === 'number' && msg.word_index > v.progress) {
+          v.progress = Math.min(msg.word_index, v.totalWords);
+        }
         for (const i of msg.matched_indices || []) {
           if (i >= 0 && i < v.totalWords) v.matched.add(i);
         }
-        if (v.matched.size !== before || A === this.cursor) {
+        if (this.coveredCount(A) !== beforeCovered || A === this.cursor) {
           effects.push({
             type: 'word-progress',
             ayah: A,
-            matched: Array.from(v.matched).sort(function (a, b) {
-              return a - b;
-            }),
+            matched: this.coveredIndices(A),
             totalWords: v.totalWords,
           });
         }
@@ -422,7 +472,7 @@
           done.push(a);
           const missed = this.missedWordIndices(a);
           if (missed.length) missedWords[a] = missed;
-          matchedTotal += v.matched.size;
+          matchedTotal += this.coveredCount(a);
           wordTotal += v.totalWords;
         } else if (v.status === 'skipped') {
           skipped.push(a);

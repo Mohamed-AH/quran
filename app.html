@@ -75,6 +75,7 @@
             <button class="tab" onclick="switchTab('history')" id="tabHistory">السجل</button>
             <button class="tab" onclick="switchTab('stats')" id="tabStats">الإحصائيات</button>
             <button class="tab" onclick="switchTab('leaderboard')" id="tabLeaderboard">🏆 المتصدرون</button>
+            <button class="tab" onclick="switchTab('recite')" id="tabRecite">🎙️ التلاوة</button>
         </div>
 
         <div class="content">
@@ -204,6 +205,81 @@
                 </div>
             </div>
 
+            <div id="reciteTab" style="display:none;">
+                <!-- Unsupported browser -->
+                <div id="reciteUnsupported" style="display:none;">
+                    <div class="empty-state">
+                        <p id="reciteUnsupportedText">متصفحك لا يدعم ميزة التلاوة (يتطلب ميكروفون و WebAssembly)</p>
+                    </div>
+                </div>
+
+                <!-- Surah picker -->
+                <div id="recitePicker" style="display:none;">
+                    <h2 style="color: var(--gold); margin-bottom: 10px;" id="reciteTitle">🎙️ التلاوة</h2>
+                    <p style="color: var(--sage); margin-bottom: 20px;" id="reciteDesc">اختر سورة واتلُها — سأستمع إليك وأتابع تلاوتك كلمة كلمة</p>
+                    <div class="surah-grid" id="surahGrid"></div>
+                </div>
+
+                <!-- First-use setup: model download -->
+                <div id="reciteSetup" style="display:none;">
+                    <div class="recite-setup-card">
+                        <h3 style="color: var(--gold); margin-bottom: 10px;" id="reciteSetupTitle">تجهيز المستمع الذكي</h3>
+                        <p style="color: var(--sage); margin-bottom: 15px;" id="reciteSetupNote">يتم تنزيل نموذج التعرف على التلاوة (≈ ٨٨ م.ب) لمرة واحدة فقط — يعمل بعدها على جهازك دون إنترنت</p>
+                        <div class="recite-progress"><div class="recite-progress-bar" id="reciteProgressBar"></div></div>
+                        <p class="recite-progress-text" id="reciteProgressText"></p>
+                        <div class="button-group">
+                            <button class="btn btn-secondary" onclick="recitationUI.cancelSetup()" id="btnReciteSetupCancel">إلغاء</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live coaching view -->
+                <div id="reciteLive" style="display:none;">
+                    <div class="recite-topbar">
+                        <div class="recite-topbar-info">
+                            <div class="recite-surah-title" id="reciteSurahTitle"></div>
+                            <div class="recite-verse-pos" id="reciteVersePos"></div>
+                        </div>
+                        <div class="recite-topbar-status">
+                            <span class="recite-pulse" id="recitePulse"></span>
+                            <span class="recite-elapsed" id="reciteElapsed">0:00</span>
+                            <button class="btn recite-stop-btn" onclick="recitationUI.stopSession()" id="btnReciteStop">⏹ إنهاء</button>
+                        </div>
+                    </div>
+                    <div class="recite-hint" id="reciteHint"></div>
+                    <div class="verse-text" id="reciteVerseText" dir="rtl"></div>
+                    <div class="recite-verse-list" id="reciteVerseList"></div>
+                </div>
+
+                <!-- Session summary -->
+                <div id="reciteSummary" style="display:none;"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Recitation: surah confirm modal -->
+    <div class="modal" id="reciteConfirmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="reciteConfirmTitle"></h2>
+                <button class="close-btn" onclick="recitationUI.closeConfirm()">×</button>
+            </div>
+            <p style="color: var(--sage); margin-bottom: 15px;" id="reciteConfirmAyahs"></p>
+            <div class="recite-range-row">
+                <div class="input-group">
+                    <label id="labelReciteFrom">من آية</label>
+                    <input type="number" id="reciteFromAyah" min="1" value="1">
+                </div>
+                <div class="input-group">
+                    <label id="labelReciteTo">إلى آية</label>
+                    <input type="number" id="reciteToAyah" min="1" value="1">
+                </div>
+            </div>
+            <div class="button-group">
+                <button class="btn" onclick="recitationUI.startSession()" id="btnReciteStart">🎙️ ابدأ التلاوة</button>
+                <button class="btn btn-secondary" onclick="recitationUI.closeConfirm()" id="btnReciteCancel">إلغاء</button>
+            </div>
         </div>
     </div>
 
@@ -296,6 +372,11 @@
     <script src="js/auth.js"></script>
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/recitation-surahs.js"></script>
+    <script src="js/recitation-coach.js"></script>
+    <script src="js/recitation-assets.js"></script>
+    <script src="js/recitation-audio.js"></script>
+    <script src="js/recitation.js"></script>
     <script src="js/app.js"></script>
 
     <!-- Authentication initialization -->

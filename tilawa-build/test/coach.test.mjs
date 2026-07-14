@@ -43,11 +43,13 @@ const vm = (ayah, confidence = 0.9, surah = 1) => ({
   surrounding_verses: [],
 });
 
+// word_index mirrors tilawa's semantics: the alignment position (first
+// unmatched index), i.e. one past the furthest matched word.
 const wp = (ayah, matched, surah = 1) => ({
   type: "word_progress",
   surah,
   ayah,
-  word_index: matched.length ? Math.max(...matched) : 0,
+  word_index: matched.length ? Math.max(...matched) + 1 : 0,
   total_words: 0,
   matched_indices: matched,
 });
@@ -165,31 +167,59 @@ test("word repetition only adds coverage — never subtracts", () => {
   assert.deepEqual(committed.missedWords, []);
 });
 
-test("repeating the current verse is a neutral repetition, not an error", () => {
+test("duplicate verse_match for the current verse is silently absorbed", () => {
+  // The tracker re-emits verse_match on confirm/flush cycles — these must
+  // not surface as anything (reciting the current verse again is a no-op).
   const coach = makeCoach();
   coach.handleEvent(vm(1)); // start + commit signal
-  const effects = coach.handleEvent(vm(1)); // recited again
-  assert.deepEqual(types(effects), ["repetition"]);
-  assert.equal(effects[0].count, 1);
+  const effects = coach.handleEvent(vm(1)); // tracker re-emission
+  assert.deepEqual(types(effects), []);
   assert.equal(coach.cursor, 1);
+  assert.equal(coach.perVerse[1].repeats, 0);
 });
 
-test("going back to an earlier verse is repetition and can clear missed words", () => {
+test("going back to an earlier verse is repetition (with hysteresis) and can clear missed words", () => {
   const coach = makeCoach();
   coach.handleEvent(vm(1));
-  coach.handleEvent(wp(1, [0, 1, 2])); // word 3 missed initially
-  coach.handleEvent(vm(2)); // advance — verse 1 committed with a miss
-  const back = coach.handleEvent(vm(1)); // reciter returns to verse 1
-  assert.deepEqual(types(back), ["repetition"]);
+  coach.handleEvent(wp(1, [0, 1, 2])); // word 3 (tail) never reached
+  coach.handleEvent(vm(2)); // advance — verse 1 committed with a tail miss
+  const first = coach.handleEvent(vm(1)); // could be a stale re-emission…
+  assert.deepEqual(types(first), [], "single backward match is not yet a repetition");
   assert.equal(coach.cursor, 2, "cursor must not move backward");
-  coach.handleEvent(wp(1, [3])); // now covers the missed word
-  coach.handleEvent(vm(2)); // repetition of current verse (already committed)
+  const confirmed = coach.handleEvent(wp(1, [3])); // …but word progress confirms the revisit
+  assert.ok(types(confirmed).includes("repetition"));
   reciteVerse(coach, 3);
   coach.requestStop();
   const fx = coach.handleEvent(fin([1, 2, 3]));
   const s = fx[0].summary;
-  assert.equal(s.missedWords[1], undefined, "revisit cleared the missed word");
-  assert.deepEqual(s.repeats, { 1: 1, 2: 1 });
+  assert.equal(s.missedWords[1], undefined, "revisit cleared the missed tail word");
+  assert.deepEqual(s.repeats, { 1: 1 });
+});
+
+test("stale backward verse_match during stop-flush never counts as repetition", () => {
+  const coach = makeCoach();
+  reciteVerse(coach, 1);
+  reciteVerse(coach, 2);
+  reciteVerse(coach, 3);
+  coach.requestStop();
+  coach.handleEvent(vm(2)); // flush re-emission of an earlier verse
+  const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
+  assert.deepEqual(s.repeats, {});
+});
+
+test("missed words are only claimed beyond the alignment high-water mark", () => {
+  // Sparse incremental matches below the high-water mark must not be
+  // reported as misses — only the unreached tail counts.
+  const coach = makeCoach({ ayahStart: 7, ayahEnd: 7 });
+  coach.handleEvent(vm(7));
+  // position reached word 6 of 9, but only words 2 and 5 were reported
+  coach.handleEvent({
+    type: "word_progress", surah: 1, ayah: 7,
+    word_index: 6, total_words: 9, matched_indices: [2, 5],
+  });
+  coach.requestStop();
+  const s = coach.handleEvent(fin([7]))[0].summary;
+  assert.deepEqual(s.missedWords[7], [6, 7, 8], "only the unreached tail is missed");
 });
 
 // ---------------------------------------------------------------------------
