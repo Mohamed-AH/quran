@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recitation Pipeline Harness (dev only)</title>
+    <style>
+        body { font-family: monospace; background: #0a3a2a; color: #faf8f3; padding: 20px; }
+        h1 { color: #d4af37; font-size: 1.2rem; }
+        fieldset { border: 1px solid #d4af37; margin-bottom: 14px; padding: 12px; }
+        legend { color: #d4af37; }
+        button { background: #d4af37; border: 0; padding: 8px 14px; cursor: pointer; margin: 4px; font-family: monospace; }
+        button:disabled { opacity: 0.4; }
+        input, select { font-family: monospace; padding: 4px; }
+        .cols { display: flex; gap: 14px; }
+        .col { flex: 1; min-width: 0; }
+        .log { background: rgba(0,0,0,0.4); height: 340px; overflow-y: auto; padding: 8px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+        .log .vm { color: #f4d77f; }
+        .log .wp { color: #9fd6b8; }
+        .log .fs { color: #e05c5c; }
+        .log .fx { color: #8bd4e8; }
+        #status { color: #8ba888; margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎙️ Recitation Pipeline Harness — dev only, not linked from the app</h1>
+    <div id="status">idle</div>
+
+    <fieldset>
+        <legend>1. Engine</legend>
+        <button id="btnBoot">Boot engine (downloads model on first run)</button>
+        <span id="bootProgress"></span>
+    </fieldset>
+
+    <fieldset>
+        <legend>2. Input</legend>
+        <input type="file" id="wavFile" accept="audio/*">
+        <label>surah <input type="number" id="surah" value="1" min="1" max="114" style="width:4em"></label>
+        <label>from <input type="number" id="from" value="1" min="1" style="width:4em"></label>
+        <label>to <input type="number" id="to" value="7" min="1" style="width:4em"></label>
+        <label><input type="checkbox" id="realtime"> real-time pacing</label>
+        <br>
+        <button id="btnStream" disabled>Stream file → coach</button>
+        <button id="btnTranscribe" disabled>One-shot transcribe</button>
+        <button id="btnMic" disabled>Mic stream (5 min max)</button>
+        <button id="btnStop" disabled>Stop</button>
+    </fieldset>
+
+    <div class="cols">
+        <div class="col">
+            <fieldset><legend>Raw tilawa events</legend><div class="log" id="rawLog"></div></fieldset>
+        </div>
+        <div class="col">
+            <fieldset><legend>Coach effects</legend><div class="log" id="coachLog"></div></fieldset>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/recitation-surahs.js"></script>
+    <script src="js/recitation-coach.js"></script>
+    <script src="js/recitation-assets.js"></script>
+    <script src="js/recitation-audio.js"></script>
+    <script>
+        const $ = (id) => document.getElementById(id);
+        const status = (s) => { $('status').textContent = s; };
+        let worker = null, quranData = null, coach = null, stopFlag = false;
+
+        function log(el, cls, obj) {
+            const div = document.createElement('div');
+            div.className = cls;
+            div.textContent = `[${new Date().toISOString().slice(11, 19)}] ${typeof obj === 'string' ? obj : JSON.stringify(obj)}`;
+            $(el).appendChild(div);
+            $(el).scrollTop = $(el).scrollHeight;
+        }
+
+        const EVENT_CLS = { verse_match: 'vm', word_progress: 'wp', final_sequence: 'fs', verse_candidate: '' };
+
+        $('btnBoot').onclick = async () => {
+            $('btnBoot').disabled = true;
+            status('loading assets…');
+            try {
+                const assets = await recitationAssets.loadAll(({ stage, loaded, total }) => {
+                    $('bootProgress').textContent = total
+                        ? `${stage} ${(loaded / 1048576).toFixed(1)}/${(total / 1048576).toFixed(1)} MB`
+                        : `${stage} ${(loaded / 1048576).toFixed(1)} MB`;
+                });
+                quranData = assets.quran;
+                status('starting worker…');
+                worker = new Worker(CONFIG.TILAWA.WORKER_PATH, { type: 'module' });
+                worker.onmessage = (e) => {
+                    const m = e.data;
+                    if (m.type === 'ready') {
+                        status('engine ready');
+                        ['btnStream', 'btnTranscribe', 'btnMic'].forEach((b) => ($(b).disabled = false));
+                    } else if (m.type === 'event') {
+                        log('rawLog', EVENT_CLS[m.event.type] || '', m.event);
+                        if (coach) {
+                            for (const fx of coach.handleEvent(m.event)) log('coachLog', 'fx', fx);
+                        }
+                    } else if (m.type === 'transcribed') {
+                        log('rawLog', 'vm', m.prediction);
+                        status('transcribe done');
+                    } else if (m.type === 'stopped') {
+                        if (coach) log('coachLog', 'fx', coach.finalize());
+                        status('stopped / flushed');
+                    } else if (m.type === 'error') {
+                        log('rawLog', 'fs', 'ERROR: ' + m.message);
+                    }
+                };
+                worker.postMessage({
+                    type: 'init',
+                    model: assets.model,
+                    vocab: assets.vocab,
+                    quranCtcTokens: assets.quranCtcTokens,
+                    quran: assets.quran,
+                    config: { audioChunkMs: 200, finalSilenceSec: 5 },
+                }, [assets.model]);
+            } catch (err) {
+                status('boot failed: ' + err.message);
+                $('btnBoot').disabled = false;
+            }
+        };
+
+        async function fileTo16k() {
+            const file = $('wavFile').files[0];
+            if (!file) throw new Error('pick an audio file first');
+            const raw = await file.arrayBuffer();
+            const probe = new AudioContext();
+            const decoded = await probe.decodeAudioData(raw);
+            probe.close();
+            const frames = Math.ceil(decoded.duration * 16000);
+            const off = new OfflineAudioContext(1, frames, 16000);
+            const src = off.createBufferSource();
+            src.buffer = decoded;
+            src.connect(off.destination);
+            src.start();
+            const rendered = await off.startRendering();
+            return rendered.getChannelData(0);
+        }
+
+        function makeCoach() {
+            const surah = +$('surah').value, from = +$('from').value, to = +$('to').value;
+            const verses = quranData
+                .filter((v) => v.surah === surah && v.ayah >= from && v.ayah <= to)
+                .map((v) => ({ ayah: v.ayah, text: v.text_uthmani }));
+            $('rawLog').innerHTML = $('coachLog').innerHTML = '';
+            coach = new RecitationCoach({ surah, ayahStart: from, ayahEnd: to, verses });
+            worker.postMessage({ type: 'reset' });
+        }
+
+        $('btnStream').onclick = async () => {
+            try {
+                const audio = await fileTo16k();
+                makeCoach();
+                stopFlag = false;
+                $('btnStop').disabled = false;
+                status(`streaming ${(audio.length / 16000).toFixed(1)}s of audio…`);
+                const CHUNK = 3200;
+                for (let i = 0; i < audio.length && !stopFlag; i += CHUNK) {
+                    const chunk = audio.slice(i, i + CHUNK);
+                    worker.postMessage({ type: 'feed', samples: chunk }, [chunk.buffer]);
+                    if ($('realtime').checked) await new Promise((r) => setTimeout(r, 200));
+                    else await new Promise((r) => setTimeout(r, 5));
+                }
+                worker.postMessage({ type: 'stop' });
+                status('file fed; flushing…');
+            } catch (err) { status(err.message); }
+        };
+
+        $('btnTranscribe').onclick = async () => {
+            try {
+                const audio = await fileTo16k();
+                status('transcribing…');
+                worker.postMessage({ type: 'transcribe', samples: audio }, [audio.buffer]);
+            } catch (err) { status(err.message); }
+        };
+
+        $('btnMic').onclick = async () => {
+            makeCoach();
+            stopFlag = false;
+            $('btnStop').disabled = false;
+            await recitationAudio.start({
+                onChunk: (c) => { if (!stopFlag) worker.postMessage({ type: 'feed', samples: c }, [c.buffer]); },
+                onLevel: () => {},
+            });
+            status('mic live — recite now');
+            setTimeout(() => { if (!stopFlag) $('btnStop').click(); }, 300000);
+        };
+
+        $('btnStop').onclick = () => {
+            stopFlag = true;
+            recitationAudio.stop();
+            worker.postMessage({ type: 'stop' });
+            $('btnStop').disabled = true;
+        };
+    </script>
+</body>
+</html>

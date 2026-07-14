@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+tilawa-build/node_modules/
+backend/node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Editor/OS
+.DS_Store
+.vscode/
+.idea/
+
+# Never commit the ONNX model — it is downloaded at runtime (see CONFIG.TILAWA)
+*.onnx
