@@ -24,6 +24,14 @@ A beautiful, bilingual (Arabic/English) web application for tracking your Quran 
 - **Streak Tracking**: Monitor consecutive days of practice
 - **Comprehensive History**: View all past entries with dates and details
 
+### 🎙️ Recitation Coach (تلاوة)
+- **Live Listening**: Recite into your microphone and watch words light up as you say them
+- **Pick a Passage or Just Recite**: Choose a surah (and ayah range), or use **"اتلُ مباشرة" (Just Recite)** and the coach detects what you're reciting automatically
+- **Mistake Detection**: Skipped verses and unfinished verses are flagged in the session summary
+- **Repetition Friendly**: Repeating words or verses for emphasis and contemplation is never counted as a mistake
+- **Pause Friendly**: Breathe and pause for reflection between verses — the coach keeps listening patiently
+- **100% On-Device & Private**: Powered by [tilawa](https://github.com/Mohamed-AH/tilawa) — recognition runs entirely in your browser; your voice never leaves your device
+
 ### 🌐 User Experience
 - **Interactive Demo**: Try the app before signing up on landing page
 - **Bilingual Interface**: Full Arabic and English support with RTL/LTR layouts
@@ -53,6 +61,12 @@ A beautiful, bilingual (Arabic/English) web application for tracking your Quran 
   - `js/ui.js` - Toast notifications, loaders, skeletons
   - `js/app.js` - Main application logic
   - `js/demo.js` - Landing page demo data
+- **Recitation Coach modules**:
+  - `js/recitation.js` - Recite tab controller (picker, live view, summary)
+  - `js/recitation-coach.js` - Coaching state machine (start/end, mistakes, repetition tolerance)
+  - `js/recitation-audio.js` + `js/recitation-audio-processor.js` - Mic capture → 16 kHz chunks
+  - `js/recitation-assets.js` - One-time model download + Cache Storage
+  - `js/vendor/tilawa-worker.js` - Speech-recognition Web Worker (built in `tilawa-build/`, see its README)
 
 ### Backend (Node.js/Express)
 - **RESTful API**: Clean endpoint structure
@@ -200,6 +214,34 @@ http://localhost:8000
 - **History Tab**: See all past entries chronologically
 - **Statistics Tab**: View detailed analytics
 - **Dashboard Cards**: Quick overview at the top
+
+### Reciting with the Coach 🎙️
+The **"التلاوة" (Recite)** tab is a personal listening coach: it hears your recitation, follows along word by word, and gives you an honest summary at the end.
+
+**Starting a session — two ways:**
+1. **Pick a passage**: tap a surah card, optionally narrow the ayah range (من آية / إلى آية), then **"ابدأ التلاوة" (Start Reciting)**.
+2. **Just Recite (اتلُ مباشرة)**: tap the 🎯 card at the top of the surah grid and simply begin reciting from anywhere in the Quran. The coach identifies your surah and ayah automatically within a few seconds, shows the surah name it locked onto, and follows you from there to the end of the surah (or until you stop).
+
+**First use only:** the app downloads the speech-recognition model (≈ 88 MB) with a progress bar. It's cached on your device — every later session starts instantly, and recognition works fully offline after that. You'll also be asked once for microphone permission.
+
+**During recitation:**
+- The current verse is displayed large; each word turns **gold** as the coach hears it
+- The pulse dot next to the timer shows the coach is hearing you
+- **Pauses are welcome** — breathe, reflect, take your time between verses; nothing counts down and nothing is flagged
+- **Repetition is welcome** — repeating a word or returning to an earlier verse shows a gentle "إعادة — أحسنت التدبر" note, never an error
+- Completed verses appear below with a ✓; verses you jumped over are marked ↷
+- Tap **"⏹ إنهاء" (Stop)** whenever you're done — or just finish the passage and pause; the coach wraps up on its own
+
+**The summary shows:**
+- A score out of 100 (verses completed, word coverage, recognition confidence)
+- **Skipped verses** with their full text so you can review them
+- **Missed words** highlighted in red inside their verse
+- Repetitions listed as neutral notes (they never reduce your score)
+- Verses you didn't reach are listed separately — stopping early isn't a mistake
+
+**Requirements:** a modern browser (Chrome, Edge, Firefox, or Safari) with microphone access. Everything runs on your device — no audio is ever uploaded.
+
+**For developers:** the recognition worker is prebuilt and committed under `js/vendor/`; rebuild it with `cd tilawa-build && npm install && npm run build`, and run the coach's test suite with `npm test` (see `tilawa-build/README.md`). A standalone harness page, `test-recitation.html`, lets you stream a WAV file or live mic through the full pipeline with raw event and coach-verdict logs side by side.
 
 ### Language Switching
 - Click language toggle button (top right)

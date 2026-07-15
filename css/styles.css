@@ -711,3 +711,10 @@
             .verse-text { font-size: 1.6rem; padding: 20px 15px; }
             .recite-topbar { padding: 12px 14px; }
         }
+
+        .freestyle-card {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.12) 0%, rgba(30, 122, 84, 0.15) 100%);
+            border-color: var(--gold);
+        }
+        .freestyle-card .surah-card-name { color: var(--gold-light); font-size: 1.15rem; }

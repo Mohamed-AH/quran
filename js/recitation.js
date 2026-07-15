@@ -42,6 +42,10 @@ const recitationUI = {
       initializing: 'تشغيل المستمع… لحظات',
       listening: 'أستمع إليك…',
       awaitingStart: 'ابدأ التلاوة متى شئت — أنا أستمع، خذ وقتك',
+      freestyleTitle: 'اتلُ مباشرة',
+      freestyleDesc: 'من أي موضع — سأتعرف على السورة تلقائياً',
+      freestyleListening: 'اتلُ من أي موضع في القرآن — سأتعرف على موضعك وأتابعك',
+      anchored: (name) => `🎯 ${name} — تابع، أنا معك`,
       stillListening: 'لم أسمع تلاوة بعد — ما زلت أستمع',
       repetition: '🔁 إعادة — أحسنت التدبر',
       checkpoint: 'توقفت للتأمل؟ خذ وقتك، ما زلت أستمع',
@@ -82,6 +86,10 @@ const recitationUI = {
       initializing: 'Starting the listener… one moment',
       listening: 'Listening…',
       awaitingStart: 'Begin whenever you are ready — I am listening, take your time',
+      freestyleTitle: 'Just Recite',
+      freestyleDesc: 'From anywhere — the surah is detected automatically',
+      freestyleListening: 'Recite from anywhere in the Quran — I will find your place and follow along',
+      anchored: (name) => `🎯 ${name} — keep going, I am with you`,
       stillListening: 'No recitation heard yet — still listening',
       repetition: '🔁 Repetition — beautiful contemplation',
       checkpoint: 'Pausing to reflect? Take your time — still listening',
@@ -201,7 +209,13 @@ const recitationUI = {
     if (!grid) return;
     const lang = this._lang();
     const t = this._t();
-    grid.innerHTML = RECITATION_SURAHS.map(
+    const freestyleCard = `
+      <div class="juz-card surah-card freestyle-card" onclick="recitationUI.startFreestyle()">
+        <div class="juz-number">🎯</div>
+        <div class="surah-card-name">${t.freestyleTitle}</div>
+        <div class="surah-card-en">${t.freestyleDesc}</div>
+      </div>`;
+    grid.innerHTML = freestyleCard + RECITATION_SURAHS.map(
       (s) => `
       <div class="juz-card surah-card" onclick="recitationUI.openConfirm(${s.n})">
         <div class="juz-number">${this._num(s.n)}</div>
@@ -348,10 +362,19 @@ const recitationUI = {
     const from = Math.max(1, Math.min(s.ayahs, parseInt(document.getElementById('reciteFromAyah').value, 10) || 1));
     const to = Math.max(from, Math.min(s.ayahs, parseInt(document.getElementById('reciteToAyah').value, 10) || s.ayahs));
     this.closeConfirm();
+    await this._launch({ surah: s.n, from, to });
+  },
 
+  /** Freestyle mode: no passage picked — tilawa's discovery identifies the
+   *  verse being recited and the coach anchors itself on the fly. */
+  async startFreestyle() {
+    await this._launch({ freestyle: true });
+  },
+
+  async _launch(spec) {
     this._phase = 'setup';
     this._showPanel('reciteSetup');
-    this._pendingStart = { surah: s.n, from, to };
+    this._pendingStart = spec;
 
     try {
       await this._ensureEngine();
@@ -380,31 +403,69 @@ const recitationUI = {
       return;
     }
 
-    const { surah, from: ayahStart, to: ayahEnd } = this._pendingStart;
     this._pendingStart = null;
-
-    const verses = this._quranData
-      .filter((v) => v.surah === surah && v.ayah >= ayahStart && v.ayah <= ayahEnd)
-      .map((v) => ({ ayah: v.ayah, text: v.text_uthmani }));
-
     this._worker.postMessage({ type: 'reset' });
-    this._session = {
-      surah,
-      ayahStart,
-      ayahEnd,
-      surahInfo: RECITATION_SURAHS[surah - 1],
-      verses,
-      versesByAyah: Object.fromEntries(verses.map((v) => [v.ayah, v])),
-      coach: new RecitationCoach({ surah, ayahStart, ayahEnd, verses }),
-      startedAtMs: Date.now(),
-      cursor: null,
-      ended: false,
-    };
+
+    if (spec.freestyle) {
+      this._session = {
+        freestyle: true,
+        coach: null, // anchored on the first confident verse_match
+        committed: false,
+        lastOutOfRange: null,
+        startedAtMs: Date.now(),
+        cursor: null,
+        ended: false,
+      };
+    } else {
+      this._session = Object.assign(
+        this._sessionFieldsFor({
+          surah: spec.surah,
+          ayahStart: spec.from,
+          ayahEnd: spec.to,
+        }),
+        { startedAtMs: Date.now(), cursor: null, ended: false }
+      );
+    }
 
     this._phase = 'live';
     this._showPanel('reciteLive');
     this._renderLiveInitial();
     this._startElapsedTimer();
+  },
+
+  /** Build the coach + verse lookup fields for a known passage. */
+  _sessionFieldsFor(anchor) {
+    const verses =
+      anchor.verses ||
+      this._quranData
+        .filter((v) => v.surah === anchor.surah && v.ayah >= anchor.ayahStart && v.ayah <= anchor.ayahEnd)
+        .map((v) => ({ ayah: v.ayah, text: v.text_uthmani }));
+    return {
+      surah: anchor.surah,
+      ayahStart: anchor.ayahStart,
+      ayahEnd: anchor.ayahEnd,
+      surahInfo: RECITATION_SURAHS[anchor.surah - 1],
+      verses,
+      versesByAyah: Object.fromEntries(verses.map((v) => [v.ayah, v])),
+      coach: new RecitationCoach({
+        surah: anchor.surah,
+        ayahStart: anchor.ayahStart,
+        ayahEnd: anchor.ayahEnd,
+        verses,
+      }),
+    };
+  },
+
+  /** Anchor (or re-anchor) a freestyle session at a detected verse. */
+  _anchorFreestyle(anchor) {
+    const s = this._session;
+    Object.assign(s, this._sessionFieldsFor(anchor));
+    s.cursor = null;
+    s.committed = false;
+    s.lastOutOfRange = null;
+    document.getElementById('reciteSurahTitle').textContent = s.surahInfo.name;
+    this._renderVersePosition();
+    document.getElementById('reciteVerseList').innerHTML = '';
   },
 
   _showSetupError(message) {
@@ -435,7 +496,7 @@ const recitationUI = {
 
   stopSession() {
     if (!this._session || this._session.ended) return;
-    this._session.coach.requestStop();
+    if (this._session.coach) this._session.coach.requestStop();
     this._showHint(this._t().stopping, 0);
     recitationAudio.stop();
     if (this._worker) this._worker.postMessage({ type: 'stop' });
@@ -460,8 +521,12 @@ const recitationUI = {
 
   _finishSession() {
     if (!this._session || this._session.ended) return;
-    const effect = this._session.coach.finalize();
-    this._applyEffects([effect]);
+    if (!this._session.coach) {
+      // Freestyle session stopped before any recitation was recognized.
+      this._applyEffects([{ type: 'completed', summary: { started: false } }]);
+      return;
+    }
+    this._applyEffects([this._session.coach.finalize()]);
   },
 
   _clearTimers() {
@@ -477,9 +542,32 @@ const recitationUI = {
   // -------------------------------------------------------------------------
 
   _onTilawaEvent(event) {
-    if (!this._session || this._session.ended) return;
-    const effects = this._session.coach.handleEvent(event);
-    this._applyEffects(effects);
+    const s = this._session;
+    if (!s || s.ended) return;
+
+    if (s.freestyle && !s.coach) {
+      // Un-anchored freestyle session: wait for tilawa's discovery to
+      // identify what is being recited, then anchor the coach there.
+      const anchor = RecitationCoach.anchorFromEvent(event, this._quranData);
+      if (!anchor) return;
+      this._anchorFreestyle(anchor);
+      this._showHint(this._t().anchored(s.surahInfo.name), 3500);
+      // fall through: the anchoring event also starts the coach
+    } else if (
+      s.freestyle &&
+      s.coach &&
+      !s.committed &&
+      event.type === 'verse_match' &&
+      (event.confidence || 0) >= 0.55 &&
+      !s.coach.inRange(event.surah, event.ayah)
+    ) {
+      // Remember confident out-of-range matches: if the initial anchor was
+      // wrong (e.g. an identical opening phrase), the off-track effect
+      // below re-anchors to where the reciter actually is.
+      s.lastOutOfRange = event;
+    }
+
+    this._applyEffects(s.coach.handleEvent(event));
   },
 
   _applyEffects(effects) {
@@ -500,6 +588,7 @@ const recitationUI = {
           }
           break;
         case 'verse-committed':
+          this._session.committed = true;
           this._renderVerseList();
           break;
         case 'verses-skipped':
@@ -512,9 +601,23 @@ const recitationUI = {
         case 'checkpoint':
           this._showHint(this._t().checkpoint, 4000);
           break;
-        case 'off-track':
+        case 'off-track': {
+          const s = this._session;
+          if (s.freestyle && !s.committed && s.lastOutOfRange) {
+            // The first anchor never took hold and the reciter is
+            // consistently somewhere else — move the coach there.
+            const detected = s.lastOutOfRange; // _anchorFreestyle clears it
+            const anchor = RecitationCoach.anchorFromEvent(detected, this._quranData);
+            if (anchor) {
+              this._anchorFreestyle(anchor);
+              this._showHint(this._t().anchored(s.surahInfo.name), 3500);
+              this._applyEffects(s.coach.handleEvent(detected));
+              break;
+            }
+          }
           this._showHint(this._t().offTrack, 4000);
           break;
+        }
         case 'completed':
           this._session.ended = true;
           this._clearTimers();
@@ -536,11 +639,13 @@ const recitationUI = {
 
   _renderLiveInitial() {
     const s = this._session;
-    document.getElementById('reciteSurahTitle').textContent = s.surahInfo.name;
+    document.getElementById('reciteSurahTitle').textContent = s.freestyle && !s.coach
+      ? this._t().freestyleTitle
+      : s.surahInfo.name;
     document.getElementById('reciteVerseText').innerHTML = '';
     document.getElementById('reciteVerseList').innerHTML = '';
     this._renderVersePosition();
-    this._showHint(this._t().awaitingStart, 0);
+    this._showHint(s.freestyle ? this._t().freestyleListening : this._t().awaitingStart, 0);
     // Gentle nudge if nothing is heard for a while (not an error).
     this._awaitTimer = setTimeout(() => {
       if (this._session && !this._session.ended && this._session.cursor === null) {
@@ -554,7 +659,9 @@ const recitationUI = {
     if (!s) return;
     const el = document.getElementById('reciteVersePos');
     if (!el) return;
-    if (s.cursor === null) {
+    if (!s.coach) {
+      el.textContent = '';
+    } else if (s.cursor === null) {
       el.textContent = `${this._t().range}: ${this._num(s.ayahStart)}–${this._num(s.ayahEnd)}`;
     } else {
       el.textContent = this._t().verseOf(this._num(s.cursor), this._num(s.ayahEnd));
@@ -589,7 +696,7 @@ const recitationUI = {
 
   _renderVerseList() {
     const s = this._session;
-    if (!s) return;
+    if (!s || !s.coach) return;
     const t = this._t();
     const items = [];
     for (const v of s.verses) {

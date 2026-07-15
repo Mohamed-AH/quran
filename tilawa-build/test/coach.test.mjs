@@ -336,6 +336,32 @@ test("a session that never started scores zero", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Freestyle anchoring (just-recite mode)
+// ---------------------------------------------------------------------------
+
+const QURAN_LIKE = FATIHA.map((v) => ({ surah: 1, ayah: v.ayah, text_uthmani: v.text }));
+
+test("anchorFromEvent builds a range from the detected verse to the surah end", () => {
+  const anchor = RecitationCoach.anchorFromEvent(vm(3, 0.9), QURAN_LIKE);
+  assert.equal(anchor.surah, 1);
+  assert.equal(anchor.ayahStart, 3);
+  assert.equal(anchor.ayahEnd, 7);
+  assert.deepEqual(anchor.verses.map((v) => v.ayah), [3, 4, 5, 6, 7]);
+  // The anchor drives a working coach that starts on the same event.
+  const coach = new RecitationCoach({ ...anchor, now: () => 0 });
+  const effects = coach.handleEvent(vm(3, 0.9));
+  assert.ok(types(effects).includes("started"));
+  assert.equal(coach.cursor, 3);
+});
+
+test("anchorFromEvent rejects low confidence, other event types, and unknown verses", () => {
+  assert.equal(RecitationCoach.anchorFromEvent(vm(1, 0.3), QURAN_LIKE), null);
+  assert.equal(RecitationCoach.anchorFromEvent(wp(1, [0, 1]), QURAN_LIKE), null);
+  assert.equal(RecitationCoach.anchorFromEvent(vm(1, 0.9, 2), QURAN_LIKE), null); // surah 2 not in data
+  assert.equal(RecitationCoach.anchorFromEvent(null, QURAN_LIKE), null);
+});
+
+// ---------------------------------------------------------------------------
 // Off-track handling
 // ---------------------------------------------------------------------------
 

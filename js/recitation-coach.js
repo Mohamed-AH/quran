@@ -529,6 +529,37 @@
     }
   }
 
+  /**
+   * Freestyle ("just recite") support: derive a coach anchor from the first
+   * confident verse_match of an un-anchored session. Tilawa's discovery mode
+   * identifies the verse across all 6,236; the expected range then becomes
+   * that verse through the end of its surah. Returns constructor options for
+   * RecitationCoach, or null if the event is not a confident verse match.
+   */
+  RecitationCoach.anchorFromEvent = function (event, quranData, opts) {
+    const minConfidence = (opts && opts.minConfidence) || 0.55;
+    if (!event || event.type !== 'verse_match') return null;
+    if ((event.confidence || 0) < minConfidence) return null;
+    const verses = [];
+    let ayahEnd = event.ayah;
+    for (const v of quranData) {
+      if (v.surah === event.surah && v.ayah >= event.ayah) {
+        verses.push({ ayah: v.ayah, text: v.text_uthmani });
+        if (v.ayah > ayahEnd) ayahEnd = v.ayah;
+      }
+    }
+    if (verses.length === 0) return null;
+    verses.sort(function (a, b) {
+      return a.ayah - b.ayah;
+    });
+    return {
+      surah: event.surah,
+      ayahStart: event.ayah,
+      ayahEnd: ayahEnd,
+      verses: verses,
+    };
+  };
+
   RecitationCoach.splitDisplayTokens = splitDisplayTokens;
   RecitationCoach.countWords = countWords;
 
