@@ -31,6 +31,34 @@ let session = null;
 let feeding = Promise.resolve();
 let stopping = false;
 
+// Debug instrumentation (toggled from the main thread via {type:"setDebug"}).
+// When on: tilawa's onDiagnostic firehose is forwarded, and feed timing /
+// queue-depth stats are posted every ~5 s so real-time headroom is visible.
+let debugEnabled = false;
+let queueDepth = 0;
+const stats = { feeds: 0, feedMsTotal: 0, feedMsMax: 0, audioMs: 0, lastPost: 0 };
+
+function postStats(now) {
+  const avg = stats.feeds ? stats.feedMsTotal / stats.feeds : 0;
+  // realtimeFactor < 1 means inference keeps up with the mic.
+  const realtimeFactor = stats.audioMs ? stats.feedMsTotal / stats.audioMs : 0;
+  self.postMessage({
+    type: "stats",
+    stats: {
+      feeds: stats.feeds,
+      avgFeedMs: Math.round(avg * 10) / 10,
+      maxFeedMs: Math.round(stats.feedMsMax),
+      queueDepth,
+      realtimeFactor: Math.round(realtimeFactor * 100) / 100,
+    },
+  });
+  stats.feeds = 0;
+  stats.feedMsTotal = 0;
+  stats.feedMsMax = 0;
+  stats.audioMs = 0;
+  stats.lastPost = now;
+}
+
 function postEvent(event) {
   self.postMessage({ type: "event", event });
 }
@@ -82,6 +110,9 @@ async function handleInit(msg) {
     {
       config: msg.config || {},
       onOutput: postEvent,
+      onDiagnostic: (event, data) => {
+        if (debugEnabled) self.postMessage({ type: "diag", event, data });
+      },
     },
   );
   self.postMessage({ type: "ready" });
@@ -89,9 +120,26 @@ async function handleInit(msg) {
 
 // feed() calls must not interleave: the tracker is stateful. Serialize them.
 function enqueueFeed(samples) {
+  queueDepth++;
   feeding = feeding
-    .then(() => (session && !stopping ? session.feed(samples) : null))
-    .catch((err) => postError(`feed failed: ${err && err.message}`));
+    .then(async () => {
+      if (!session || stopping) return null;
+      const t0 = Date.now();
+      const result = await session.feed(samples);
+      if (debugEnabled) {
+        const ms = Date.now() - t0;
+        stats.feeds++;
+        stats.feedMsTotal += ms;
+        if (ms > stats.feedMsMax) stats.feedMsMax = ms;
+        stats.audioMs += (samples.length / SAMPLE_RATE) * 1000;
+        if (Date.now() - stats.lastPost >= 5000) postStats(Date.now());
+      }
+      return result;
+    })
+    .catch((err) => postError(`feed failed: ${err && err.message}`))
+    .finally(() => {
+      queueDepth--;
+    });
   return feeding;
 }
 
@@ -144,6 +192,10 @@ self.onmessage = (e) => {
         break;
       case "setConfig":
         if (session) session.setConfig(msg.config || {});
+        break;
+      case "setDebug":
+        debugEnabled = !!msg.enabled;
+        stats.lastPost = Date.now();
         break;
       case "transcribe":
         (async () => {

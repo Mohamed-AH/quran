@@ -718,3 +718,36 @@
             border-color: var(--gold);
         }
         .freestyle-card .surah-card-name { color: var(--gold-light); font-size: 1.15rem; }
+
+        /* Volume level meter (audio-input feedback for the reciter) */
+        .recite-meter {
+            width: 90px;
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            overflow: hidden;
+            position: relative;
+        }
+        /* Zone ticks: below ~18% reads as too quiet, above ~85% as too hot */
+        .recite-meter::before,
+        .recite-meter::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: rgba(250, 248, 243, 0.25);
+        }
+        .recite-meter::before { inset-inline-start: 18%; }
+        .recite-meter::after { inset-inline-start: 85%; }
+        .recite-meter-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 5px;
+            background: var(--sage);
+            transition: width 0.06s linear;
+        }
+        .recite-meter-fill.level-good { background: linear-gradient(90deg, var(--forest-light), var(--gold)); }
+        .recite-meter-fill.level-low { background: var(--sage); }
+        .recite-meter-fill.level-hot { background: #e05c5c; }
