@@ -241,6 +241,8 @@ The **"التلاوة" (Recite)** tab is a personal listening coach: it hears yo
 
 **Requirements:** a modern browser (Chrome, Edge, Firefox, or Safari) with microphone access. Everything runs on your device — no audio is ever uploaded.
 
+**Works on restricted networks:** the verse data is served from the app itself (`assets/tilawa/`) and the model from the app's backend (`/api/tilawa/model`), so the coach works even on corporate networks that block GitHub. The original GitHub URLs remain as automatic fallbacks, and the backend can be pointed at an internal mirror via the `TILAWA_MODEL_UPSTREAM` environment variable.
+
 **For developers:** the recognition worker is prebuilt and committed under `js/vendor/`; rebuild it with `cd tilawa-build && npm install && npm run build`, and run the coach's test suite with `npm test` (see `tilawa-build/README.md`). A standalone harness page, `test-recitation.html`, lets you stream a WAV file or live mic through the full pipeline with raw event and coach-verdict logs side by side.
 
 ### Language Switching

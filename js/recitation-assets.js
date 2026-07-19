@@ -20,8 +20,11 @@ const recitationAssets = {
     );
   },
 
-  _assetUrl(name) {
-    return CONFIG.TILAWA.ASSET_BASE + CONFIG.TILAWA.ASSETS[name];
+  /** Ordered candidate URLs for a JSON asset (same-origin first). */
+  _assetUrls(name) {
+    return CONFIG.TILAWA.ASSET_BASES.map(
+      (base) => base + CONFIG.TILAWA.ASSETS[name]
+    );
   },
 
   async _openCache() {
@@ -53,7 +56,40 @@ const recitationAssets = {
   async isModelCached() {
     const cache = await this._openCache();
     if (!cache) return false;
-    return !!(await cache.match(CONFIG.TILAWA.MODEL_URL));
+    for (const url of CONFIG.TILAWA.MODEL_SOURCES) {
+      if (await cache.match(url)) return true;
+    }
+    return false;
+  },
+
+  /**
+   * Fetch the first reachable of several candidate URLs as an ArrayBuffer.
+   * Checks Cache Storage across ALL candidates first (so a user whose cache
+   * was filled from an older source keeps it), then tries the network in
+   * order, falling through on any failure. Throws only when every source
+   * fails.
+   */
+  async fetchFirstAvailable(urls, { expectedBytes = 0, onProgress = null } = {}) {
+    const cache = await this._openCache();
+    if (cache) {
+      for (const url of urls) {
+        const hit = await cache.match(url);
+        if (!hit) continue;
+        const buf = await hit.arrayBuffer();
+        if (!expectedBytes || buf.byteLength === expectedBytes) return buf;
+        await cache.delete(url); // stale/corrupt entry
+      }
+    }
+    let lastError = null;
+    for (const url of urls) {
+      try {
+        return await this.fetchWithProgress(url, { expectedBytes, onProgress, skipCacheLookup: true });
+      } catch (err) {
+        lastError = err;
+        debug.warn(`asset source failed, trying next: ${url}`, err);
+      }
+    }
+    throw lastError || new Error('No asset sources configured');
   },
 
   /**
@@ -61,9 +97,9 @@ const recitationAssets = {
    * expectedBytes (optional) rejects truncated downloads before caching.
    * onProgress(loaded, total) — total is 0 when Content-Length is unknown.
    */
-  async fetchWithProgress(url, { expectedBytes = 0, onProgress = null } = {}) {
+  async fetchWithProgress(url, { expectedBytes = 0, onProgress = null, skipCacheLookup = false } = {}) {
     const cache = await this._openCache();
-    if (cache) {
+    if (cache && !skipCacheLookup) {
       const hit = await cache.match(url);
       if (hit) {
         const buf = await hit.arrayBuffer();
@@ -126,7 +162,7 @@ const recitationAssets = {
   /** The full verse dataset (6,236 records). Cached in memory + Cache Storage. */
   async getQuranData() {
     if (!this._quranPromise) {
-      this._quranPromise = this.fetchWithProgress(this._assetUrl('quran'))
+      this._quranPromise = this.fetchFirstAvailable(this._assetUrls('quran'))
         .then((buf) => JSON.parse(new TextDecoder('utf-8').decode(buf)))
         .catch((err) => {
           this._quranPromise = null; // allow retry
@@ -144,15 +180,15 @@ const recitationAssets = {
     await this.sweepStaleCaches();
 
     const [vocabBuf, tokensBuf, quran] = await Promise.all([
-      this.fetchWithProgress(this._assetUrl('vocab')),
-      this.fetchWithProgress(this._assetUrl('quranCtcTokens'), {
+      this.fetchFirstAvailable(this._assetUrls('vocab')),
+      this.fetchFirstAvailable(this._assetUrls('quranCtcTokens'), {
         onProgress: (loaded, total) =>
           onProgress && onProgress({ stage: 'assets', loaded, total }),
       }),
       this.getQuranData(),
     ]);
 
-    const model = await this.fetchWithProgress(CONFIG.TILAWA.MODEL_URL, {
+    const model = await this.fetchFirstAvailable(CONFIG.TILAWA.MODEL_SOURCES, {
       expectedBytes: CONFIG.TILAWA.MODEL_BYTES,
       onProgress: (loaded, total) =>
         onProgress && onProgress({ stage: 'model', loaded, total }),
