@@ -30,11 +30,22 @@ cross-origin-isolation requirement that the app's static hosting does not meet).
 ## The 88 MB ONNX model is NOT committed
 
 `fastconformer_full_mixed.onnx` is downloaded at runtime by
-`js/recitation-assets.js` from the URLs in `CONFIG.TILAWA` (`js/config.js`) and
-cached in the browser via the Cache Storage API. The default URLs point at the
-`Mohamed-AH/tilawa` repository (the model is stored there in Git LFS, served via
-`media.githubusercontent.com`; the JSON assets via `raw.githubusercontent.com` —
-both send `Access-Control-Allow-Origin: *`).
+`js/recitation-assets.js` and cached in the browser via the Cache Storage API.
+Sources are ORDERED FALLBACK CHAINS in `CONFIG.TILAWA` (`js/config.js`),
+same-origin first so the feature works on networks that block GitHub:
+
+1. **Model**: `/api/tilawa/model` — the backend proxy
+   (`backend/src/routes/tilawa.js`) downloads the model server-side once
+   (upstream configurable via `TILAWA_MODEL_UPSTREAM`, default = the
+   `Mohamed-AH/tilawa` Git LFS URL) and streams it from a disk cache.
+   Fallback: the GitHub LFS URL directly (`media.githubusercontent.com`).
+2. **JSON assets** (`vocab.json`, `quran.json`, `quran_ctc_tokens.json`):
+   committed copies under `assets/tilawa/` (same commit as the vendored core),
+   with `raw.githubusercontent.com` as fallback.
+
+If you update the vendored core to a new tilawa commit, refresh the
+`assets/tilawa/` copies from that commit too — the CTC token table, verse
+text, and model must stay in sync.
 
 ## Updating the vendored core
 

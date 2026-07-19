@@ -34,16 +34,26 @@ const CONFIG = {
     RECITATION: true, // Tilawa recitation practice tab
   },
 
-  // Tilawa recitation engine assets (https://github.com/Mohamed-AH/tilawa)
-  // Pinned to the commit the vendored core was built from (see tilawa-build/).
-  // The ONNX model lives in that repo as Git LFS, served by media.githubusercontent;
-  // the JSON assets are regular files served by raw.githubusercontent. Both send
-  // Access-Control-Allow-Origin: * so the browser can fetch them cross-origin.
+  // Tilawa recitation engine assets (https://github.com/Mohamed-AH/tilawa,
+  // pinned to the commit the vendored core was built from — see tilawa-build/).
+  // Each entry is an ORDERED fallback chain, same-origin first: corporate
+  // networks often block GitHub domains, but anything served from the app's
+  // own origin (committed assets/tilawa/ files, and the backend model proxy
+  // at /api/tilawa/model) works wherever the app itself loads.
   TILAWA: {
     CACHE_NAME: 'tilawa-v1',
-    MODEL_URL: 'https://media.githubusercontent.com/media/Mohamed-AH/tilawa/ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793/web/frontend/public/fastconformer_full_mixed.onnx',
     MODEL_BYTES: 88307366, // verified before caching to reject truncated downloads
-    ASSET_BASE: 'https://raw.githubusercontent.com/Mohamed-AH/tilawa/ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793/web/frontend/public/',
+    MODEL_SOURCES: [
+      // Backend proxy (same-origin via the static site's /api/* rewrite).
+      // Filled in below once API_BASE_URL is resolved for the environment.
+      null,
+      // Direct fallback (GitHub LFS media) for dev without a backend.
+      'https://media.githubusercontent.com/media/Mohamed-AH/tilawa/ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793/web/frontend/public/fastconformer_full_mixed.onnx',
+    ],
+    ASSET_BASES: [
+      'assets/tilawa/', // committed to this repo — same-origin, no CORS
+      'https://raw.githubusercontent.com/Mohamed-AH/tilawa/ec5cdc72c1c48ba29866ca2e3197d6b9a0e2e793/web/frontend/public/',
+    ],
     ASSETS: {
       vocab: 'vocab.json',
       quranCtcTokens: 'quran_ctc_tokens.json',
@@ -60,6 +70,9 @@ const isProduction = window.location.hostname !== 'localhost' && window.location
 if (isProduction && CONFIG.PRODUCTION_API_URL) {
   CONFIG.API_BASE_URL = CONFIG.PRODUCTION_API_URL;
 }
+
+// Primary model source = backend proxy, resolved for this environment.
+CONFIG.TILAWA.MODEL_SOURCES[0] = CONFIG.API_BASE_URL + '/tilawa/model';
 
 // Debug Utility - Only logs in development environment
 const debug = {

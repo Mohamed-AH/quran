@@ -111,6 +111,7 @@ app.use('/api/juz', require('./routes/juz'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
+app.use('/api/tilawa', require('./routes/tilawa'));
 
 // ============================================
 // STATIC FILES (Production only)
