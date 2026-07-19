@@ -132,7 +132,18 @@ const recitationUI = {
 
   /** Verbose pipeline logging — enable with ?debug=1 (see CONFIG.TILAWA.DEBUG). */
   _log(...args) {
-    if (CONFIG.TILAWA.DEBUG) console.log('%c[recite:ui]', 'color:#d4af37', ...args);
+    if (CONFIG.TILAWA.DEBUG) {
+      console.log('%c[recite:ui]', 'color:#d4af37', ...args);
+      if (typeof recitationDebug !== 'undefined') {
+        recitationDebug.push('ui', args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : a)).join(' '));
+      }
+    }
+  },
+
+  /** Always-on lifecycle breadcrumbs — never gated, so the console always
+   *  proves whether the pipeline is alive even without debug mode. */
+  _breadcrumb(...args) {
+    console.info('[recite]', ...args);
   },
 
   _lang() {
@@ -317,7 +328,7 @@ const recitationUI = {
   _onWorkerMessage(msg) {
     switch (msg.type) {
       case 'ready':
-        this._log(`engine ready (ONNX session init ${Date.now() - (this._engineInitStartedAt || Date.now())}ms)`);
+        this._breadcrumb(`engine ready (ONNX init ${Date.now() - (this._engineInitStartedAt || Date.now())}ms)`);
         if (CONFIG.TILAWA.DEBUG && this._worker) {
           this._worker.postMessage({ type: 'setDebug', enabled: true });
         }
@@ -334,14 +345,21 @@ const recitationUI = {
         // tilawa's internal diagnostics firehose (decode windows, tracker
         // transitions, rollbacks) — the ground truth when chasing jitter.
         console.log('%c[tilawa:diag]', 'color:#888', msg.event, msg.data);
+        if (typeof recitationDebug !== 'undefined') {
+          recitationDebug.push('diag', `${msg.event} ${JSON.stringify(msg.data).slice(0, 160)}`);
+        }
         break;
       case 'stats': {
         const s = msg.stats;
-        const style = s.realtimeFactor > 0.9 || s.queueDepth > 5 ? 'color:#e05c5c;font-weight:bold' : 'color:#888';
+        const behind = s.realtimeFactor > 0.9;
+        const style = behind || s.queueDepth > 5 ? 'color:#e05c5c;font-weight:bold' : 'color:#888';
         console.log(
-          `%c[tilawa:stats] feeds=${s.feeds} avgFeedMs=${s.avgFeedMs} maxFeedMs=${s.maxFeedMs} queueDepth=${s.queueDepth} realtimeFactor=${s.realtimeFactor}${s.realtimeFactor > 0.9 ? ' ← INFERENCE NOT KEEPING UP WITH REAL-TIME' : ''}`,
+          `%c[tilawa:stats] feeds=${s.feeds} avgFeedMs=${s.avgFeedMs} maxFeedMs=${s.maxFeedMs} queueDepth=${s.queueDepth} realtimeFactor=${s.realtimeFactor}${behind ? ' ← INFERENCE NOT KEEPING UP WITH REAL-TIME' : ''}`,
           style
         );
+        if (typeof recitationDebug !== 'undefined') {
+          recitationDebug.set('inference', `${s.avgFeedMs}ms avg, queue ${s.queueDepth}, rtFactor ${s.realtimeFactor}${behind ? ' ⚠️ BEHIND' : ''}`);
+        }
         break;
       }
       case 'stopped':
@@ -437,6 +455,16 @@ const recitationUI = {
     }
 
     this._pendingStart = null;
+    this._breadcrumb(
+      spec.freestyle
+        ? 'session started (freestyle — auto-detect)'
+        : `session started (surah ${spec.surah}, ayahs ${spec.from}–${spec.to})`,
+      `mic: contextRate=${recitationAudio._ctx ? recitationAudio._ctx.sampleRate : '?'}Hz, path=${recitationAudio._stats ? recitationAudio._stats.workletPath : '?'}`
+    );
+    if (typeof recitationDebug !== 'undefined') {
+      recitationDebug.set('session', spec.freestyle ? 'freestyle' : `surah ${spec.surah} (${spec.from}–${spec.to})`);
+      recitationDebug.set('mic', `${recitationAudio._ctx ? recitationAudio._ctx.sampleRate : '?'}Hz via ${recitationAudio._stats ? recitationAudio._stats.workletPath : '?'}`);
+    }
     this._worker.postMessage({ type: 'reset' });
 
     if (spec.freestyle) {
@@ -490,6 +518,11 @@ const recitationUI = {
           'recite-meter-fill ' +
           (level.peak > 0.95 ? 'level-hot' : pct >= 18 ? 'level-good' : 'level-low');
         this._trackMicHealth(level, health);
+        if (typeof recitationDebug !== 'undefined' && (!health.lastPanelAt || Date.now() - health.lastPanelAt > 500)) {
+          health.lastPanelAt = Date.now();
+          recitationDebug.set('level', `rms=${level.rms.toFixed(4)} peak=${level.peak.toFixed(2)} (${pct}%)`);
+          if (recitationAudio._stats) recitationDebug.set('chunks', recitationAudio._stats.chunks);
+        }
       }
       this._meterRaf = requestAnimationFrame(tick);
     };
@@ -684,6 +717,9 @@ const recitationUI = {
         `event: ${brief} → coach[cursor=${s.coach.cursor} state=${s.coach.state}]:`,
         effects.length ? effects.map((e) => e.type).join(', ') : '(no effect)'
       );
+      if (typeof recitationDebug !== 'undefined') {
+        recitationDebug.set('coach', `state=${s.coach.state} cursor=${s.coach.cursor}`);
+      }
     }
     this._applyEffects(effects);
   },
@@ -692,6 +728,7 @@ const recitationUI = {
     for (const fx of effects || []) {
       switch (fx.type) {
         case 'started':
+          this._breadcrumb(`recitation recognized — started at ayah ${fx.ayah}`);
           this._showHint(this._t().listening, 2500);
           break;
         case 'verse-active':
@@ -737,6 +774,10 @@ const recitationUI = {
           break;
         }
         case 'completed':
+          this._breadcrumb(
+            `session ended — score ${fx.summary.score}, done ${fx.summary.versesDone ? fx.summary.versesDone.length : 0}, ` +
+              `skipped ${fx.summary.versesSkipped ? fx.summary.versesSkipped.length : 0}`
+          );
           this._session.ended = true;
           this._clearTimers();
           recitationAudio.stop();
@@ -986,8 +1027,17 @@ const recitationUI = {
 
 // Hide the tab button entirely when the feature is off or unsupported.
 document.addEventListener('DOMContentLoaded', () => {
+  console.info(
+    `[recite] module loaded — build ${CONFIG.TILAWA.BUILD}, app v${CONFIG.VERSION}, ` +
+      `debug=${CONFIG.TILAWA.DEBUG ? 'ON (panel + verbose logs)' : 'off — enable with ?debug=1 or 7 taps on the Recite title'}`
+  );
   const tabBtn = document.getElementById('tabRecite');
   if (tabBtn && (!CONFIG.FEATURES.RECITATION || !recitationAssets.isSupported())) {
     tabBtn.style.display = 'none';
+  }
+  if (typeof recitationDebug !== 'undefined') {
+    recitationDebug.init();
+    const title = document.getElementById('reciteTitle');
+    if (title) title.addEventListener('click', () => recitationDebug.handleTitleTap());
   }
 });

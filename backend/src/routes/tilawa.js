@@ -100,6 +100,12 @@ async function ensureModelCached() {
 }
 
 router.get('/model', async (req, res) => {
+  const started = Date.now();
+  const wasCached = await isCacheValid();
+  console.log(`[tilawa] model requested (server cache ${wasCached ? 'HIT' : 'MISS'})`);
+  res.on('finish', () => {
+    console.log(`[tilawa] model response ${res.statusCode} in ${Date.now() - started}ms`);
+  });
   try {
     await ensureModelCached();
   } catch (err) {

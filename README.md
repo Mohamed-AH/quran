@@ -245,7 +245,13 @@ The **"التلاوة" (Recite)** tab is a personal listening coach: it hears yo
 
 **For developers:** the recognition worker is prebuilt and committed under `js/vendor/`; rebuild it with `cd tilawa-build && npm install && npm run build`, and run the coach's test suite with `npm test` (see `tilawa-build/README.md`). A standalone harness page, `test-recitation.html`, lets you stream a WAV file or live mic through the full pipeline with raw event and coach-verdict logs side by side.
 
-**Debug mode:** open the app with `?debug=1` (or run `localStorage.setItem('hafiz_recite_debug', '1')` in the console) to get verbose pipeline logging: mic capture settings and chunk cadence (`[recite:audio]`), every tilawa event with the coach's resulting decision (`[recite:ui]`), tilawa's internal decode/tracker diagnostics (`[tilawa:diag]`), and inference performance stats every 5 s (`[tilawa:stats]` — watch `realtimeFactor`: above ~0.9 means the device can't keep up with real-time recognition).
+**Debug mode:** open the app once with `?debug=1` — the flag persists (survives OAuth redirects and navigation) until you open with `?debug=0`. No URL access? Tap the Recite tab title 7 times. Debug mode gives you:
+- An **on-screen debug panel** (works on phones — no devtools needed): build stamp, live mic level, chunk counter, inference stats, coach state, and a rolling event log, with a **"copy report"** button that puts a full JSON diagnostic on the clipboard — paste that into an issue when reporting problems.
+- Verbose console logging: `[recite:audio]` (capture settings, cadence), `[recite:ui]` (every tilawa event + the coach's decision), `[tilawa:diag]` (the recognizer's internals), `[tilawa:stats]` (every 5 s — watch `realtimeFactor`: above ~0.9 means the device can't keep up with real-time recognition).
+
+Even without debug mode, a few `[recite]` breadcrumb lines always print (module loaded + build, session start, engine ready, session end) so you can confirm the deployed version and that the pipeline is alive.
+
+**Why Render server logs are quiet during recitation:** the entire pipeline — microphone, speech recognition, coaching — runs inside the browser; audio never leaves the device (this is the privacy design, not a bug). The only server-side event is the one-time model download, which logs `[tilawa] model requested (server cache HIT/MISS)` lines on the backend.
 
 ### Language Switching
 - Click language toggle button (top right)
