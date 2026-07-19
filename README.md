@@ -251,6 +251,8 @@ The **"التلاوة" (Recite)** tab is a personal listening coach: it hears yo
 
 Even without debug mode, a few `[recite]` breadcrumb lines always print (module loaded + build, session start, engine ready, session end) so you can confirm the deployed version and that the pipeline is alive.
 
+**How correction works (and its limits):** the [tilawa](https://github.com/Mohamed-AH/tilawa) engine is a streaming *recognizer* — it identifies verses and tracks position through continuous multi-verse recitation, but it does not judge correctness. All coaching verdicts are computed in this app on top of its events, in two layers: (1) structural — skipped verses, unfinished verses, out-of-order jumps, detected from verse-level tracking (very reliable); (2) word-level — the recognizer's decoded transcript is aligned against the expected passage text to confirm word coverage and detect omitted or substituted words (`tilawa-build/src/align.js`; substitution/omission *claims* are behind `CONFIG.FEATURES.WORD_VERDICTS`, off by default until calibrated with real wrong-recitation clips — coverage improvement from the same alignment is always on). Not detectable with this model: tajweed quality and diacritic-level (haraka) mistakes — those would need a different model, not more code.
+
 **Why Render server logs are quiet during recitation:** the entire pipeline — microphone, speech recognition, coaching — runs inside the browser; audio never leaves the device (this is the privacy design, not a bug). The only server-side event is the one-time model download, which logs `[tilawa] model requested (server cache HIT/MISS)` lines on the backend.
 
 ### Language Switching

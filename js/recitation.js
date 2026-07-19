@@ -70,6 +70,8 @@ const recitationUI = {
       statMissed: 'كلمات فائتة',
       statRepeats: 'إعادات',
       missedTitle: 'كلمات فاتتك (بالأحمر)',
+      substitutedTitle: 'كلمات مُبدلة',
+      heardInstead: (heard, expected) => `سمعت «${heard}» بدل «${expected}»`,
       skippedTitle: 'آيات تخطيتها',
       notReachedNote: (n) => `توقفت قبل ${n} آية من نهاية المقطع`,
       repeatsNote: 'الإعادة للتدبر ليست خطأ — أحسنت',
@@ -117,6 +119,8 @@ const recitationUI = {
       statMissed: 'Missed words',
       statRepeats: 'Repetitions',
       missedTitle: 'Words you missed (in red)',
+      substitutedTitle: 'Substituted words',
+      heardInstead: (heard, expected) => `heard “${heard}” instead of “${expected}”`,
       skippedTitle: 'Verses you skipped',
       notReachedNote: (n) => `You stopped ${n} ayah(s) before the end of the passage`,
       repeatsNote: 'Repetition for reflection is never a mistake — well done',
@@ -486,6 +490,7 @@ const recitationUI = {
         }),
         { startedAtMs: Date.now(), cursor: null, ended: false }
       );
+      this._sendExpected(this._session);
     }
 
     this._phase = 'live';
@@ -589,8 +594,20 @@ const recitationUI = {
         ayahStart: anchor.ayahStart,
         ayahEnd: anchor.ayahEnd,
         verses,
+        config: { useWordVerdicts: CONFIG.FEATURES.WORD_VERDICTS },
       }),
     };
+  },
+
+  /** Tell the worker what passage to align transcripts against. */
+  _sendExpected(s) {
+    if (!this._worker || !s || !s.coach) return;
+    this._worker.postMessage({
+      type: 'setExpected',
+      surah: s.surah,
+      ayahStart: s.ayahStart,
+      ayahEnd: s.ayahEnd,
+    });
   },
 
   /** Anchor (or re-anchor) a freestyle session at a detected verse. */
@@ -600,6 +617,7 @@ const recitationUI = {
     s.cursor = null;
     s.committed = false;
     s.lastOutOfRange = null;
+    this._sendExpected(s);
     document.getElementById('reciteSurahTitle').textContent = s.surahInfo.name;
     this._renderVersePosition();
     document.getElementById('reciteVerseList').innerHTML = '';
@@ -733,6 +751,7 @@ const recitationUI = {
           break;
         case 'verse-active':
           this._session.cursor = fx.ayah;
+          if (this._worker) this._worker.postMessage({ type: 'cursor', ayah: fx.ayah });
           this._renderCurrentVerse();
           this._renderVersePosition();
           this._renderVerseList();
@@ -956,6 +975,20 @@ const recitationUI = {
         })
         .join('');
       mistakes += `<h4 class="recite-section-title">${t.missedTitle}</h4>${rows}`;
+    }
+    const subsByAyah = sum.substitutedWords || {};
+    if (Object.keys(subsByAyah).length) {
+      const rows = Object.keys(subsByAyah)
+        .map((ayah) =>
+          subsByAyah[ayah]
+            .map(
+              (sub) =>
+                `<div class="recite-mistake-verse"><span class="recite-verse-num">${this._num(Number(ayah))}</span><div>${t.heardInstead(sub.heard || '؟', sub.expected)}</div></div>`
+            )
+            .join('')
+        )
+        .join('');
+      mistakes += `<h4 class="recite-section-title">${t.substitutedTitle}</h4>${rows}`;
     }
     if (sum.versesSkipped.length && versesByAyah) {
       const rows = sum.versesSkipped

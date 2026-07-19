@@ -32,6 +32,10 @@ const CONFIG = {
     EXPORT_DATA: false, // Removed as per decision
     PROFILES: false, // Removed as per decision
     RECITATION: true, // Tilawa recitation practice tab
+    // Transcript-alignment word verdicts (missing/substituted word claims).
+    // Off until calibrated against real wrong-recitation clips — the
+    // alignment events still flow in debug/harness for tuning.
+    WORD_VERDICTS: false,
   },
 
   // Tilawa recitation engine assets (https://github.com/Mohamed-AH/tilawa,
