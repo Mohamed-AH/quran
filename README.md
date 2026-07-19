@@ -245,6 +245,8 @@ The **"التلاوة" (Recite)** tab is a personal listening coach: it hears yo
 
 **For developers:** the recognition worker is prebuilt and committed under `js/vendor/`; rebuild it with `cd tilawa-build && npm install && npm run build`, and run the coach's test suite with `npm test` (see `tilawa-build/README.md`). A standalone harness page, `test-recitation.html`, lets you stream a WAV file or live mic through the full pipeline with raw event and coach-verdict logs side by side.
 
+**Debug mode:** open the app with `?debug=1` (or run `localStorage.setItem('hafiz_recite_debug', '1')` in the console) to get verbose pipeline logging: mic capture settings and chunk cadence (`[recite:audio]`), every tilawa event with the coach's resulting decision (`[recite:ui]`), tilawa's internal decode/tracker diagnostics (`[tilawa:diag]`), and inference performance stats every 5 s (`[tilawa:stats]` — watch `realtimeFactor`: above ~0.9 means the device can't keep up with real-time recognition).
+
 ### Language Switching
 - Click language toggle button (top right)
 - Automatically detects browser language

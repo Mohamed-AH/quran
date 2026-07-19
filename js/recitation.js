@@ -49,6 +49,9 @@ const recitationUI = {
       stillListening: 'لم أسمع تلاوة بعد — ما زلت أستمع',
       repetition: '🔁 إعادة — أحسنت التدبر',
       checkpoint: 'توقفت للتأمل؟ خذ وقتك، ما زلت أستمع',
+      micSilent: '🎤 لا أسمع أي صوت — تحقق من الميكروفون',
+      micLow: '🎤 صوتك منخفض — ارفع صوتك قليلاً أو اقترب من الميكروفون',
+      micHot: '🎤 الصوت مرتفع جداً — ابتعد قليلاً عن الميكروفون',
       offTrack: 'يبدو أنك تتلو موضعاً آخر — أتابع السورة المختارة',
       stopping: 'لحظة… أراجع ما سمعت',
       verseOf: (n, m) => `آية ${n} من ${m}`,
@@ -93,6 +96,9 @@ const recitationUI = {
       stillListening: 'No recitation heard yet — still listening',
       repetition: '🔁 Repetition — beautiful contemplation',
       checkpoint: 'Pausing to reflect? Take your time — still listening',
+      micSilent: '🎤 I hear no sound at all — check your microphone',
+      micLow: '🎤 Your voice is faint — speak up a little or move closer to the mic',
+      micHot: '🎤 Too loud — move back a little from the mic',
       offTrack: 'You seem to be reciting a different passage — following your chosen surah',
       stopping: 'One moment… reviewing what I heard',
       verseOf: (n, m) => `Ayah ${n} of ${m}`,
@@ -122,6 +128,11 @@ const recitationUI = {
       seconds: 's',
       minutes: 'm',
     },
+  },
+
+  /** Verbose pipeline logging — enable with ?debug=1 (see CONFIG.TILAWA.DEBUG). */
+  _log(...args) {
+    if (CONFIG.TILAWA.DEBUG) console.log('%c[recite:ui]', 'color:#d4af37', ...args);
   },
 
   _lang() {
@@ -265,14 +276,18 @@ const recitationUI = {
     const t = this._t();
     this._setProgress(0, 0, t.downloadingAssets);
 
+    const tAssets0 = Date.now();
     const assets = await recitationAssets.loadAll(({ stage, loaded, total }) => {
       const label = stage === 'model' ? this._t().downloadingModel : this._t().downloadingAssets;
       this._setProgress(loaded, total, label);
     });
     this._quranData = assets.quran;
+    this._log(`assets ready in ${Date.now() - tAssets0}ms (model ${assets.model.byteLength} bytes)`);
 
     this._setProgress(1, 1, t.initializing);
 
+    const tInit0 = Date.now();
+    this._engineInitStartedAt = tInit0;
     const worker = new Worker(CONFIG.TILAWA.WORKER_PATH, { type: 'module' });
     this._worker = worker;
     worker.onmessage = (e) => this._onWorkerMessage(e.data);
@@ -302,6 +317,10 @@ const recitationUI = {
   _onWorkerMessage(msg) {
     switch (msg.type) {
       case 'ready':
+        this._log(`engine ready (ONNX session init ${Date.now() - (this._engineInitStartedAt || Date.now())}ms)`);
+        if (CONFIG.TILAWA.DEBUG && this._worker) {
+          this._worker.postMessage({ type: 'setDebug', enabled: true });
+        }
         if (this._engineResolve) {
           this._engineResolve();
           this._engineResolve = null;
@@ -311,6 +330,20 @@ const recitationUI = {
       case 'event':
         this._onTilawaEvent(msg.event);
         break;
+      case 'diag':
+        // tilawa's internal diagnostics firehose (decode windows, tracker
+        // transitions, rollbacks) — the ground truth when chasing jitter.
+        console.log('%c[tilawa:diag]', 'color:#888', msg.event, msg.data);
+        break;
+      case 'stats': {
+        const s = msg.stats;
+        const style = s.realtimeFactor > 0.9 || s.queueDepth > 5 ? 'color:#e05c5c;font-weight:bold' : 'color:#888';
+        console.log(
+          `%c[tilawa:stats] feeds=${s.feeds} avgFeedMs=${s.avgFeedMs} maxFeedMs=${s.maxFeedMs} queueDepth=${s.queueDepth} realtimeFactor=${s.realtimeFactor}${s.realtimeFactor > 0.9 ? ' ← INFERENCE NOT KEEPING UP WITH REAL-TIME' : ''}`,
+          style
+        );
+        break;
+      }
       case 'stopped':
         this._onWorkerStopped();
         break;
@@ -431,6 +464,77 @@ const recitationUI = {
     this._showPanel('reciteLive');
     this._renderLiveInitial();
     this._startElapsedTimer();
+    this._startMeterLoop();
+  },
+
+  /**
+   * 60 fps volume meter driven by the analyser tap — immediate feedback on
+   * whether the mic is working, too quiet, or too hot. Also raises gentle
+   * hints on sustained problems (throttled so it never nags).
+   */
+  _startMeterLoop() {
+    const fill = document.getElementById('reciteMeterFill');
+    if (!fill) return;
+    const health = { silentSince: null, lowSince: null, hotCount: 0, hotWindowStart: 0, lastWarnAt: 0 };
+    const tick = () => {
+      if (!this._session || this._session.ended) {
+        fill.style.width = '0%';
+        return;
+      }
+      const level = recitationAudio.getLevel();
+      if (level) {
+        // Speech RMS lives around 0.02–0.25; sqrt curve gives useful travel.
+        const pct = Math.min(100, Math.round(Math.sqrt(Math.min(1, level.rms / 0.35)) * 100));
+        fill.style.width = pct + '%';
+        fill.className =
+          'recite-meter-fill ' +
+          (level.peak > 0.95 ? 'level-hot' : pct >= 18 ? 'level-good' : 'level-low');
+        this._trackMicHealth(level, health);
+      }
+      this._meterRaf = requestAnimationFrame(tick);
+    };
+    this._meterRaf = requestAnimationFrame(tick);
+  },
+
+  _trackMicHealth(level, health) {
+    const now = Date.now();
+    const t = this._t();
+    const warn = (msg, tag) => {
+      if (now - health.lastWarnAt < 10000) return;
+      health.lastWarnAt = now;
+      this._showHint(msg, 3500);
+      this._log(`mic health: ${tag} (rms=${level.rms.toFixed(4)} peak=${level.peak.toFixed(2)})`);
+    };
+
+    // Silence/faint-voice feedback only BEFORE the recitation is recognized:
+    // once the session is tracking, quiet stretches are legitimate pauses
+    // for breath and contemplation and must never draw a warning.
+    const notStartedYet = this._session && this._session.cursor === null;
+
+    // Dead silence: no signal at all (mic muted / wrong device).
+    if (notStartedYet && level.rms < 0.0015) {
+      if (!health.silentSince) health.silentSince = now;
+      else if (now - health.silentSince > 4000) warn(t.micSilent, 'silent');
+    } else {
+      health.silentSince = null;
+    }
+
+    // Sustained faint-but-present voice (whispering / mic too far).
+    if (notStartedYet && level.rms >= 0.0015 && level.rms < 0.01) {
+      if (!health.lowSince) health.lowSince = now;
+      else if (now - health.lowSince > 6000) warn(t.micLow, 'low');
+    } else {
+      health.lowSince = null;
+    }
+
+    // Clipping: many near-full-scale peaks in a short window.
+    if (level.peak > 0.98) {
+      if (now - health.hotWindowStart > 3000) {
+        health.hotWindowStart = now;
+        health.hotCount = 0;
+      }
+      if (++health.hotCount > 20) warn(t.micHot, 'hot');
+    }
   },
 
   /** Build the coach + verse lookup fields for a known passage. */
@@ -534,7 +638,8 @@ const recitationUI = {
     if (this._hintTimer) clearTimeout(this._hintTimer);
     if (this._stopFallbackTimer) clearTimeout(this._stopFallbackTimer);
     if (this._awaitTimer) clearTimeout(this._awaitTimer);
-    this._elapsedTimer = this._hintTimer = this._stopFallbackTimer = this._awaitTimer = null;
+    if (this._meterRaf) cancelAnimationFrame(this._meterRaf);
+    this._elapsedTimer = this._hintTimer = this._stopFallbackTimer = this._awaitTimer = this._meterRaf = null;
   },
 
   // -------------------------------------------------------------------------
@@ -567,7 +672,20 @@ const recitationUI = {
       s.lastOutOfRange = event;
     }
 
-    this._applyEffects(s.coach.handleEvent(event));
+    const effects = s.coach.handleEvent(event);
+    if (CONFIG.TILAWA.DEBUG) {
+      const brief =
+        event.type === 'verse_match'
+          ? `verse_match ${event.surah}:${event.ayah} conf=${event.confidence}`
+          : event.type === 'word_progress'
+            ? `word_progress ${event.surah}:${event.ayah} idx=${event.word_index}/${event.total_words} matched=[${event.matched_indices}]`
+            : event.type;
+      this._log(
+        `event: ${brief} → coach[cursor=${s.coach.cursor} state=${s.coach.state}]:`,
+        effects.length ? effects.map((e) => e.type).join(', ') : '(no effect)'
+      );
+    }
+    this._applyEffects(effects);
   },
 
   _applyEffects(effects) {

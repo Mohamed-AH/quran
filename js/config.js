@@ -74,6 +74,21 @@ if (isProduction && CONFIG.PRODUCTION_API_URL) {
 // Primary model source = backend proxy, resolved for this environment.
 CONFIG.TILAWA.MODEL_SOURCES[0] = CONFIG.API_BASE_URL + '/tilawa/model';
 
+// Recitation debug mode: verbose console logging through the whole pipeline
+// (audio capture → worker/inference → tilawa diagnostics → coach verdicts).
+// Enable with ?debug=1 in the URL, or persistently via
+//   localStorage.setItem('hafiz_recite_debug', '1')
+CONFIG.TILAWA.DEBUG = (() => {
+  try {
+    return (
+      new URLSearchParams(window.location.search).has('debug') ||
+      localStorage.getItem('hafiz_recite_debug') === '1'
+    );
+  } catch (e) {
+    return false;
+  }
+})();
+
 // Debug Utility - Only logs in development environment
 const debug = {
   log: (...args) => {
