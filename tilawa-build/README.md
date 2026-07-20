@@ -64,6 +64,34 @@ U+06D6–U+06ED); the remaining letter-bearing tokens align 1:1 with
 filter (`js/recitation-coach.js` `splitDisplayWords`) in sync if the verse data
 source ever changes.
 
+## `raw_transcript` is discovery-mode only (field-verified, commit ec5cdc7)
+
+`RecitationTracker` emits `{type:"raw_transcript"}` — the event our
+transcript-alignment layer (`tilawa-build/src/align.js`) depends on — **only**
+from `_handleDiscovery()`. `_handleTracking()` never emits it. Practically:
+once the tracker locks onto ANY verse (right or wrong) it stops feeding our
+alignment layer entirely until it exits tracking (advances, goes stale, or
+gets reset) and returns to discovery.
+
+This matters because pre-recitation noise can commit the tracker to a wrong
+verse before the user starts (seen repeatedly in the field: commits like
+`68:9`, `104:9`, `105:1` via `short_rescue`/weak acoustic evidence). While
+stuck there, tilawa's own `transcribe` diagnostic can show the ACTUAL
+recitation being decoded correctly at high confidence — but our alignment
+layer never sees it, because tracking-mode suppresses `raw_transcript`. One
+observed consequence: a verse whose text embeds the Basmala as its own first
+words (a text-source convention — see `assets/tilawa/quran.json`, e.g. Surah
+85 ayah 1 is 7 words: `بسم الله الرحمن الرحيم` + the actual verse content) can
+end up with those opening words honestly reported as unconfirmed, even though
+the reciter said them clearly, if the tracker happened to be stuck on a wrong
+verse at that exact moment.
+
+Mitigation in `js/recitation.js`'s wrong-track watchdog: react on the FIRST
+confident off-range `verse_match` OR stable off-range `verse_candidate` while
+`awaiting_start` (not the second — a wrong lock may only ever produce one
+visible off-range event before going quiet in tracking mode), resetting the
+tracker immediately to reopen the discovery window as early as possible.
+
 ## CSP note
 
 If production hosting ever enables a Content-Security-Policy for static pages,
