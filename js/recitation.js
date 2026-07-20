@@ -185,9 +185,34 @@ const recitationUI = {
     }
     if (!this._initialized) {
       this._initialized = true;
+      // Field bug (build 2026-07-20f, surah 86 full recitation): a bare,
+      // instant visibilitychange->stop silently ended an ACTIVE session
+      // mid-recitation — the user never left the app. Desktop browsers
+      // (confirmed: macOS Safari) can flip visibilityState to 'hidden'
+      // momentarily for reasons that never actually background the tab
+      // (a notification stealing focus, Mission Control/Exposé, a
+      // dialog) — none of which suspend getUserMedia audio capture the
+      // way iOS Safari genuinely does. Debounce: only stop if 'hidden'
+      // persists past a short window, and cancel if visibility returns
+      // before it fires. This still catches genuine backgrounding
+      // (switching apps, locking the phone), which persists far longer.
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden' && this.isSessionActive()) {
-          this.stopSession(); // audio is suspended in background anyway
+        if (document.visibilityState === 'hidden') {
+          if (!this.isSessionActive()) return;
+          if (this._hiddenStopTimer) clearTimeout(this._hiddenStopTimer);
+          this._hiddenStopTimer = setTimeout(() => {
+            this._hiddenStopTimer = null;
+            if (this.isSessionActive()) {
+              this._breadcrumb('auto-stop: tab hidden for 5s+');
+              if (typeof recitationDebug !== 'undefined') {
+                recitationDebug.milestone('AUTO-STOP triggered: tab hidden 5s+');
+              }
+              this.stopSession();
+            }
+          }, 5000);
+        } else if (this._hiddenStopTimer) {
+          clearTimeout(this._hiddenStopTimer);
+          this._hiddenStopTimer = null;
         }
       });
       window.addEventListener('pagehide', () => {
@@ -716,6 +741,11 @@ const recitationUI = {
 
   stopSession() {
     if (!this._session || this._session.ended) return;
+    if (typeof recitationDebug !== 'undefined') {
+      // Generic catch-all — the specific auto-triggers (visibility, 30-min
+      // cap) log their own more detailed reason immediately before this.
+      recitationDebug.milestone('stopSession() called');
+    }
     if (this._session.coach) this._session.coach.requestStop();
     this._showHint(this._t().stopping, 0);
     recitationAudio.stop();
@@ -1064,7 +1094,10 @@ const recitationUI = {
       const ss = String(sec % 60).padStart(2, '0');
       if (el) el.textContent = `${this._num(m)}:${this._lang() === 'ar' ? convertToArabicNumerals(ss) : ss}`;
       // Session cap: 30 minutes (battery/memory guard).
-      if (sec >= 1800) this.stopSession();
+      if (sec >= 1800) {
+        if (typeof recitationDebug !== 'undefined') recitationDebug.milestone('AUTO-STOP triggered: 30-minute session cap');
+        this.stopSession();
+      }
     }, 1000);
   },
 
