@@ -75,6 +75,13 @@
     // noise-acquired verse (field bug: perfect Fatiha decode, tracker
     // blocked on 104:9). Stable in-range candidates open the session.
     candidateStartConfidence: 0.85,
+    // Corroborating span evidence recorded from ANY in-range verse_candidate
+    // (not just at session start) — see spanEvidence below. Lower bar than
+    // candidateStartConfidence because this only ever RESCUES a verse from
+    // a false skip accusation, never accuses; the risk of being generous
+    // here is a verse marked done that maybe wasn't fully recited, not a
+    // false mistake claim.
+    spanEvidenceConfidence: 0.75,
     // Transcript-alignment session start/advance: independent of tilawa's
     // tracker entirely — if the aligner proves >=N expected words were
     // recited, that IS the recitation. The strongest defense against a
@@ -115,6 +122,13 @@
       this.pendingJump = null; // {ayah} — forward-jump hysteresis
       this.pendingBack = null; // {ayah} — backward-repetition hysteresis
       this.confidences = [];
+      // ayah -> confidence, from ANY in-range verse_candidate seen so far
+      // (tracking or awaiting_start). tilawa's discovery often identifies a
+      // multi-verse span (e.g. "1:2-4") and then — by design — commits only
+      // its first ayah ("live span collapsed to first ayah"); without this,
+      // the coach would later see a jump past 3-4 and wrongly call them
+      // skipped even though the recognizer's own evidence covered them.
+      this.spanEvidence = {};
 
       this.perVerse = {};
       for (const v of opts.verses) {
@@ -217,7 +231,25 @@
      * Requires a stable top candidate inside the expected range — or the
      * same unstable top candidate twice in a row (hysteresis).
      */
+    /** Record every in-range candidate as corroborating span evidence,
+     *  regardless of session state — this is pure bookkeeping, never an
+     *  action by itself. */
+    _recordSpanEvidence(msg) {
+      for (const c of msg.candidates || []) {
+        if (c.surah !== this.surah) continue;
+        if ((c.confidence || 0) < this.cfg.spanEvidenceConfidence) continue;
+        const start = Math.max(c.ayah, this.ayahStart);
+        const end = Math.min(c.ayah_end || c.ayah, this.ayahEnd);
+        for (let a = start; a <= end; a++) {
+          if (!this.spanEvidence[a] || c.confidence > this.spanEvidence[a]) {
+            this.spanEvidence[a] = c.confidence;
+          }
+        }
+      }
+    }
+
     _onVerseCandidate(msg) {
+      this._recordSpanEvidence(msg);
       const effects = [];
       if (this.state !== 'awaiting_start') return effects;
       // Scan ALL candidates for the best IN-RANGE one — the first entry is
@@ -319,19 +351,25 @@
         });
       }
 
-      // Transcript-driven advance: enough aligned words in the NEXT verse
-      // while the current one is substantially covered means the reciter
-      // moved on — even if the tracker's advance gate never says so.
-      const next = this.cursor + 1;
+      // Transcript-driven advance: enough aligned words in an UPCOMING verse
+      // (not just the immediate next one — a fast reciter's fragment can
+      // cover two verses at once) means the reciter moved on, even if the
+      // tracker's own advance gate never says so. Scans forward through the
+      // alignment window and jumps to the furthest well-evidenced verse;
+      // _commitAndAdvance's span-evidence rescue (fed by the same
+      // verse_candidate stream) keeps any verse in between from being
+      // wrongly called skipped.
+      let target = this.cursor;
+      for (let a = this.cursor + 1; a <= Math.min(this.cursor + 2, this.ayahEnd); a++) {
+        if (this.perVerse[a] && this.perVerse[a].matched.size >= 2) target = a;
+      }
       if (
-        next <= this.ayahEnd &&
-        this.perVerse[next] &&
-        this.perVerse[next].matched.size >= 2 &&
+        target > this.cursor &&
         (this.coverage(this.cursor) >= 0.5 || this.perVerse[this.cursor].sawCommit)
       ) {
         this.pendingJump = null;
         this.pendingBack = null;
-        effects.push(...this._commitAndAdvance(next));
+        effects.push(...this._commitAndAdvance(target));
       }
       return effects;
     }
@@ -501,13 +539,19 @@
       v.sawCommit = true;
       if (ayah > this.ayahStart) {
         // Provisional: reconciled at finalize (the reciter may genuinely
-        // have meant to start mid-range).
+        // have meant to start mid-range) — and rescued immediately if
+        // discovery evidence already covers a verse (see spanEvidence).
         const skipped = [];
         for (let a = this.ayahStart; a < ayah; a++) {
-          this.perVerse[a].status = 'skipped';
-          skipped.push(a);
+          if (this.spanEvidence[a] >= this.cfg.spanEvidenceConfidence) {
+            this.perVerse[a].status = 'done';
+            this.perVerse[a].sawCommit = true;
+          } else {
+            this.perVerse[a].status = 'skipped';
+            skipped.push(a);
+          }
         }
-        effects.push({ type: 'verses-skipped', ayahs: skipped });
+        if (skipped.length) effects.push({ type: 'verses-skipped', ayahs: skipped });
       }
       effects.push({ type: 'started', ayah: ayah });
       effects.push({ type: 'verse-active', ayah: ayah });
@@ -527,7 +571,20 @@
       if (toAyah > this.cursor + 1) {
         const skipped = [];
         for (let a = this.cursor + 1; a < toAyah; a++) {
-          if (this.perVerse[a].status === 'pending') {
+          if (this.perVerse[a].status !== 'pending') continue;
+          // Rescue: the recognizer's own discovery evidence covered this
+          // verse (typically a multi-verse span tilawa committed only the
+          // head of — "live span collapsed to first ayah"), OR it already
+          // has direct word-level matches (e.g. a multi-step transcript
+          // advance just aligned it in the same batch as the target verse).
+          // Either is positive evidence of recitation, not a mistake.
+          if (
+            this.spanEvidence[a] >= this.cfg.spanEvidenceConfidence ||
+            this.perVerse[a].matched.size >= 2
+          ) {
+            this.perVerse[a].status = 'done';
+            this.perVerse[a].sawCommit = true;
+          } else {
             this.perVerse[a].status = 'skipped';
             skipped.push(a);
           }
