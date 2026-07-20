@@ -385,9 +385,9 @@ const recitationUI = {
                   audioChunkMs: 300,
                   finalSilenceSec: 5,
                   trackingTriggerSec: 0.8,
-                  discoveryTriggerSec: 2.5,
+                  discoveryTriggerSec: 3,
                   trackingMaxWindowSec: 8,
-                  discoveryMaxWindowSec: 12,
+                  discoveryMaxWindowSec: 8,
                 },
               });
               this._breadcrumb(`eco mode enabled — inference ${s.realtimeFactor}x slower than real-time on this device`);
@@ -554,8 +554,8 @@ const recitationUI = {
   },
 
   /** Reset ONLY the tilawa tracker (coach state is ours and stays). */
-  _resetTracker(reason) {
-    if (Date.now() - (this._lastTrackerResetAt || 0) < 8000) return; // cooldown
+  _resetTracker(reason, force) {
+    if (!force && Date.now() - (this._lastTrackerResetAt || 0) < 8000) return; // cooldown
     this._lastTrackerResetAt = Date.now();
     this._trackerResets = (this._trackerResets || 0) + 1;
     this._breadcrumb(`tracker reset — ${reason}`);
@@ -833,10 +833,19 @@ const recitationUI = {
   _applyEffects(effects) {
     for (const fx of effects || []) {
       switch (fx.type) {
-        case 'started':
+        case 'started': {
           this._breadcrumb(`recitation recognized — started at ayah ${fx.ayah}`);
           this._showHint(this._t().listening, 2500);
+          // If the tracker had locked onto an out-of-range verse before the
+          // session started (candidate-based start), break its anchor now
+          // so it re-discovers and locks onto the actual passage.
+          const s = this._session;
+          if (s && (s.offRangeCount || 0) > 0) {
+            s.offRangeCount = 0;
+            this._resetTracker('tracker was off-passage at session start', true);
+          }
           break;
+        }
         case 'verse-active':
           this._session.cursor = fx.ayah;
           if (this._worker) this._worker.postMessage({ type: 'cursor', ayah: fx.ayah });
