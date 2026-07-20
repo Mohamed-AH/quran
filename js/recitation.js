@@ -376,6 +376,13 @@ const recitationUI = {
       case 'event':
         this._onTilawaEvent(msg.event);
         break;
+      case 'scoped':
+        this._breadcrumb(`tracker scoped to surah ${msg.surah} (${msg.verseCount} verses, was 6236)`);
+        if (typeof recitationDebug !== 'undefined') {
+          recitationDebug.set('scope', `surah ${msg.surah} (${msg.verseCount} verses)`);
+          recitationDebug.milestone(`tracker scoped to surah ${msg.surah} (${msg.verseCount} verses)`);
+        }
+        break;
       case 'diag':
         // tilawa's internal diagnostics firehose (decode windows, tracker
         // transitions, rollbacks) — the ground truth when chasing jitter.
@@ -800,23 +807,50 @@ const recitationUI = {
     // Wrong-track watchdog: the tilawa tracker doesn't know which passage
     // we expect, and pre-recitation noise can lock it onto a random verse —
     // after which it BLOCKS "non-continuation" jumps to the real recitation
-    // (seen in the field: tracker stuck on 87:x while decoding Fatiha 1:5
-    // at 0.98 confidence). While the session hasn't started, confident
-    // matches OUTSIDE the expected passage mean the tracker is lost: reset
-    // it so discovery can re-run against the actual recitation.
+    // (seen in the field: tracker stuck on 87:x/104:9/105:1 while decoding
+    // the ACTUAL recitation at high confidence). While the session hasn't
+    // started, confident evidence OUTSIDE the expected passage means the
+    // tracker is lost: reset it so discovery can re-run against the real
+    // recitation.
+    //
+    // React on the FIRST confident off-range signal, not the second: once
+    // tilawa commits to a wrong verse it enters "tracking" mode, and
+    // tracking-mode cycles never emit raw_transcript (confirmed in the
+    // vendored source — see tilawa-build/README.md) — meaning our own
+    // transcript-alignment layer goes COMPLETELY BLIND for as long as the
+    // wrong lock holds, even while the reciter is being decoded correctly
+    // by tilawa's own internal transcription. Field case (build 2026-07-20g,
+    // Surah 85): the reciter's Basmala was decoded perfectly at 0.96-1.0
+    // confidence while the tracker sat locked on 105:1, and because that
+    // wrong lock only ever produced ONE off-range verse_match (a single
+    // commit, then silent tracking — never a second one to trip the old
+    // 2-strike threshold), the watchdog never fired; the words were only
+    // rescued by tilawa's own ~11s "stale_exit". Reacting on strike 1
+    // (still behind _resetTracker's 8s cooldown, so no spam risk) closes
+    // that blind window as early as possible. Also watch verse_candidate:
+    // a STABLE, confident off-range candidate is just as strong a signal of
+    // a wrong lock, and may appear before/instead of a visible verse_match.
     if (
       !s.freestyle &&
       s.coach &&
       s.coach.state === 'awaiting_start' &&
-      event.type === 'verse_match' &&
       (event.confidence || 0) >= 0.55 &&
-      !s.coach.inRange(event.surah, event.ayah)
+      ((event.type === 'verse_match' && !s.coach.inRange(event.surah, event.ayah)) ||
+        (event.type === 'verse_candidate' &&
+          event.stable &&
+          (() => {
+            const top = (event.candidates || [])[0];
+            return top && !s.coach.inRange(top.surah, top.ayah);
+          })()))
     ) {
+      const ref =
+        event.type === 'verse_match'
+          ? `${event.surah}:${event.ayah}`
+          : `${event.candidates[0].surah}:${event.candidates[0].ayah}`;
+      // Kept for the post-start cleanup check and the "never started"
+      // summary hint below — the reset itself no longer waits on this.
       s.offRangeCount = (s.offRangeCount || 0) + 1;
-      if (s.offRangeCount >= 2) {
-        s.offRangeCount = 0;
-        this._resetTracker(`locked on ${event.surah}:${event.ayah} outside expected passage`);
-      }
+      this._resetTracker(`locked on ${ref} outside expected passage`);
     }
 
     if (s.freestyle && !s.coach) {

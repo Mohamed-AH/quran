@@ -13,6 +13,8 @@
  *   { type: "reset" }
  *   { type: "setConfig", config: Partial<StreamingConfig> }
  *   { type: "setExpected", surah, ayahStart, ayahEnd }  word-accuracy window
+ *                                                       + rescopes the tracker
+ *                                                       to just that surah
  *   { type: "cursor", ayah }                       coach cursor updates
  *   { type: "transcribe", samples: Float32Array }  one-shot (harness/debug)
  *
@@ -33,6 +35,16 @@ const SAMPLE_RATE = 16000;
 let session = null;
 let feeding = Promise.resolve();
 let stopping = false;
+
+// Retained from init() so setExpected can REBUILD the session scoped to a
+// single surah (see rescopeToSurah). runner/assets are cheap to keep around;
+// the ONNX InferenceSession itself (inside runner) is never recreated.
+let runner = null;
+let fullQuranData = null;
+let vocabData = null;
+let ctcTokensData = null;
+let currentConfig = {};
+let scopedSurah = null; // null = full corpus (freestyle, pre-anchor)
 
 // Word-accuracy layer: expected passage (from QuranDB.phoneme_words — same
 // decode space as raw_transcript text) and the coach's cursor. Each
@@ -146,17 +158,16 @@ async function createRunner(modelBuffer) {
   };
 }
 
-async function handleInit(msg) {
-  const runner = await createRunner(msg.model);
-  session = createTilawaSession(
+function buildSession(quranSubset, config) {
+  return createTilawaSession(
     runner,
     {
-      vocab: msg.vocab,
-      quranCtcTokens: msg.quranCtcTokens,
-      quran: msg.quran,
+      vocab: vocabData,
+      quranCtcTokens: ctcTokensData,
+      quran: quranSubset,
     },
     {
-      config: msg.config || {},
+      config,
       // NOTE: no onOutput — streaming events are posted from the returned
       // messages of each feed() so that resets can drop stale in-flight
       // output (see drainLoop / resetEpoch).
@@ -165,7 +176,53 @@ async function handleInit(msg) {
       },
     },
   );
+}
+
+async function handleInit(msg) {
+  runner = await createRunner(msg.model);
+  vocabData = msg.vocab;
+  ctcTokensData = msg.quranCtcTokens;
+  fullQuranData = msg.quran;
+  currentConfig = msg.config || {};
+  scopedSurah = null;
+  session = buildSession(fullQuranData, currentConfig);
   self.postMessage({ type: "ready" });
+}
+
+/**
+ * Restrict the tilawa tracker's search space to a single surah.
+ *
+ * Cross-surah noise-locking is the single most common field failure so
+ * far: pre-recitation ambient noise gets committed to some unrelated verse
+ * (68:9, 104:9, 105:1, 87:1 all observed) purely because discovery searches
+ * the entire 6,236-verse corpus. When the user has already picked a
+ * passage, the surah is known in advance — there is no reason for
+ * discovery to ever consider the other 113 surahs. Rebuilding the session
+ * with QuranDB restricted to just that surah's verses makes a cross-surah
+ * lock structurally impossible (those verses simply do not exist in the
+ * tracker's world), and as a side effect shrinks the champion-matching
+ * scan (quran-db.ts iterates `this.verses` on every decode cycle) from
+ * 6,236 down to as few as 3 verses — a likely win for the persistent
+ * real-time-lag issues seen on slow devices.
+ *
+ * Freestyle mode starts unscoped (surah unknown yet, needs the full
+ * corpus for discovery) and rescopes here too, once anchored.
+ */
+function rescopeToSurah(surah) {
+  if (surah === scopedSurah || !fullQuranData) return;
+  const subset = fullQuranData.filter((v) => v.surah === surah);
+  if (subset.length === 0) return; // defensive: keep the current session
+  scopedSurah = surah;
+  currentConfig = session ? session.getConfig() : currentConfig;
+  session = buildSession(subset, currentConfig);
+  self.postMessage({ type: "scoped", surah, verseCount: subset.length });
+  // A rebuilt session is a brand new tracker: drop any queued backlog (it
+  // was scored against the old DB) and invalidate in-flight feeds, same
+  // safety net as a manual reset.
+  pendingChunks = [];
+  queueDepth = 0;
+  cursorAyah = null;
+  resetEpoch++;
 }
 
 // feed() calls must not interleave (the tracker is stateful), and on slow
@@ -305,6 +362,7 @@ self.onmessage = (e) => {
         resetStreaming();
         break;
       case "setExpected":
+        rescopeToSurah(msg.surah);
         expectedRange = {
           surah: msg.surah,
           ayahStart: msg.ayahStart,
@@ -317,6 +375,7 @@ self.onmessage = (e) => {
         break;
       case "setConfig":
         if (session) session.setConfig(msg.config || {});
+        currentConfig = session ? session.getConfig() : currentConfig;
         break;
       case "setDebug":
         debugEnabled = !!msg.enabled;

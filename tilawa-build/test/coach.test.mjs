@@ -22,6 +22,19 @@ const FATIHA = [
   { ayah: 7, text: "صِرَٰطَ ٱلَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا ٱلضَّآلِّينَ" }, // 9 words
 ];
 
+// Real text_uthmani for Surah 85 (Al-Buruj) — ayah 1 embeds the Basmala as
+// its own first 4 words (this text source's convention for every surah
+// except 1 and 9); used to test isti'adhah/Basmala recitation tolerance.
+const BURUJ = [
+  { ayah: 1, text: "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ وَٱلسَّمَآءِ ذَاتِ ٱلْبُرُوجِ" }, // 7 words (4 Basmala + 3 real)
+  { ayah: 2, text: "وَٱلْيَوْمِ ٱلْمَوْعُودِ" }, // 2 words
+];
+
+// Surah 9 (At-Tawbah) ayah 1 has NO Basmala at all — must not be affected.
+const TAWBAH1 = [
+  { ayah: 1, text: "بَرَآءَةٌۭ مِّنَ ٱللَّهِ وَرَسُولِهِۦٓ إِلَى ٱلَّذِينَ عَٰهَدتُّم مِّنَ ٱلْمُشْرِكِينَ" }, // 9 words
+];
+
 function makeCoach(overrides = {}) {
   return new RecitationCoach({
     surah: 1,
@@ -168,6 +181,68 @@ test("a done verse with PARTIAL coverage still reports its unreached tail", () =
   coach.handleEvent(wp(1, [0, 1])); // some real data: words 0-1 confirmed, 2-3 never reached
   coach.handleEvent(vm(2));
   assert.deepEqual(coach.missedWordIndices(1), [2, 3]);
+});
+
+// ---------------------------------------------------------------------------
+// Isti'adhah/Basmala recitation conventions (all four accepted openings)
+// ---------------------------------------------------------------------------
+
+test("skipping the embedded Basmala (direct-to-surah opening) is never accused", () => {
+  // Field scenario (build 2026-07-20h, Surah 85): reciter opened straight
+  // into the surah content, skipping the Basmala entirely (a valid, common
+  // convention). The transcript-alignment layer only ever matched the
+  // REAL content words (indices 4,5,6), progress never touched 0-3.
+  const coach = new RecitationCoach({ surah: 85, ayahStart: 1, ayahEnd: 2, verses: BURUJ });
+  coach.handleEvent(wv([
+    { ayah: 1, index: 4, status: "matched", expected: "والسماء" },
+    { ayah: 1, index: 5, status: "matched", expected: "ذات" },
+    { ayah: 1, index: 6, status: "matched", expected: "البروج" },
+  ], 85));
+  assert.equal(coach.state, "tracking");
+  assert.deepEqual(coach.missedWordIndices(1), [], "Basmala prefix never accused");
+  coach.requestStop();
+  const s = coach.finalize().summary;
+  assert.equal(s.missedWords[1], undefined);
+  assert.equal(s.wordCoverage, 1, "omitting the optional Basmala must not lower word coverage");
+});
+
+test("reciting the Basmala too still earns credit (never penalized for saying it)", () => {
+  // Single-verse range so the summary isolates verse 1's own coverage,
+  // undiluted by an incidental zero-coverage cursor verse at stop time.
+  const coach = new RecitationCoach({ surah: 85, ayahStart: 1, ayahEnd: 1, verses: BURUJ });
+  coach.handleEvent(vm(1, 0.9, 85));
+  coach.handleEvent(wp(1, [0, 1, 2, 3, 4, 5, 6], 85)); // full verse matched, incl. Basmala
+  assert.deepEqual(coach.missedWordIndices(1), []);
+  coach.requestStop();
+  const s = coach.finalize().summary;
+  assert.equal(s.wordCoverage, 1, "reciting the Basmala earns full credit, not just neutrality");
+});
+
+test("Al-Fatiha's own verse 1 (the Basmala itself) is NOT stripped", () => {
+  // surah === 1 is explicitly excluded — the Basmala IS Fatiha's verse 1,
+  // not an optional prefix to it.
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(vm(2)); // advance with zero word-level coverage of verse 1
+  assert.deepEqual(
+    coach.missedWordIndices(1),
+    [],
+    "zero-coverage guard still applies (unrelated to Basmala logic)"
+  );
+  // But with PARTIAL coverage, all 4 words of 1:1 are real content and must
+  // still be individually accusable — none of them are "optional" here.
+  const coach2 = makeCoach();
+  coach2.handleEvent(vm(1));
+  coach2.handleEvent(wp(1, [0, 1]));
+  coach2.handleEvent(vm(2));
+  assert.deepEqual(coach2.missedWordIndices(1), [2, 3]);
+});
+
+test("At-Tawbah 9:1 (no Basmala at all) is unaffected by the stripping logic", () => {
+  const coach = new RecitationCoach({ surah: 9, ayahStart: 1, ayahEnd: 1, verses: TAWBAH1 });
+  coach.handleEvent(vm(1, 0.9, 9));
+  coach.handleEvent(wp(1, [0, 1], 9)); // only 2 of 9 real words confirmed
+  assert.deepEqual(coach.missedWordIndices(1), [2, 3, 4, 5, 6, 7, 8], "all remaining words are real content, fully accusable");
 });
 
 test("missed words are counted only when the verse is committed past", () => {
