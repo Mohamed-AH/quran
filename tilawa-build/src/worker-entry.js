@@ -48,12 +48,14 @@ function expectedWindow() {
   const words = [];
   // Before the session starts (no cursor yet) align against the head of the
   // expected passage — this powers transcript-based session start when the
-  // tracker itself is stuck. After start: cursor verse + the next one.
+  // tracker itself is stuck. After start: cursor verse + the next TWO, so a
+  // fast reciter's fragment spanning multiple verses can still be matched
+  // directly (mirrors the coach's multi-step transcript advance).
   const from = cursorAyah === null ? expectedRange.ayahStart : cursorAyah;
   const to =
     cursorAyah === null
       ? expectedRange.ayahEnd
-      : Math.min(cursorAyah + 1, expectedRange.ayahEnd);
+      : Math.min(cursorAyah + 2, expectedRange.ayahEnd);
   for (let a = from; a <= to && words.length < MAX_WINDOW_WORDS; a++) {
     const verse = session.db.getVerse(expectedRange.surah, a);
     if (!verse) continue;

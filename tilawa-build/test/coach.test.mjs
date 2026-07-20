@@ -436,6 +436,63 @@ test("accusation flags stay gated even though transcript-start is on", () => {
   assert.deepEqual(s.substitutedWords, {}, "no accusations without the calibration flag");
 });
 
+test("field scenario: a collapsed span commit no longer accuses the covered verses", () => {
+  // Reproduces the exact build-2026-07-20c report: tilawa's discovery finds
+  // span 1:2-4 but (by its own documented design) commits only verse 2
+  // ("live span collapsed to first ayah"), then later jumps straight to 5.
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, allWords(1)));
+  coach.handleEvent(vm(2)); // commit verse 2
+  // Discovery's span candidate for 2-4 arrives (the evidence tilawa itself
+  // saw before collapsing its commit) — recorded even though nothing acts
+  // on it yet.
+  coach.handleEvent(vc([{ surah: 1, ayah: 2, ayah_end: 4, confidence: 0.93 }]));
+  // Tracker then jumps straight to verse 5 (hysteresis: match + confirming
+  // word_progress), skipping past 3 and 4 in the tracker's own timeline.
+  coach.handleEvent(vm(5));
+  const fx = coach.handleEvent(wp(5, allWords(5)));
+  assert.ok(types(fx).includes("verse-committed"));
+  const skipEffect = fx.find((e) => e.type === "verses-skipped");
+  assert.ok(!skipEffect, "3 and 4 must NOT be reported skipped — evidence covered them");
+  assert.equal(coach.perVerse[3].status, "done");
+  assert.equal(coach.perVerse[4].status, "done");
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2, 3, 4, 5]))[0].summary;
+  assert.deepEqual(s.versesSkipped, []);
+  assert.ok(s.versesDone.includes(3) && s.versesDone.includes(4));
+});
+
+test("a genuine skip with NO discovery evidence is still reported", () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, allWords(1)));
+  coach.handleEvent(vm(2));
+  // No verse_candidate evidence for 3/4 at all this time.
+  coach.handleEvent(vm(5));
+  const fx = coach.handleEvent(wp(5, allWords(5)));
+  const skipEffect = fx.find((e) => e.type === "verses-skipped");
+  assert.deepEqual(skipEffect.ayahs, [3, 4]);
+  assert.equal(coach.perVerse[3].status, "skipped");
+});
+
+test("transcript advance can jump two verses at once when both are evidenced", () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, allWords(1)));
+  const fx = coach.handleEvent(
+    wv([
+      { ayah: 2, index: 0, status: "matched", expected: "w" },
+      { ayah: 2, index: 1, status: "matched", expected: "w" },
+      { ayah: 3, index: 0, status: "matched", expected: "w" },
+      { ayah: 3, index: 1, status: "matched", expected: "w" },
+    ])
+  );
+  assert.ok(types(fx).includes("verse-committed"));
+  assert.equal(coach.cursor, 3, "jumped straight to verse 3, verse 2 not left as pending");
+  assert.equal(coach.perVerse[2].status, "done");
+});
+
 test("candidates are ignored once the session is tracking", () => {
   const coach = makeCoach();
   coach.handleEvent(vm(1));
