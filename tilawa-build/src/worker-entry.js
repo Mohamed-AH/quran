@@ -152,29 +152,59 @@ async function handleInit(msg) {
   self.postMessage({ type: "ready" });
 }
 
-// feed() calls must not interleave: the tracker is stateful. Serialize them.
+// feed() calls must not interleave (the tracker is stateful), and on slow
+// devices inference can fall behind real-time (observed: 2.8× on
+// Safari/macOS). Pending chunks are therefore COALESCED: each drain
+// concatenates everything queued into one contiguous feed, so a backlog
+// turns into fewer, larger feeds (fewer decode cycles) instead of an
+// ever-growing queue of small ones. Audio stays contiguous either way.
+let pendingChunks = [];
+let draining = false;
+
 function enqueueFeed(samples) {
-  queueDepth++;
-  feeding = feeding
-    .then(async () => {
-      if (!session || stopping) return null;
+  pendingChunks.push(samples);
+  queueDepth = pendingChunks.length;
+  if (!draining) feeding = drainLoop();
+}
+
+async function drainLoop() {
+  draining = true;
+  try {
+    while (pendingChunks.length && session && !stopping) {
+      const batch = pendingChunks;
+      pendingChunks = [];
+      queueDepth = 0;
+      let combined;
+      if (batch.length === 1) {
+        combined = batch[0];
+      } else {
+        let total = 0;
+        for (const c of batch) total += c.length;
+        combined = new Float32Array(total);
+        let offset = 0;
+        for (const c of batch) {
+          combined.set(c, offset);
+          offset += c.length;
+        }
+      }
       const t0 = Date.now();
-      const result = await session.feed(samples);
+      try {
+        await session.feed(combined);
+      } catch (err) {
+        postError(`feed failed: ${err && err.message}`);
+      }
       if (debugEnabled) {
         const ms = Date.now() - t0;
         stats.feeds++;
         stats.feedMsTotal += ms;
         if (ms > stats.feedMsMax) stats.feedMsMax = ms;
-        stats.audioMs += (samples.length / SAMPLE_RATE) * 1000;
+        stats.audioMs += (combined.length / SAMPLE_RATE) * 1000;
         if (Date.now() - stats.lastPost >= 5000) postStats(Date.now());
       }
-      return result;
-    })
-    .catch((err) => postError(`feed failed: ${err && err.message}`))
-    .finally(() => {
-      queueDepth--;
-    });
-  return feeding;
+    }
+  } finally {
+    draining = false;
+  }
 }
 
 /**
@@ -187,9 +217,9 @@ async function handleStop() {
     self.postMessage({ type: "stopped" });
     return;
   }
-  stopping = true;
   try {
-    await feeding; // let in-flight feeds drain
+    await feeding; // drain ALL pending real audio (incl. the mic tail) first
+    stopping = true;
     const cfg = session.getConfig();
     const chunk = new Float32Array(Math.round(SAMPLE_RATE * 0.3));
     const flushSec = (cfg.finalSilenceSec || 5) + 1.5;
