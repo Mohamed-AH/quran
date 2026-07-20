@@ -70,6 +70,11 @@
     doneCoverage: 0.6, // word coverage for the active verse to count as done at finalize
     reconcileCoverage: 0.8, // coverage that counts a verse done even without a commit
     offTrackLimit: 3, // consecutive out-of-range events before the off-track hint
+    // verse_candidate-based start: discovery's ranked candidates identify
+    // the passage even when the tracker's advance gate is stuck on a
+    // noise-acquired verse (field bug: perfect Fatiha decode, tracker
+    // blocked on 104:9). Stable in-range candidates open the session.
+    candidateStartConfidence: 0.85,
     scoreWeights: { verses: 60, words: 30, confidence: 10 },
     // Transcript-alignment word verdicts (worker `word_verdicts` events).
     // Off until calibrated against real wrong-recitation clips — see
@@ -191,11 +196,64 @@
           return this._onWordProgress(event);
         case 'word_verdicts':
           return this._onWordVerdicts(event);
+        case 'verse_candidate':
+          return this._onVerseCandidate(event);
         case 'final_sequence':
           return this._onFinalSequence(event);
         default:
           return [];
       }
+    }
+
+    /**
+     * Start the session from discovery candidates when the verse_match path
+     * is unavailable (tracker stuck on a pre-recitation noise commit).
+     * Requires a stable top candidate inside the expected range — or the
+     * same unstable top candidate twice in a row (hysteresis).
+     */
+    _onVerseCandidate(msg) {
+      const effects = [];
+      if (this.state !== 'awaiting_start') return effects;
+      const top =
+        (msg.candidates || []).find(function (c) {
+          return c.rank === 0;
+        }) || (msg.candidates || [])[0];
+      if (!top || (top.confidence || 0) < this.cfg.candidateStartConfidence) {
+        this.pendingCandidate = null;
+        return effects;
+      }
+      const spanStart = top.ayah;
+      const spanEnd = top.ayah_end || top.ayah;
+      const inRange =
+        top.surah === this.surah &&
+        spanEnd >= this.ayahStart &&
+        spanStart <= this.ayahEnd;
+      if (!inRange) {
+        this.pendingCandidate = null;
+        return effects;
+      }
+
+      const key = `${top.surah}:${spanStart}-${spanEnd}`;
+      if (!msg.stable) {
+        if (this.pendingCandidate !== key) {
+          this.pendingCandidate = key; // wait for a second consistent sighting
+          return effects;
+        }
+      }
+      this.pendingCandidate = null;
+
+      // The candidate span is what has ALREADY been recited: start at the
+      // span's first in-range ayah, then advance through the span so the
+      // cursor lands on its last verse. Word coverage arrives afterwards
+      // via word_verdicts/word_progress; reconciliation counts committed
+      // verses as done.
+      const from = Math.max(spanStart, this.ayahStart);
+      const to = Math.min(spanEnd, this.ayahEnd);
+      effects.push(...this._start(from));
+      for (let a = from + 1; a <= to; a++) {
+        effects.push(...this._commitAndAdvance(a));
+      }
+      return effects;
     }
 
     _onWordVerdicts(msg) {
@@ -611,12 +669,30 @@
    */
   RecitationCoach.anchorFromEvent = function (event, quranData, opts) {
     const minConfidence = (opts && opts.minConfidence) || 0.55;
-    if (!event || event.type !== 'verse_match') return null;
-    if ((event.confidence || 0) < minConfidence) return null;
+    if (!event) return null;
+    let surah = null;
+    let ayah = null;
+    if (event.type === 'verse_match') {
+      if ((event.confidence || 0) < minConfidence) return null;
+      surah = event.surah;
+      ayah = event.ayah;
+    } else if (event.type === 'verse_candidate' && event.stable) {
+      // Discovery candidates can anchor a freestyle session even when the
+      // tracker's advance gate is stuck — stable top candidate only.
+      const top =
+        (event.candidates || []).find(function (c) {
+          return c.rank === 0;
+        }) || (event.candidates || [])[0];
+      if (!top || (top.confidence || 0) < Math.max(minConfidence, 0.85)) return null;
+      surah = top.surah;
+      ayah = top.ayah;
+    } else {
+      return null;
+    }
     const verses = [];
-    let ayahEnd = event.ayah;
+    let ayahEnd = ayah;
     for (const v of quranData) {
-      if (v.surah === event.surah && v.ayah >= event.ayah) {
+      if (v.surah === surah && v.ayah >= ayah) {
         verses.push({ ayah: v.ayah, text: v.text_uthmani });
         if (v.ayah > ayahEnd) ayahEnd = v.ayah;
       }
@@ -626,8 +702,8 @@
       return a.ayah - b.ayah;
     });
     return {
-      surah: event.surah,
-      ayahStart: event.ayah,
+      surah: surah,
+      ayahStart: ayah,
       ayahEnd: ayahEnd,
       verses: verses,
     };

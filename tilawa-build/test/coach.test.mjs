@@ -336,6 +336,72 @@ test("a session that never started scores zero", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Candidate-based start (tracker advance gate stuck on a noise commit)
+// ---------------------------------------------------------------------------
+
+const vc = (candidates, stable = true) => ({
+  type: "verse_candidate",
+  candidates: candidates.map((c, i) => ({ rank: i, source: "discovery", ...c })),
+  stable,
+  final_flush: false,
+});
+
+test("a stable in-range span candidate starts the session through the span", () => {
+  const coach = makeCoach();
+  // Field scenario: tracker stuck on 104:9, discovery ranks 1:1-3 top.
+  const fx = coach.handleEvent(vc([{ surah: 1, ayah: 1, ayah_end: 3, confidence: 0.98 }]));
+  assert.ok(types(fx).includes("started"));
+  assert.equal(coach.state, "tracking");
+  assert.equal(coach.cursor, 3, "cursor lands on the span's last verse");
+  assert.ok(coach.perVerse[1].sawCommit && coach.perVerse[2].sawCommit);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
+  assert.deepEqual(s.versesDone, [1, 2, 3]);
+});
+
+test("an unstable candidate needs two consistent sightings (hysteresis)", () => {
+  const coach = makeCoach();
+  assert.deepEqual(coach.handleEvent(vc([{ surah: 1, ayah: 1, confidence: 0.95 }], false)), []);
+  assert.equal(coach.state, "awaiting_start");
+  const fx = coach.handleEvent(vc([{ surah: 1, ayah: 1, confidence: 0.95 }], false));
+  assert.ok(types(fx).includes("started"));
+  assert.equal(coach.cursor, 1);
+});
+
+test("low-confidence and out-of-range candidates never start a session", () => {
+  const coach = makeCoach();
+  assert.deepEqual(coach.handleEvent(vc([{ surah: 1, ayah: 1, confidence: 0.5 }])), []);
+  assert.deepEqual(coach.handleEvent(vc([{ surah: 104, ayah: 9, confidence: 0.99 }])), []);
+  assert.equal(coach.state, "awaiting_start");
+});
+
+test("candidates are ignored once the session is tracking", () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  const fx = coach.handleEvent(vc([{ surah: 1, ayah: 5, ayah_end: 6, confidence: 0.99 }]));
+  assert.deepEqual(fx, []);
+  assert.equal(coach.cursor, 1, "candidate must not move the cursor mid-session");
+});
+
+test("anchorFromEvent also anchors freestyle from a stable candidate", () => {
+  const anchor = RecitationCoach.anchorFromEvent(
+    vc([{ surah: 1, ayah: 2, confidence: 0.97 }]),
+    FATIHA.map((v) => ({ surah: 1, ayah: v.ayah, text_uthmani: v.text }))
+  );
+  assert.equal(anchor.surah, 1);
+  assert.equal(anchor.ayahStart, 2);
+  assert.equal(anchor.ayahEnd, 7);
+  // Unstable candidates never anchor.
+  assert.equal(
+    RecitationCoach.anchorFromEvent(
+      vc([{ surah: 1, ayah: 2, confidence: 0.97 }], false),
+      FATIHA.map((v) => ({ surah: 1, ayah: v.ayah, text_uthmani: v.text }))
+    ),
+    null
+  );
+});
+
+// ---------------------------------------------------------------------------
 // Word verdicts (transcript-alignment layer)
 // ---------------------------------------------------------------------------
 

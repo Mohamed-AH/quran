@@ -143,7 +143,9 @@ async function handleInit(msg) {
     },
     {
       config: msg.config || {},
-      onOutput: postEvent,
+      // NOTE: no onOutput — streaming events are posted from the returned
+      // messages of each feed() so that resets can drop stale in-flight
+      // output (see drainLoop / resetEpoch).
       onDiagnostic: (event, data) => {
         if (debugEnabled) self.postMessage({ type: "diag", event, data });
       },
@@ -153,13 +155,29 @@ async function handleInit(msg) {
 }
 
 // feed() calls must not interleave (the tracker is stateful), and on slow
-// devices inference can fall behind real-time (observed: 2.8× on
-// Safari/macOS). Pending chunks are therefore COALESCED: each drain
-// concatenates everything queued into one contiguous feed, so a backlog
-// turns into fewer, larger feeds (fewer decode cycles) instead of an
-// ever-growing queue of small ones. Audio stays contiguous either way.
+// devices inference can fall behind real-time (observed: up to 5× on
+// Safari/macOS). Pending chunks are therefore COALESCED — but capped at
+// MAX_BATCH_SAMPLES per feed call: an unbounded batch makes a single
+// session.feed() run for tens of seconds, during which a tracker reset
+// cannot take effect (field bug: reset "did nothing" because a mega-feed
+// on the OLD tracker kept emitting events long after the swap).
+//
+// resetEpoch makes resets authoritative: a reset bumps the epoch and drops
+// the queued backlog (after a reset we listen FRESH — replaying lagged
+// audio would just re-poison the new tracker), and any events produced by
+// a feed that started before the reset are discarded.
+const MAX_BATCH_SAMPLES = SAMPLE_RATE; // 1 s of audio per feed call
 let pendingChunks = [];
 let draining = false;
+let resetEpoch = 0;
+
+function resetStreaming() {
+  if (session) session.reset();
+  pendingChunks = [];
+  queueDepth = 0;
+  cursorAyah = null;
+  resetEpoch++;
+}
 
 function enqueueFeed(samples) {
   pendingChunks.push(samples);
@@ -167,31 +185,42 @@ function enqueueFeed(samples) {
   if (!draining) feeding = drainLoop();
 }
 
+function takeBatch() {
+  let total = 0;
+  let count = 0;
+  while (count < pendingChunks.length && total < MAX_BATCH_SAMPLES) {
+    total += pendingChunks[count].length;
+    count++;
+  }
+  const batch = pendingChunks.splice(0, count);
+  queueDepth = pendingChunks.length;
+  if (batch.length === 1) return batch[0];
+  const combined = new Float32Array(total);
+  let offset = 0;
+  for (const c of batch) {
+    combined.set(c, offset);
+    offset += c.length;
+  }
+  return combined;
+}
+
 async function drainLoop() {
   draining = true;
   try {
     while (pendingChunks.length && session && !stopping) {
-      const batch = pendingChunks;
-      pendingChunks = [];
-      queueDepth = 0;
-      let combined;
-      if (batch.length === 1) {
-        combined = batch[0];
-      } else {
-        let total = 0;
-        for (const c of batch) total += c.length;
-        combined = new Float32Array(total);
-        let offset = 0;
-        for (const c of batch) {
-          combined.set(c, offset);
-          offset += c.length;
-        }
-      }
+      const combined = takeBatch();
+      const epochAtStart = resetEpoch;
       const t0 = Date.now();
+      let messages = null;
       try {
-        await session.feed(combined);
+        messages = await session.feed(combined);
       } catch (err) {
         postError(`feed failed: ${err && err.message}`);
+      }
+      // Drop events from a feed that straddled a reset — they belong to
+      // the discarded tracker state.
+      if (messages && resetEpoch === epochAtStart) {
+        for (const msg of messages) postEvent(msg);
       }
       if (debugEnabled) {
         const ms = Date.now() - t0;
@@ -226,6 +255,7 @@ async function handleStop() {
     const maxChunks = Math.ceil((flushSec * SAMPLE_RATE) / chunk.length);
     for (let i = 0; i < maxChunks; i++) {
       const messages = await session.feed(chunk);
+      for (const msg of messages) postEvent(msg);
       if (messages.some((m) => m.type === "final_sequence")) break;
     }
   } catch (err) {
@@ -252,8 +282,7 @@ self.onmessage = (e) => {
         handleStop();
         break;
       case "reset":
-        if (session) session.reset();
-        cursorAyah = null;
+        resetStreaming();
         break;
       case "setExpected":
         expectedRange = {
