@@ -792,3 +792,11 @@
         .rdbg-effect { color: #9fd6b8; }
         .rdbg-diag { color: #999; }
         .rdbg-error { color: #e05c5c; }
+        .rdbg-milestones {
+            border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            max-height: 90px;
+            overflow-y: auto;
+        }
+        .rdbg-milestone { color: var(--gold-light); }

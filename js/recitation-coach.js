@@ -194,9 +194,19 @@
      * high-water mark were provably never reached. Gaps below it are NOT
      * reported — tilawa's incremental match reports are too sparse to
      * accuse the reciter of skipping individual mid-verse words.
+     *
+     * A verse with ZERO coverage at all (progress=0, nothing matched) is a
+     * different situation entirely: it means the tracker advanced past this
+     * verse before any word-level alignment ever ran on it (e.g. a fast
+     * commit+advance on a short opening verse) — we have no data, not
+     * evidence of specific missing words. Reporting all N words as "missed"
+     * would misrepresent an absence of data as an accusation; field-tested
+     * case (build 2026-07-20e): a session that recited verse 1:1 correctly
+     * still had all 4 of its words reported "missed" this way.
      */
     missedWordIndices(ayah) {
       const v = this.perVerse[ayah];
+      if (v.progress === 0 && v.matched.size === 0) return [];
       const missed = [];
       for (let i = v.progress; i < v.totalWords; i++) {
         if (!v.matched.has(i)) missed.push(i);

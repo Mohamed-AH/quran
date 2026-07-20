@@ -12,8 +12,20 @@
  */
 
 const recitationDebug = {
-  MAX_LOG: 50,
+  // Field lesson (build 2026-07-20e): a real 150s session generates
+  // hundreds of diag/ui lines, so a 50-entry rolling log discarded the
+  // exact moment a verse got skipped before the report could be copied.
+  // Raised generously — plain text, cheap to hold even at this size.
+  MAX_LOG: 1000,
   _log: [],
+  // Separate, coarser trail of only the COACH's decisions (started,
+  // verse-committed, verses-skipped, repetition, off-track, completed) —
+  // there are at most a few dozen of these even in a long session, so this
+  // never needs to evict anything and always survives to the report,
+  // giving an at-a-glance decision timeline without wading through the
+  // much noisier per-chunk diag stream.
+  MAX_MILESTONES: 300,
+  _milestones: [],
   _live: {},
   _el: null,
   _bodyEl: null,
@@ -41,6 +53,18 @@ const recitationDebug = {
     this._queueRender();
   },
 
+  /** Coarse, high-priority trail of coach DECISIONS — always survives to
+   *  the report even when the noisy diag/ui log has scrolled past it. */
+  milestone(text) {
+    if (!this.enabled()) return;
+    this._milestones.push({
+      t: new Date().toISOString().slice(11, 23),
+      text: String(text),
+    });
+    if (this._milestones.length > this.MAX_MILESTONES) this._milestones.shift();
+    this._queueRender();
+  },
+
   /** Live key/value status shown at the top of the panel. */
   set(key, value) {
     if (!this.enabled()) return;
@@ -62,6 +86,7 @@ const recitationDebug = {
       </div>
       <div class="rdbg-body" id="rdbgBody">
         <div class="rdbg-live" id="rdbgLive"></div>
+        <div class="rdbg-milestones" id="rdbgMilestones"></div>
         <div class="rdbg-log" id="rdbgLog"></div>
       </div>`;
     document.body.appendChild(el);
@@ -89,6 +114,7 @@ const recitationDebug = {
   _render() {
     if (!this._el || this._collapsed) return;
     const liveEl = this._el.querySelector('#rdbgLive');
+    const milestonesEl = this._el.querySelector('#rdbgMilestones');
     const logEl = this._el.querySelector('#rdbgLog');
     liveEl.innerHTML = Object.entries(this._live)
       .map(
@@ -96,6 +122,11 @@ const recitationDebug = {
           `<div><span class="rdbg-k">${k}</span> ${typeof v === 'object' ? JSON.stringify(v) : v}</div>`
       )
       .join('');
+    if (milestonesEl) {
+      milestonesEl.innerHTML = this._milestones
+        .map((e) => `<div class="rdbg-milestone">${e.t} ★ ${e.text}</div>`)
+        .join('');
+    }
     logEl.innerHTML = this._log
       .map((e) => `<div class="rdbg-${e.kind}">${e.t} [${e.kind}] ${e.text}</div>`)
       .join('');
@@ -149,6 +180,7 @@ const recitationDebug = {
         coach: coachState,
         summary: lastSummary,
         live: this._live,
+        milestones: this._milestones,
         log: this._log,
       },
       null,
