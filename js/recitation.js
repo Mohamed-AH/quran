@@ -839,8 +839,36 @@ const recitationUI = {
     this._applyEffects(effects);
   },
 
+  /** One-line human-readable summary of a coach effect, for the milestone
+   *  trail — this is the record that must survive a long, noisy session. */
+  _describeEffect(fx) {
+    switch (fx.type) {
+      case 'started':
+        return `STARTED at ayah ${fx.ayah}`;
+      case 'verse-active':
+        return `now on ayah ${fx.ayah}`;
+      case 'verse-committed':
+        return `committed ayah ${fx.ayah}${fx.missedWords && fx.missedWords.length ? ` (missed words: [${fx.missedWords}])` : ''}`;
+      case 'verses-skipped':
+        return `SKIPPED ayahs [${fx.ayahs}]`;
+      case 'repetition':
+        return `repetition of ayah ${fx.ayah} (x${fx.count})`;
+      case 'off-track':
+        return 'off-track hint shown';
+      case 'checkpoint':
+        return 'checkpoint (silence flush mid-session)';
+      case 'completed':
+        return `COMPLETED — score=${fx.summary.score} done=[${fx.summary.versesDone}] skipped=[${fx.summary.versesSkipped}] notReached=[${fx.summary.versesNotReached}]`;
+      default:
+        return fx.type;
+    }
+  },
+
   _applyEffects(effects) {
     for (const fx of effects || []) {
+      if (typeof recitationDebug !== 'undefined') {
+        recitationDebug.milestone(this._describeEffect(fx));
+      }
       switch (fx.type) {
         case 'started': {
           this._breadcrumb(`recitation recognized — started at ayah ${fx.ayah}`);

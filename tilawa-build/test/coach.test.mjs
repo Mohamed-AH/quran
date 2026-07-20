@@ -147,6 +147,29 @@ test("clean recitation completes with full score components", () => {
   assert.ok(s.score >= 95, `score ${s.score}`);
 });
 
+test("a done verse with ZERO coverage reports no missed words (no data, not an accusation)", () => {
+  // Field scenario (build 2026-07-20e): verse 1 was recognized and the
+  // session advanced past it before any word-level alignment ever ran on
+  // it specifically (progress=0, matched empty) — the summary must not
+  // claim "you missed all 4 words" when the truth is "we have no data".
+  const coach = makeCoach();
+  coach.handleEvent(vm(1)); // starts, but no word_progress/word_verdicts for verse 1 at all
+  coach.handleEvent(vm(2)); // advance commits verse 1 with zero coverage
+  assert.deepEqual(coach.missedWordIndices(1), []);
+  reciteVerse(coach, 2);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2]))[0].summary;
+  assert.equal(s.missedWords[1], undefined, "no accusation for a verse with no alignment data at all");
+});
+
+test("a done verse with PARTIAL coverage still reports its unreached tail", () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, [0, 1])); // some real data: words 0-1 confirmed, 2-3 never reached
+  coach.handleEvent(vm(2));
+  assert.deepEqual(coach.missedWordIndices(1), [2, 3]);
+});
+
 test("missed words are counted only when the verse is committed past", () => {
   const coach = makeCoach();
   coach.handleEvent(vm(1));
