@@ -92,6 +92,30 @@ confident off-range `verse_match` OR stable off-range `verse_candidate` while
 visible off-range event before going quiet in tracking mode), resetting the
 tracker immediately to reopen the discovery window as early as possible.
 
+## Search space is scoped to the picked surah, not the full 6,236-verse corpus
+
+`QuranDB` takes a plain verse array in its constructor — nothing tilawa-side
+requires the full corpus. When the user has already picked a passage, its
+surah is known before a single audio chunk arrives, so there is no reason for
+discovery to search the other 113 surahs at all. The worker
+(`tilawa-build/src/worker-entry.js`, `rescopeToSurah`) rebuilds the tilawa
+session with `QuranDB` restricted to just that surah on every `setExpected`
+message (reusing the same already-initialized ONNX `runner` — only the
+cheap text-side wrapper is rebuilt).
+
+This makes the cross-surah noise-locking bug above **structurally
+impossible** in picked-passage mode (those verses don't exist in the
+tracker's world, so it cannot commit to them), and shrinks the
+champion-matching scan every decode cycle performs (`quran-db.ts` iterates
+`this.verses` in `bestJoint03Match` and related methods) from 6,236 verses
+down to as few as 3 — a meaningful speed-up on the slow devices seen in the
+field (verified: `session.db.totalVerses === 6` for a session scoped to
+Surah 114, vs the full corpus's 6,236).
+
+Freestyle ("just recite") mode starts unscoped, since the surah isn't known
+until something is recognized — but rescopes too, immediately after
+anchoring, so the rest of a freestyle session gets the same protection.
+
 ## CSP note
 
 If production hosting ever enables a Content-Security-Policy for static pages,

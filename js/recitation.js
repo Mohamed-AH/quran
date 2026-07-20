@@ -376,6 +376,13 @@ const recitationUI = {
       case 'event':
         this._onTilawaEvent(msg.event);
         break;
+      case 'scoped':
+        this._breadcrumb(`tracker scoped to surah ${msg.surah} (${msg.verseCount} verses, was 6236)`);
+        if (typeof recitationDebug !== 'undefined') {
+          recitationDebug.set('scope', `surah ${msg.surah} (${msg.verseCount} verses)`);
+          recitationDebug.milestone(`tracker scoped to surah ${msg.surah} (${msg.verseCount} verses)`);
+        }
+        break;
       case 'diag':
         // tilawa's internal diagnostics firehose (decode windows, tracker
         // transitions, rollbacks) — the ground truth when chasing jitter.
