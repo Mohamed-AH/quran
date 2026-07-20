@@ -818,7 +818,16 @@ const recitationUI = {
           ? `verse_match ${event.surah}:${event.ayah} conf=${event.confidence}`
           : event.type === 'word_progress'
             ? `word_progress ${event.surah}:${event.ayah} idx=${event.word_index}/${event.total_words} matched=[${event.matched_indices}]`
-            : event.type;
+            : event.type === 'verse_candidate'
+              ? `verse_candidate${event.stable ? ' STABLE' : ''} [${(event.candidates || [])
+                  .slice(0, 3)
+                  .map((c) => `${c.surah}:${c.ayah}${c.ayah_end ? '-' + c.ayah_end : ''}@${c.confidence}`)
+                  .join(', ')}]`
+              : event.type === 'word_verdicts'
+                ? `word_verdicts [${(event.verdicts || [])
+                    .map((v) => `${v.ayah}.${v.index}:${v.status[0]}`)
+                    .join(',')}]`
+                : event.type;
       this._log(
         `event: ${brief} → coach[cursor=${s.coach.cursor} state=${s.coach.state}]:`,
         effects.length ? effects.map((e) => e.type).join(', ') : '(no effect)'

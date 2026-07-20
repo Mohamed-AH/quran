@@ -75,6 +75,12 @@
     // noise-acquired verse (field bug: perfect Fatiha decode, tracker
     // blocked on 104:9). Stable in-range candidates open the session.
     candidateStartConfidence: 0.85,
+    // Transcript-alignment session start/advance: independent of tilawa's
+    // tracker entirely — if the aligner proves >=N expected words were
+    // recited, that IS the recitation. The strongest defense against a
+    // tracker stuck on a noise commit.
+    transcriptStart: true,
+    transcriptStartWords: 3,
     scoreWeights: { verses: 60, words: 30, confidence: 10 },
     // Transcript-alignment word verdicts (worker `word_verdicts` events).
     // Off until calibrated against real wrong-recitation clips — see
@@ -214,24 +220,23 @@
     _onVerseCandidate(msg) {
       const effects = [];
       if (this.state !== 'awaiting_start') return effects;
-      const top =
-        (msg.candidates || []).find(function (c) {
-          return c.rank === 0;
-        }) || (msg.candidates || [])[0];
-      if (!top || (top.confidence || 0) < this.cfg.candidateStartConfidence) {
+      // Scan ALL candidates for the best IN-RANGE one — the first entry is
+      // tilawa's fusion/champion pick, which can be an out-of-range verse
+      // (field case: 87:1 ranked above the correct 1:1-2 span). The user
+      // told us the passage; an out-of-range leader is irrelevant to us.
+      let top = null;
+      for (const c of msg.candidates || []) {
+        if ((c.confidence || 0) < this.cfg.candidateStartConfidence) continue;
+        const cEnd = c.ayah_end || c.ayah;
+        if (c.surah !== this.surah || cEnd < this.ayahStart || c.ayah > this.ayahEnd) continue;
+        if (!top || (c.confidence || 0) > (top.confidence || 0)) top = c;
+      }
+      if (!top) {
         this.pendingCandidate = null;
         return effects;
       }
       const spanStart = top.ayah;
       const spanEnd = top.ayah_end || top.ayah;
-      const inRange =
-        top.surah === this.surah &&
-        spanEnd >= this.ayahStart &&
-        spanStart <= this.ayahEnd;
-      if (!inRange) {
-        this.pendingCandidate = null;
-        return effects;
-      }
 
       const key = `${top.surah}:${spanStart}-${spanEnd}`;
       if (!msg.stable) {
@@ -258,23 +263,42 @@
 
     _onWordVerdicts(msg) {
       const effects = [];
-      if (!this.cfg.useWordVerdicts) return effects;
-      if (this.state !== 'tracking') return effects;
+      if (!this.cfg.useWordVerdicts && !this.cfg.transcriptStart) return effects;
       if (msg.surah !== this.surah) return effects;
+      if (this.state !== 'tracking' && this.state !== 'awaiting_start') return effects;
+
+      const verdicts = (msg.verdicts || []).filter(
+        (vd) =>
+          this.perVerse[vd.ayah] &&
+          vd.index >= 0 &&
+          vd.index < this.perVerse[vd.ayah].totalWords
+      );
+
+      // Transcript-based session start: alignment proving that expected
+      // words were recited is direct evidence, no tracker involved.
+      if (this.state === 'awaiting_start') {
+        if (!this.cfg.transcriptStart) return effects;
+        const matchedVerdicts = verdicts.filter(
+          (vd) => vd.status === 'matched' || vd.status === 'fuzzy'
+        );
+        if (matchedVerdicts.length < this.cfg.transcriptStartWords) return effects;
+        effects.push(...this._start(matchedVerdicts[0].ayah));
+      }
 
       const touched = new Set();
-      for (const verdict of msg.verdicts || []) {
+      for (const verdict of verdicts) {
         const v = this.perVerse[verdict.ayah];
-        if (!v || verdict.index < 0 || verdict.index >= v.totalWords) continue;
-
         if (verdict.status === 'matched' || verdict.status === 'fuzzy') {
           const grew = !v.matched.has(verdict.index);
           v.matched.add(verdict.index);
           if (v.wordFlags[verdict.index]) delete v.wordFlags[verdict.index]; // repair
           if (grew) touched.add(verdict.ayah);
-        } else if (verdict.status === 'missing' || verdict.status === 'substituted') {
-          // Positive evidence of a problem — but never contradict an
-          // explicit earlier match for the same word.
+        } else if (
+          this.cfg.useWordVerdicts &&
+          (verdict.status === 'missing' || verdict.status === 'substituted')
+        ) {
+          // Accusations stay behind the calibration flag, and never
+          // contradict an explicit earlier match for the same word.
           if (!v.matched.has(verdict.index)) {
             v.wordFlags[verdict.index] = {
               status: verdict.status,
@@ -293,6 +317,21 @@
           matched: this.coveredIndices(ayah),
           totalWords: this.perVerse[ayah].totalWords,
         });
+      }
+
+      // Transcript-driven advance: enough aligned words in the NEXT verse
+      // while the current one is substantially covered means the reciter
+      // moved on — even if the tracker's advance gate never says so.
+      const next = this.cursor + 1;
+      if (
+        next <= this.ayahEnd &&
+        this.perVerse[next] &&
+        this.perVerse[next].matched.size >= 2 &&
+        (this.coverage(this.cursor) >= 0.5 || this.perVerse[this.cursor].sawCommit)
+      ) {
+        this.pendingJump = null;
+        this.pendingBack = null;
+        effects.push(...this._commitAndAdvance(next));
       }
       return effects;
     }
