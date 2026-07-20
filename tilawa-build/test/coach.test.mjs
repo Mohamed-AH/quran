@@ -339,9 +339,11 @@ test("a session that never started scores zero", () => {
 // Candidate-based start (tracker advance gate stuck on a noise commit)
 // ---------------------------------------------------------------------------
 
+// Mirrors the real tracker: rank starts at 1, first entry is the
+// fusion/champion pick (which can be out-of-range).
 const vc = (candidates, stable = true) => ({
   type: "verse_candidate",
-  candidates: candidates.map((c, i) => ({ rank: i, source: "discovery", ...c })),
+  candidates: candidates.map((c, i) => ({ rank: i + 1, source: "discovery", ...c })),
   stable,
   final_flush: false,
 });
@@ -373,6 +375,65 @@ test("low-confidence and out-of-range candidates never start a session", () => {
   assert.deepEqual(coach.handleEvent(vc([{ surah: 1, ayah: 1, confidence: 0.5 }])), []);
   assert.deepEqual(coach.handleEvent(vc([{ surah: 104, ayah: 9, confidence: 0.99 }])), []);
   assert.equal(coach.state, "awaiting_start");
+});
+
+test("an in-range candidate ranked BELOW an out-of-range leader still starts", () => {
+  // Field bug: fusion ranked 87:1 first while the correct 1:1-2 span sat
+  // second — the coach must scan the whole list for in-range candidates.
+  const coach = makeCoach();
+  const fx = coach.handleEvent(
+    vc([
+      { surah: 87, ayah: 1, confidence: 0.86 },
+      { surah: 1, ayah: 1, ayah_end: 2, confidence: 0.93 },
+    ])
+  );
+  assert.ok(types(fx).includes("started"));
+  assert.equal(coach.cursor, 2);
+});
+
+test("transcript-aligned words start the session with no tracker involvement", () => {
+  const coach = makeCoach(); // default config — transcriptStart is on
+  const fx = coach.handleEvent(
+    wv([
+      { ayah: 1, index: 0, status: "matched", expected: "بسم" },
+      { ayah: 1, index: 1, status: "matched", expected: "الله" },
+      { ayah: 1, index: 2, status: "matched", expected: "الرحمن" },
+    ])
+  );
+  assert.ok(types(fx).includes("started"));
+  assert.equal(coach.cursor, 1);
+  // Two matched words are NOT enough evidence.
+  const cold = makeCoach();
+  assert.deepEqual(
+    types(cold.handleEvent(wv([
+      { ayah: 1, index: 0, status: "matched", expected: "x" },
+      { ayah: 1, index: 1, status: "matched", expected: "y" },
+    ]))),
+    []
+  );
+});
+
+test("transcript-aligned words in the next verse advance the cursor", () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, allWords(1))); // verse 1 fully covered
+  const fx = coach.handleEvent(
+    wv([
+      { ayah: 2, index: 0, status: "matched", expected: "الحمد" },
+      { ayah: 2, index: 1, status: "matched", expected: "لله" },
+    ])
+  );
+  assert.ok(types(fx).includes("verse-committed"));
+  assert.equal(coach.cursor, 2, "advanced without any tracker verse_match");
+});
+
+test("accusation flags stay gated even though transcript-start is on", () => {
+  const coach = makeCoach(); // useWordVerdicts false, transcriptStart true
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wv([{ ayah: 1, index: 2, status: "substituted", heard: "x", expected: "y" }]));
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1]))[0].summary;
+  assert.deepEqual(s.substitutedWords, {}, "no accusations without the calibration flag");
 });
 
 test("candidates are ignored once the session is tracking", () => {

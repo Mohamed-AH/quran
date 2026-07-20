@@ -41,13 +41,25 @@ let stopping = false;
 let expectedRange = null; // { surah, ayahStart, ayahEnd }
 let cursorAyah = null;
 
+const MAX_WINDOW_WORDS = 64;
+
 function expectedWindow() {
-  if (!session || !expectedRange || cursorAyah === null) return null;
+  if (!session || !expectedRange) return null;
   const words = [];
-  for (let a = cursorAyah; a <= Math.min(cursorAyah + 1, expectedRange.ayahEnd); a++) {
+  // Before the session starts (no cursor yet) align against the head of the
+  // expected passage — this powers transcript-based session start when the
+  // tracker itself is stuck. After start: cursor verse + the next one.
+  const from = cursorAyah === null ? expectedRange.ayahStart : cursorAyah;
+  const to =
+    cursorAyah === null
+      ? expectedRange.ayahEnd
+      : Math.min(cursorAyah + 1, expectedRange.ayahEnd);
+  for (let a = from; a <= to && words.length < MAX_WINDOW_WORDS; a++) {
     const verse = session.db.getVerse(expectedRange.surah, a);
     if (!verse) continue;
-    verse.phoneme_words.forEach((w, i) => words.push({ word: w, ayah: a, index: i }));
+    verse.phoneme_words.forEach((w, i) => {
+      if (words.length < MAX_WINDOW_WORDS) words.push({ word: w, ayah: a, index: i });
+    });
   }
   return words.length ? words : null;
 }
@@ -208,6 +220,12 @@ async function drainLoop() {
   draining = true;
   try {
     while (pendingChunks.length && session && !stopping) {
+      // Yield to the MACROTASK queue: an async loop continues on microtasks
+      // and would otherwise starve onmessage entirely while chunks are
+      // pending — control messages (reset/setConfig) queued behind feeds
+      // were being applied minutes late on slow devices.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (!pendingChunks.length || !session || stopping) break;
       const combined = takeBatch();
       const epochAtStart = resetEpoch;
       const t0 = Date.now();
