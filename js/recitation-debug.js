@@ -127,6 +127,16 @@ const recitationDebug = {
         : { phase: recitationUI._phase };
     } catch (e) { coachState = { error: String(e) }; }
 
+    // The finalize() summary — score, versesDone/Skipped/NotReached,
+    // missedWords — is the actual verdict the user saw on screen. Without
+    // it, confirming a session's correctness from the report alone means
+    // manually replaying the event log by hand; with it, the report is
+    // self-contained.
+    let lastSummary = null;
+    try {
+      lastSummary = recitationUI._lastSummary || null;
+    } catch (e) { /* recitationUI not defined */ }
+
     return JSON.stringify(
       {
         build: CONFIG.TILAWA.BUILD,
@@ -137,6 +147,7 @@ const recitationDebug = {
         origin: window.location.origin,
         audio: audioState,
         coach: coachState,
+        summary: lastSummary,
         live: this._live,
         log: this._log,
       },
