@@ -12,6 +12,8 @@
  *   { type: "stop" }        force a final flush by feeding synthetic silence
  *   { type: "reset" }
  *   { type: "setConfig", config: Partial<StreamingConfig> }
+ *   { type: "setExpected", surah, ayahStart, ayahEnd }  word-accuracy window
+ *   { type: "cursor", ayah }                       coach cursor updates
  *   { type: "transcribe", samples: Float32Array }  one-shot (harness/debug)
  *
  * Outbound messages:
@@ -24,12 +26,43 @@
 
 import * as ort from "onnxruntime-web/wasm";
 import { createTilawaSession, BALANCED_STREAMING_CONFIG } from "@tilawa/core";
+import { alignTranscript } from "./align.js";
 
 const SAMPLE_RATE = 16000;
 
 let session = null;
 let feeding = Promise.resolve();
 let stopping = false;
+
+// Word-accuracy layer: expected passage (from QuranDB.phoneme_words — same
+// decode space as raw_transcript text) and the coach's cursor. Each
+// raw_transcript fragment is aligned against a window around the cursor and
+// per-word verdicts are emitted as a synthetic `word_verdicts` event.
+let expectedRange = null; // { surah, ayahStart, ayahEnd }
+let cursorAyah = null;
+
+function expectedWindow() {
+  if (!session || !expectedRange || cursorAyah === null) return null;
+  const words = [];
+  for (let a = cursorAyah; a <= Math.min(cursorAyah + 1, expectedRange.ayahEnd); a++) {
+    const verse = session.db.getVerse(expectedRange.surah, a);
+    if (!verse) continue;
+    verse.phoneme_words.forEach((w, i) => words.push({ word: w, ayah: a, index: i }));
+  }
+  return words.length ? words : null;
+}
+
+function maybeEmitWordVerdicts(event) {
+  if (event.type !== "raw_transcript" || !event.text) return;
+  const window = expectedWindow();
+  if (!window) return;
+  const decoded = event.text.trim().split(/\s+/).filter(Boolean);
+  if (decoded.length === 0) return;
+  const verdicts = alignTranscript(decoded, window);
+  if (verdicts.length) {
+    postEvent({ type: "word_verdicts", surah: expectedRange.surah, verdicts });
+  }
+}
 
 // Debug instrumentation (toggled from the main thread via {type:"setDebug"}).
 // When on: tilawa's onDiagnostic firehose is forwarded, and feed timing /
@@ -61,6 +94,7 @@ function postStats(now) {
 
 function postEvent(event) {
   self.postMessage({ type: "event", event });
+  maybeEmitWordVerdicts(event);
 }
 
 function postError(message, fatal = false) {
@@ -189,6 +223,18 @@ self.onmessage = (e) => {
         break;
       case "reset":
         if (session) session.reset();
+        cursorAyah = null;
+        break;
+      case "setExpected":
+        expectedRange = {
+          surah: msg.surah,
+          ayahStart: msg.ayahStart,
+          ayahEnd: msg.ayahEnd,
+        };
+        cursorAyah = null;
+        break;
+      case "cursor":
+        cursorAyah = typeof msg.ayah === "number" ? msg.ayah : null;
         break;
       case "setConfig":
         if (session) session.setConfig(msg.config || {});

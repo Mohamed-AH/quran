@@ -32,6 +32,10 @@ const CONFIG = {
     EXPORT_DATA: false, // Removed as per decision
     PROFILES: false, // Removed as per decision
     RECITATION: true, // Tilawa recitation practice tab
+    // Transcript-alignment word verdicts (missing/substituted word claims).
+    // Off until calibrated against real wrong-recitation clips — the
+    // alignment events still flow in debug/harness for tuning.
+    WORD_VERDICTS: false,
   },
 
   // Tilawa recitation engine assets (https://github.com/Mohamed-AH/tilawa,
@@ -74,16 +78,27 @@ if (isProduction && CONFIG.PRODUCTION_API_URL) {
 // Primary model source = backend proxy, resolved for this environment.
 CONFIG.TILAWA.MODEL_SOURCES[0] = CONFIG.API_BASE_URL + '/tilawa/model';
 
+// Recitation build stamp — logged at startup and shown in the debug panel so
+// a stale deploy is immediately recognizable. Bump on every recitation change.
+CONFIG.TILAWA.BUILD = '2026-07-19a';
+
 // Recitation debug mode: verbose console logging through the whole pipeline
-// (audio capture → worker/inference → tilawa diagnostics → coach verdicts).
-// Enable with ?debug=1 in the URL, or persistently via
-//   localStorage.setItem('hafiz_recite_debug', '1')
+// (audio capture → worker/inference → tilawa diagnostics → coach verdicts)
+// plus the on-screen debug panel in the Recite tab.
+//
+// Enable: open the app once with ?debug=1 (or #debug) — the flag PERSISTS
+// itself to localStorage so OAuth redirects and navigation can't lose it —
+// or tap the Recite tab title 7 times. Disable with ?debug=0 (or 7 taps).
 CONFIG.TILAWA.DEBUG = (() => {
   try {
-    return (
-      new URLSearchParams(window.location.search).has('debug') ||
-      localStorage.getItem('hafiz_recite_debug') === '1'
-    );
+    const params = new URLSearchParams(window.location.search);
+    const hashOn = window.location.hash === '#debug';
+    if (params.get('debug') === '0') {
+      localStorage.removeItem('hafiz_recite_debug');
+    } else if (params.has('debug') || hashOn) {
+      localStorage.setItem('hafiz_recite_debug', '1');
+    }
+    return localStorage.getItem('hafiz_recite_debug') === '1';
   } catch (e) {
     return false;
   }

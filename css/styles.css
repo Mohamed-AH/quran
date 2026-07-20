@@ -751,3 +751,44 @@
         .recite-meter-fill.level-good { background: linear-gradient(90deg, var(--forest-light), var(--gold)); }
         .recite-meter-fill.level-low { background: var(--sage); }
         .recite-meter-fill.level-hot { background: #e05c5c; }
+
+        /* On-screen debug panel (?debug=1) */
+        #reciteDebugPanel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: rgba(6, 30, 22, 0.96);
+            border-top: 2px solid var(--gold);
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--cream);
+            direction: ltr;
+            text-align: left;
+        }
+        .rdbg-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 10px;
+            color: var(--gold);
+        }
+        .rdbg-btn {
+            background: rgba(212, 175, 55, 0.2);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-family: monospace;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .rdbg-body { padding: 0 10px 8px; }
+        .rdbg-live { border-bottom: 1px solid rgba(212, 175, 55, 0.25); padding-bottom: 5px; margin-bottom: 5px; }
+        .rdbg-k { color: var(--sage); display: inline-block; min-width: 80px; }
+        .rdbg-log { max-height: 130px; overflow-y: auto; }
+        .rdbg-event { color: #f4d77f; }
+        .rdbg-effect { color: #9fd6b8; }
+        .rdbg-diag { color: #999; }
+        .rdbg-error { color: #e05c5c; }

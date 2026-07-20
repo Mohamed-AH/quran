@@ -71,6 +71,10 @@
     reconcileCoverage: 0.8, // coverage that counts a verse done even without a commit
     offTrackLimit: 3, // consecutive out-of-range events before the off-track hint
     scoreWeights: { verses: 60, words: 30, confidence: 10 },
+    // Transcript-alignment word verdicts (worker `word_verdicts` events).
+    // Off until calibrated against real wrong-recitation clips — see
+    // CONFIG.FEATURES.WORD_VERDICTS.
+    useWordVerdicts: false,
   };
 
   class RecitationCoach {
@@ -114,6 +118,11 @@
           // matched set only adds stragglers beyond the high-water mark.
           progress: 0,
           matched: new Set(),
+          // Word-level flags from transcript alignment: index →
+          // {status: 'missing'|'substituted', heard?, expected}. A later
+          // matched/fuzzy verdict for the same index REPAIRS (deletes) the
+          // flag — re-recitation can always clear an accusation.
+          wordFlags: {},
           repeats: 0,
           sawCommit: false,
           status: 'pending', // pending | active | done | skipped
@@ -180,11 +189,54 @@
           return this._onVerseMatch(event);
         case 'word_progress':
           return this._onWordProgress(event);
+        case 'word_verdicts':
+          return this._onWordVerdicts(event);
         case 'final_sequence':
           return this._onFinalSequence(event);
         default:
           return [];
       }
+    }
+
+    _onWordVerdicts(msg) {
+      const effects = [];
+      if (!this.cfg.useWordVerdicts) return effects;
+      if (this.state !== 'tracking') return effects;
+      if (msg.surah !== this.surah) return effects;
+
+      const touched = new Set();
+      for (const verdict of msg.verdicts || []) {
+        const v = this.perVerse[verdict.ayah];
+        if (!v || verdict.index < 0 || verdict.index >= v.totalWords) continue;
+
+        if (verdict.status === 'matched' || verdict.status === 'fuzzy') {
+          const grew = !v.matched.has(verdict.index);
+          v.matched.add(verdict.index);
+          if (v.wordFlags[verdict.index]) delete v.wordFlags[verdict.index]; // repair
+          if (grew) touched.add(verdict.ayah);
+        } else if (verdict.status === 'missing' || verdict.status === 'substituted') {
+          // Positive evidence of a problem — but never contradict an
+          // explicit earlier match for the same word.
+          if (!v.matched.has(verdict.index)) {
+            v.wordFlags[verdict.index] = {
+              status: verdict.status,
+              heard: verdict.heard,
+              expected: verdict.expected,
+            };
+            touched.add(verdict.ayah);
+          }
+        }
+      }
+
+      for (const ayah of touched) {
+        effects.push({
+          type: 'word-progress',
+          ayah: ayah,
+          matched: this.coveredIndices(ayah),
+          totalWords: this.perVerse[ayah].totalWords,
+        });
+      }
+      return effects;
     }
 
     _onVerseMatch(msg) {
@@ -462,6 +514,7 @@
       const skipped = [];
       const notReached = [];
       const missedWords = {};
+      const substitutedWords = {};
       const repeats = {};
       let matchedTotal = 0;
       let wordTotal = 0;
@@ -470,8 +523,27 @@
         const v = this.perVerse[a];
         if (v.status === 'done') {
           done.push(a);
-          const missed = this.missedWordIndices(a);
-          if (missed.length) missedWords[a] = missed;
+          // Misses = unreached tail ∪ alignment-confirmed missing words.
+          const missedSet = new Set(this.missedWordIndices(a));
+          const subs = [];
+          for (const idx of Object.keys(v.wordFlags)) {
+            const flag = v.wordFlags[idx];
+            if (flag.status === 'missing') {
+              missedSet.add(Number(idx));
+            } else if (flag.status === 'substituted') {
+              subs.push({ index: Number(idx), heard: flag.heard, expected: flag.expected });
+            }
+          }
+          if (missedSet.size) {
+            missedWords[a] = Array.from(missedSet).sort(function (x, y) {
+              return x - y;
+            });
+          }
+          if (subs.length) {
+            substitutedWords[a] = subs.sort(function (x, y) {
+              return x.index - y.index;
+            });
+          }
           matchedTotal += this.coveredCount(a);
           wordTotal += v.totalWords;
         } else if (v.status === 'skipped') {
@@ -517,6 +589,7 @@
         versesSkipped: skipped,
         versesNotReached: notReached,
         missedWords: missedWords,
+        substitutedWords: substitutedWords,
         repeats: repeats,
         wordCoverage: Math.round(wordRatio * 100) / 100,
         avgConfidence: Math.round(avgConfidence * 100) / 100,

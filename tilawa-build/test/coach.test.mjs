@@ -336,6 +336,86 @@ test("a session that never started scores zero", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Word verdicts (transcript-alignment layer)
+// ---------------------------------------------------------------------------
+
+const wv = (verdicts, surah = 1) => ({ type: "word_verdicts", surah, verdicts });
+
+function verdictCoach() {
+  return new RecitationCoach({
+    surah: 1,
+    ayahStart: 1,
+    ayahEnd: 7,
+    verses: FATIHA,
+    now: () => 1000,
+    config: { useWordVerdicts: true },
+  });
+}
+
+test("word_verdicts are ignored entirely when the flag is off (default)", () => {
+  const coach = makeCoach(); // default config — flag off
+  coach.handleEvent(vm(1));
+  const fx = coach.handleEvent(
+    wv([{ ayah: 1, index: 2, status: "substituted", heard: "x", expected: "y" }])
+  );
+  assert.deepEqual(fx, []);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1]))[0].summary;
+  assert.deepEqual(s.substitutedWords, {});
+});
+
+test("matched verdicts add coverage and repair earlier flags", () => {
+  const coach = verdictCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wv([{ ayah: 1, index: 1, status: "missing", expected: "w" }]));
+  // Re-recitation: the same word now aligns as matched → flag repaired.
+  const fx = coach.handleEvent(wv([{ ayah: 1, index: 1, status: "matched", expected: "w" }]));
+  assert.ok(fx.some((e) => e.type === "word-progress"));
+  coach.handleEvent(wv([{ ayah: 1, index: 0, status: "matched", expected: "w" },
+                        { ayah: 1, index: 2, status: "matched", expected: "w" },
+                        { ayah: 1, index: 3, status: "matched", expected: "w" }]));
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1]))[0].summary;
+  assert.equal(s.missedWords[1], undefined, "repaired flag never reaches the summary");
+});
+
+test("substituted and missing flags reach the summary for committed verses", () => {
+  const coach = verdictCoach();
+  coach.handleEvent(vm(1));
+  // Full positional progress but only words 0 and 2 explicitly matched —
+  // the tracker's position can advance past words it never confirmed.
+  coach.handleEvent({
+    type: "word_progress", surah: 1, ayah: 1,
+    word_index: 4, total_words: 4, matched_indices: [0, 2],
+  });
+  coach.handleEvent(
+    wv([
+      { ayah: 1, index: 1, status: "substituted", heard: "سمعنا", expected: "المتوقع" },
+      { ayah: 1, index: 3, status: "missing", expected: "الرحيم" },
+    ])
+  );
+  reciteVerse(coach, 2);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2]))[0].summary;
+  assert.deepEqual(s.substitutedWords[1], [
+    { index: 1, heard: "سمعنا", expected: "المتوقع" },
+  ]);
+  assert.ok(s.missedWords[1].includes(3), "alignment-confirmed miss in summary");
+});
+
+test("a flag never contradicts an explicit earlier match", () => {
+  const coach = verdictCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wv([{ ayah: 1, index: 2, status: "matched", expected: "w" }]));
+  coach.handleEvent(wv([{ ayah: 1, index: 2, status: "substituted", heard: "x", expected: "w" }]));
+  coach.handleEvent(wp(1, allWords(1)));
+  reciteVerse(coach, 2);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2]))[0].summary;
+  assert.deepEqual(s.substitutedWords, {});
+});
+
+// ---------------------------------------------------------------------------
 // Freestyle anchoring (just-recite mode)
 // ---------------------------------------------------------------------------
 

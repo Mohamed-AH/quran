@@ -95,7 +95,10 @@
                     } else if (m.type === 'event') {
                         log('rawLog', EVENT_CLS[m.event.type] || '', m.event);
                         if (coach) {
-                            for (const fx of coach.handleEvent(m.event)) log('coachLog', 'fx', fx);
+                            for (const fx of coach.handleEvent(m.event)) {
+                                log('coachLog', 'fx', fx);
+                                if (fx.type === 'verse-active') worker.postMessage({ type: 'cursor', ayah: fx.ayah });
+                            }
                         }
                     } else if (m.type === 'transcribed') {
                         log('rawLog', 'vm', m.prediction);
@@ -144,8 +147,10 @@
                 .filter((v) => v.surah === surah && v.ayah >= from && v.ayah <= to)
                 .map((v) => ({ ayah: v.ayah, text: v.text_uthmani }));
             $('rawLog').innerHTML = $('coachLog').innerHTML = '';
-            coach = new RecitationCoach({ surah, ayahStart: from, ayahEnd: to, verses });
+            // Harness always exercises the word-verdict layer (calibration bench).
+            coach = new RecitationCoach({ surah, ayahStart: from, ayahEnd: to, verses, config: { useWordVerdicts: true } });
             worker.postMessage({ type: 'reset' });
+            worker.postMessage({ type: 'setExpected', surah, ayahStart: from, ayahEnd: to });
         }
 
         $('btnStream').onclick = async () => {
