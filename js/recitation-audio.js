@@ -59,6 +59,9 @@ const recitationAudio = {
         // detection and make decode windows flush late and bursty.
         echoCancellation: true,
         noiseSuppression: true,
+        // Explicit AGC: field debugging (Safari/macOS) showed sessions with
+        // peak levels of 0.02 — far too faint for reliable decoding.
+        autoGainControl: true,
       },
     };
     try {

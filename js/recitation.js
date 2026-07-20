@@ -52,6 +52,9 @@ const recitationUI = {
       micSilent: '🎤 لا أسمع أي صوت — تحقق من الميكروفون',
       micLow: '🎤 صوتك منخفض — ارفع صوتك قليلاً أو اقترب من الميكروفون',
       micHot: '🎤 الصوت مرتفع جداً — ابتعد قليلاً عن الميكروفون',
+      relisten: '🔄 أعيد الاستماع من جديد — تابع التلاوة',
+      summaryMicHint: '🎤 كان مستوى الصوت منخفضاً جداً طوال الجلسة — جرّب رفع صوتك أو الاقتراب من الميكروفون',
+      summaryHeardOther: '👂 سمعتُ صوتاً لكن لم أتعرف على السورة المختارة — جرّب البدء مباشرة بالتلاوة في مكان هادئ',
       offTrack: 'يبدو أنك تتلو موضعاً آخر — أتابع السورة المختارة',
       stopping: 'لحظة… أراجع ما سمعت',
       verseOf: (n, m) => `آية ${n} من ${m}`,
@@ -101,6 +104,9 @@ const recitationUI = {
       micSilent: '🎤 I hear no sound at all — check your microphone',
       micLow: '🎤 Your voice is faint — speak up a little or move closer to the mic',
       micHot: '🎤 Too loud — move back a little from the mic',
+      relisten: '🔄 Listening afresh — keep reciting',
+      summaryMicHint: '🎤 Your audio level was very low throughout — try speaking up or moving closer to the microphone',
+      summaryHeardOther: '👂 I heard sound but could not recognize the chosen surah — try starting directly with the recitation in a quiet place',
       offTrack: 'You seem to be reciting a different passage — following your chosen surah',
       stopping: 'One moment… reviewing what I heard',
       verseOf: (n, m) => `Ayah ${n} of ${m}`,
@@ -364,6 +370,33 @@ const recitationUI = {
         if (typeof recitationDebug !== 'undefined') {
           recitationDebug.set('inference', `${s.avgFeedMs}ms avg, queue ${s.queueDepth}, rtFactor ${s.realtimeFactor}${behind ? ' ⚠️ BEHIND' : ''}`);
         }
+        // Adaptive eco mode: on devices where inference can't keep up
+        // (observed rtFactor 2.8 on Safari/macOS), switch to larger chunks
+        // and less frequent, smaller decode windows. Applied once per
+        // engine lifetime after two consecutive slow readings.
+        if (!this._ecoApplied) {
+          if (s.realtimeFactor > 1.3) {
+            this._slowStatsCount = (this._slowStatsCount || 0) + 1;
+            if (this._slowStatsCount >= 2 && this._worker) {
+              this._ecoApplied = true;
+              this._worker.postMessage({
+                type: 'setConfig',
+                config: {
+                  audioChunkMs: 300,
+                  finalSilenceSec: 5,
+                  trackingTriggerSec: 0.8,
+                  discoveryTriggerSec: 2.5,
+                  trackingMaxWindowSec: 8,
+                  discoveryMaxWindowSec: 12,
+                },
+              });
+              this._breadcrumb(`eco mode enabled — inference ${s.realtimeFactor}x slower than real-time on this device`);
+              if (typeof recitationDebug !== 'undefined') recitationDebug.set('mode', 'ECO (slow device)');
+            }
+          } else {
+            this._slowStatsCount = 0;
+          }
+        }
         break;
       }
       case 'stopped':
@@ -498,6 +531,37 @@ const recitationUI = {
     this._renderLiveInitial();
     this._startElapsedTimer();
     this._startMeterLoop();
+
+    // Per-session diagnostics state.
+    this._micLowSeen = false;
+    this._trackerResets = 0;
+    this._slowStatsCount = 0;
+
+    // Periodic fallback of the wrong-track watchdog: if nothing in-range has
+    // been recognized for 20 s (tracker may be silently stuck in a state we
+    // can't observe without debug diagnostics), reset it and re-listen.
+    this._lastTrackerResetAt = Date.now();
+    this._watchdogTimer = setInterval(() => {
+      const s = this._session;
+      if (!s || s.ended) return;
+      const stuck =
+        (!s.freestyle && s.coach && s.coach.state === 'awaiting_start') ||
+        (s.freestyle && !s.coach);
+      if (stuck && Date.now() - this._lastTrackerResetAt > 20000) {
+        this._resetTracker('no in-range recognition for 20s');
+      }
+    }, 5000);
+  },
+
+  /** Reset ONLY the tilawa tracker (coach state is ours and stays). */
+  _resetTracker(reason) {
+    if (Date.now() - (this._lastTrackerResetAt || 0) < 8000) return; // cooldown
+    this._lastTrackerResetAt = Date.now();
+    this._trackerResets = (this._trackerResets || 0) + 1;
+    this._breadcrumb(`tracker reset — ${reason}`);
+    if (typeof recitationDebug !== 'undefined') recitationDebug.push('ui', `tracker reset: ${reason}`);
+    if (this._worker) this._worker.postMessage({ type: 'reset' });
+    this._showHint(this._t().relisten, 3000);
   },
 
   /**
@@ -538,6 +602,7 @@ const recitationUI = {
     const now = Date.now();
     const t = this._t();
     const warn = (msg, tag) => {
+      if (tag === 'silent' || tag === 'low') this._micLowSeen = true; // for the summary
       if (now - health.lastWarnAt < 10000) return;
       health.lastWarnAt = now;
       this._showHint(msg, 3500);
@@ -690,7 +755,8 @@ const recitationUI = {
     if (this._stopFallbackTimer) clearTimeout(this._stopFallbackTimer);
     if (this._awaitTimer) clearTimeout(this._awaitTimer);
     if (this._meterRaf) cancelAnimationFrame(this._meterRaf);
-    this._elapsedTimer = this._hintTimer = this._stopFallbackTimer = this._awaitTimer = this._meterRaf = null;
+    if (this._watchdogTimer) clearInterval(this._watchdogTimer);
+    this._elapsedTimer = this._hintTimer = this._stopFallbackTimer = this._awaitTimer = this._meterRaf = this._watchdogTimer = null;
   },
 
   // -------------------------------------------------------------------------
@@ -700,6 +766,28 @@ const recitationUI = {
   _onTilawaEvent(event) {
     const s = this._session;
     if (!s || s.ended) return;
+
+    // Wrong-track watchdog: the tilawa tracker doesn't know which passage
+    // we expect, and pre-recitation noise can lock it onto a random verse —
+    // after which it BLOCKS "non-continuation" jumps to the real recitation
+    // (seen in the field: tracker stuck on 87:x while decoding Fatiha 1:5
+    // at 0.98 confidence). While the session hasn't started, confident
+    // matches OUTSIDE the expected passage mean the tracker is lost: reset
+    // it so discovery can re-run against the actual recitation.
+    if (
+      !s.freestyle &&
+      s.coach &&
+      s.coach.state === 'awaiting_start' &&
+      event.type === 'verse_match' &&
+      (event.confidence || 0) >= 0.55 &&
+      !s.coach.inRange(event.surah, event.ayah)
+    ) {
+      s.offRangeCount = (s.offRangeCount || 0) + 1;
+      if (s.offRangeCount >= 2) {
+        s.offRangeCount = 0;
+        this._resetTracker(`locked on ${event.surah}:${event.ayah} outside expected passage`);
+      }
+    }
 
     if (s.freestyle && !s.coach) {
       // Un-anchored freestyle session: wait for tilawa's discovery to
@@ -939,8 +1027,14 @@ const recitationUI = {
     const surahInfo = RECITATION_SURAHS[sum.surah - 1];
 
     if (!sum.started) {
+      // Say WHY nothing was recognized, using what the session observed.
+      const hints = [];
+      if (this._micLowSeen) hints.push(t.summaryMicHint);
+      if (((s && s.offRangeCount) || 0) + (this._trackerResets || 0) > 0 && !this._micLowSeen) {
+        hints.push(t.summaryHeardOther);
+      }
       panel.innerHTML = `
-        <div class="empty-state"><p>${t.neverStarted}</p></div>
+        <div class="empty-state"><p>${t.neverStarted}</p>${hints.map((h) => `<p class="recite-note">${h}</p>`).join('')}</div>
         <div class="button-group recite-summary-actions">
           <button class="btn" onclick="recitationUI.retrySameRange()">${t.btnRetry}</button>
           <button class="btn btn-secondary" onclick="recitationUI.backToPicker()">${t.btnNew}</button>
