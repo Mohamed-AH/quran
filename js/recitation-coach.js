@@ -65,6 +65,36 @@
     }).length;
   }
 
+  // Mirrors tilawa's own QuranDB._startsWithArabicBismillah exactly (same 4
+  // words, same surah 1/9 exclusions): ayah 1 of every surah except
+  // Al-Fatiha (1, where the Basmala IS the verse) and At-Tawbah (9, which
+  // has none) embeds the Basmala as the verse's own first 4 words in this
+  // text source. Reciters accept several equally valid openings — isti'adhah
+  // + Basmala, Basmala only, isti'adhah only, or straight into the surah —
+  // so these 4 words must never be treated as required. (Isti'adhah itself,
+  // "أعوذ بالله من الشيطان الرجيم", isn't Quran text at all — it never
+  // appears in any verse's word list, so it was never scored to begin with;
+  // once the tracker is scoped to the picked surah, that audio simply
+  // matches nothing and is silently ignored until real recitation starts.)
+  const BSM_WORDS = ['بسم', 'الله', 'الرحمن', 'الرحيم'];
+
+  // text_uthmani carries full diacritics and the alef-wasla variant (ٱ,
+  // U+0671) — strip both so the comparison matches BSM_WORDS' bare forms.
+  function normalizeArabicWord(text) {
+    return String(text || '')
+      .replace(/[ً-ٰٟـ]/g, '') // harakat/tanwin/shadda/sukun + tatweel
+      .replace(/[آأإٱ]/g, 'ا'); // آأإٱ → ا
+  }
+
+  function basmalaPrefixLength(surah, ayah, words) {
+    if (surah === 1 || surah === 9 || ayah !== 1) return 0;
+    if (words.length <= BSM_WORDS.length) return 0;
+    for (let i = 0; i < BSM_WORDS.length; i++) {
+      if (normalizeArabicWord(words[i]) !== BSM_WORDS[i]) return 0;
+    }
+    return BSM_WORDS.length;
+  }
+
   const DEFAULTS = {
     startConfidence: 0.55, // min verse_match confidence to open the session
     doneCoverage: 0.6, // word coverage for the active verse to count as done at finalize
@@ -132,10 +162,20 @@
 
       this.perVerse = {};
       for (const v of opts.verses) {
+        const wordList = splitDisplayTokens(v.text)
+          .filter(function (t) {
+            return t.isWord;
+          })
+          .map(function (t) {
+            return t.text;
+          });
         this.perVerse[v.ayah] = {
           ayah: v.ayah,
           text: v.text,
-          totalWords: countWords(v.text),
+          totalWords: wordList.length,
+          // Leading word indices [0, optionalCount) that are never accused
+          // of being missed — see basmalaPrefixLength above.
+          optionalCount: basmalaPrefixLength(this.surah, v.ayah, wordList),
           // Tilawa's word_progress carries `word_index` (the alignment
           // position — first unmatched word, a high-water mark) and
           // `matched_indices` (INCREMENTAL matches for the cycle, often a
@@ -209,9 +249,28 @@
       if (v.progress === 0 && v.matched.size === 0) return [];
       const missed = [];
       for (let i = v.progress; i < v.totalWords; i++) {
+        if (i < v.optionalCount) continue; // Basmala prefix — never accused
         if (!v.matched.has(i)) missed.push(i);
       }
       return missed;
+    }
+
+    /**
+     * Word count used as the SCORING denominator for a verse: the optional
+     * Basmala prefix only counts if it was actually recited (matched) —
+     * omitting it validly must not drag down word-coverage percentage, but
+     * saying it still earns credit like any other word.
+     */
+    _scoredWordTotal(ayah) {
+      const v = this.perVerse[ayah];
+      // Same "covered" notion as coveredCount(): an index counts as covered
+      // if it's below the progress high-water mark OR explicitly matched.
+      let unmatchedOptional = 0;
+      for (let i = 0; i < v.optionalCount; i++) {
+        const covered = i < v.progress || v.matched.has(i);
+        if (!covered) unmatchedOptional++;
+      }
+      return v.totalWords - unmatchedOptional;
     }
 
     /** Main entry point: one tilawa event in, a list of UI effects out. */
@@ -709,7 +768,7 @@
             });
           }
           matchedTotal += this.coveredCount(a);
-          wordTotal += v.totalWords;
+          wordTotal += this._scoredWordTotal(a);
         } else if (v.status === 'skipped') {
           skipped.push(a);
           wordTotal += v.totalWords;

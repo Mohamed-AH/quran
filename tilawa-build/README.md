@@ -116,7 +116,32 @@ Freestyle ("just recite") mode starts unscoped, since the surah isn't known
 until something is recognized — but rescopes too, immediately after
 anchoring, so the rest of a freestyle session gets the same protection.
 
-## CSP note
+## Isti'adhah / Basmala are optional, not required content
+
+Reciters legitimately open a surah four different ways: isti'adhah +
+Basmala, Basmala only, isti'adhah only, or straight into the surah. All are
+accepted; none should be flagged.
+
+- **Isti'adhah** ("أعوذ بالله من الشيطان الرجيم") isn't Quran text at all —
+  it never appears in any verse's word list, so it was never scored. With
+  the surah-scoping above, that audio also can't match anything in the
+  scoped DB and is silently ignored by discovery until real recitation
+  starts.
+- **Basmala**: this text source (`assets/tilawa/quran.json`) embeds it as
+  the literal first 4 words of ayah 1 for every surah except Al-Fatiha (1,
+  where it IS the verse) and At-Tawbah (9, which has none) — mirroring
+  tilawa's own `QuranDB._startsWithArabicBismillah` rule exactly (same 4
+  words, same two exclusions). `RecitationCoach` (`js/recitation-coach.js`,
+  `basmalaPrefixLength`) detects this and marks those 4 word indices
+  optional: `missedWordIndices()` never accuses them, and the word-coverage
+  denominator excludes them unless they were actually recited — so skipping
+  the Basmala costs nothing, and saying it still earns credit. Word
+  comparison normalizes diacritics and alef variants (ٱ/أ/إ/آ → ا) since
+  `text_uthmani` carries full tashkeel where the reference words don't.
+
+Field motivation: build 2026-07-20h found a real recitation of Surah 85
+flagged all 4 opening words "missed" purely because of this text
+convention, independent of the tracker-lock issue that compounded it.
 
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.
