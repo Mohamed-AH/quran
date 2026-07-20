@@ -80,7 +80,7 @@ CONFIG.TILAWA.MODEL_SOURCES[0] = CONFIG.API_BASE_URL + '/tilawa/model';
 
 // Recitation build stamp — logged at startup and shown in the debug panel so
 // a stale deploy is immediately recognizable. Bump on every recitation change.
-CONFIG.TILAWA.BUILD = '2026-07-20d';
+CONFIG.TILAWA.BUILD = '2026-07-20e';
 
 // Recitation debug mode: verbose console logging through the whole pipeline
 // (audio capture → worker/inference → tilawa diagnostics → coach verdicts)

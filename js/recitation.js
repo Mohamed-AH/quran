@@ -903,6 +903,13 @@ const recitationUI = {
             `session ended — score ${fx.summary.score}, done ${fx.summary.versesDone ? fx.summary.versesDone.length : 0}, ` +
               `skipped ${fx.summary.versesSkipped ? fx.summary.versesSkipped.length : 0}`
           );
+          if (typeof recitationDebug !== 'undefined') {
+            recitationDebug.set(
+              'result',
+              `score=${fx.summary.score} done=${JSON.stringify(fx.summary.versesDone)} ` +
+                `skipped=${JSON.stringify(fx.summary.versesSkipped)} notReached=${JSON.stringify(fx.summary.versesNotReached)}`
+            );
+          }
           this._session.ended = true;
           this._clearTimers();
           recitationAudio.stop();
