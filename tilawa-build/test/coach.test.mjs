@@ -825,3 +825,53 @@ test('lex_check events for a different surah are ignored', () => {
   assert.equal(coach.fallbackAdvances, 0);
   assert.equal(coach.lexAdvances, 0);
 });
+
+test('field scenario: a single verse fabricated on fallback alone is flagged unverified even inside an otherwise well-verified session', () => {
+  // Reproduces build-2026-07-21 (Surah 20 / Ta-Ha, ayahs 87-95): ayah 91
+  // was never actually recited — the tracker mislabeled ayah 90's own tail
+  // audio as ayah 91, then "completed" it via 3 fallback-only cycles with
+  // word_matches:0 throughout, sandwiched between two verses (90 and 92)
+  // that both had real lexical matches. The session-wide gate correctly
+  // stayed quiet (plenty of real matches elsewhere); this per-verse gate
+  // must catch the specific fabricated verse.
+  const coach = makeCoach({ ayahEnd: 3 });
+  coach.handleEvent(lc(1, 1, true)); // verse 1: genuinely verified
+  coach.handleEvent(lc(1, 2, false)); // verse 2: fabricated, like ayah 91
+  coach.handleEvent(lc(1, 2, false));
+  coach.handleEvent(lc(1, 2, false));
+  coach.handleEvent(lc(1, 3, true)); // verse 3: genuinely verified
+  for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
+  assert.deepEqual(s.versesUnverified, [2]);
+  assert.ok(!s.versesDone.includes(2));
+  assert.equal(s.contentUnverified, false); // session-wide gate stays quiet
+});
+
+test('a short verse clearing on 2 fallback cycles alone is NOT flagged unverified (below the per-verse threshold)', () => {
+  // The real, genuinely correct Surah 87 ayah 13 case that sets the floor
+  // for minFallbackForVerseJudgment: exactly 2 fallback-only cycles, zero
+  // lexical matches, and it was still a real, correct recitation.
+  const coach = makeCoach({ ayahEnd: 3 });
+  coach.handleEvent(lc(1, 2, false));
+  coach.handleEvent(lc(1, 2, false));
+  for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
+  assert.deepEqual(s.versesUnverified, []);
+  assert.ok(s.versesDone.includes(2));
+});
+
+test('an unverified verse effect flags the UI and reports no missed-word claim', () => {
+  const coach = makeCoach({ ayahEnd: 2 });
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, allWords(1)));
+  coach.handleEvent(lc(1, 1, false));
+  coach.handleEvent(lc(1, 1, false));
+  coach.handleEvent(lc(1, 1, false));
+  const fx = coach.handleEvent(vm(2));
+  const committed = fx.find((e) => e.type === 'verse-committed');
+  assert.equal(committed.unverified, true);
+  assert.deepEqual(committed.missedWords, []);
+  assert.equal(coach.perVerse[1].status, 'unverified');
+});

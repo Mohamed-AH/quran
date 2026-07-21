@@ -227,5 +227,36 @@ recitation reliably produces at least one somewhere; gibberish typically
 never does, because tilawa's own alignment is being compared against
 completely unrelated text throughout.
 
+## Per-verse content-verification: catching one fabricated verse inside a good session
+
+Field case (build 2026-07-21, Surah 20 / Ta-Ha, ayahs 87-95): ayah 91 was
+never actually recited. Tracing the raw decoded text: the tracker armed the
+90→91 transition, then labeled verse 90's OWN tail audio ("فَٱتَّبِعُونِى
+وَأَطِيعُوٓا۟ أَمْرِى") as ayah 91's tracking content, "confirmed" it via 3
+fallback-only cycles (`word_matches: 0` on every one), then ~3 seconds of
+silence/noise passed before ayah 92's real content began. Ayah 91's actual
+text ("قَالُوا۟ لَن نَّبْرَحَ...") never appears anywhere in the transcript.
+The session-wide gate above correctly stayed quiet — every OTHER verse in
+the session had real lexical matches, so the session total never crossed
+`minFallbackForJudgment`.
+
+`RecitationCoach._looksUnverified(ayah)` adds the same check per-verse:
+`fallbackAdvances[ayah] >= minFallbackForVerseJudgment (3)` and
+`lexAdvances[ayah] === 0`. Checked at the moment a verse would otherwise be
+marked `done` (`_commitAndAdvance`, `_finalize`); if it fires, the verse is
+marked `unverified` instead — excluded from `versesDone`, counted against
+`versesUnverified` (reported and rendered separately in the UI, distinct
+from `versesSkipped` since the verse WAS tracked, just never lexically
+confirmed), and contributes to the verse-ratio denominator like a skip.
+
+**The threshold (3) is a deliberate, openly-acknowledged guess, not a
+calibration** — it sits directly between the only two real data points
+available: 2 fallback cycles / genuinely correct (Surah 87 ayah 13) vs 3
+fallback cycles / genuinely fabricated (Surah 20 ayah 91). Shipped anyway,
+on explicit product direction: this app's entire purpose is helping
+reciters catch a skipped verse before reciting to a real teacher, so a
+missed skip is a worse failure than an occasional false "unverified" flag on
+a fast, short verse. Revisit this threshold as more real field logs arrive.
+
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.
