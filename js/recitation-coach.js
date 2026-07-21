@@ -25,7 +25,7 @@
  *   {type:'started', ayah}
  *   {type:'verse-active', ayah}
  *   {type:'word-progress', ayah, matched:[i...], totalWords}
- *   {type:'verse-committed', ayah, missedWords:[i...]}
+ *   {type:'verse-committed', ayah, missedWords:[i...], uncertainWords:[i...]}
  *   {type:'verses-skipped', ayahs:[...]}   (provisional until finalize)
  *   {type:'repetition', ayah, count}
  *   {type:'off-track'}
@@ -156,6 +156,17 @@
     // an accepted, deliberate tradeoff: for this app, a missed skip is
     // worse than an occasional false "unverified" flag on a fast verse.
     minLexAdvancesForVerse: 2,
+    // A verse's own trailing words can be genuinely spoken but never
+    // confirmed by tilawa's own word_progress if the tracker advances to
+    // the next verse's discovery window before one more tracking_cycle
+    // would have caught them (field cases, build 2026-07-21f, Surah 21:
+    // ayah 82's last word, ayah 90's last two words — both clearly present
+    // in the raw decoded transcript, both dropped from missedWordIndices
+    // purely because of this timing gap). Genuinely indistinguishable from
+    // an actual omission using tilawa's data alone — see
+    // splitMissedWordIndices. Capped small (2): a LARGER trailing gap is
+    // real evidence of incompleteness, not just a confirmation lag.
+    trailingUncertainTolerance: 2,
   };
 
   class RecitationCoach {
@@ -307,17 +318,52 @@
      * the first ~9 words' worth of real audio before the coach's own
      * tracking took over; those words were very likely said, just never
      * individually observed, and got reported "missed" wholesale.
+     *
+     * Returns only the CONFIRMED half of the gap — see uncertainWordIndices
+     * below for the verse's own trailing words, which get a softer verdict.
      */
     missedWordIndices(ayah) {
+      return this.splitMissedWordIndices(ayah).missed;
+    }
+
+    /**
+     * A verse's own LAST word(s) can be genuinely spoken but never
+     * confirmed by tilawa's own word_progress, if the tracker advances to
+     * the next verse's discovery window before one more tracking_cycle
+     * would have caught them — see trailingUncertainTolerance above. This
+     * is only ever a TAIL phenomenon (the transition consuming the
+     * confirmation opportunity for whatever was still unconfirmed at that
+     * exact moment) — an earlier, non-trailing gap is unaffected and stays
+     * a confirmed miss exactly as before.
+     */
+    uncertainWordIndices(ayah) {
+      return this.splitMissedWordIndices(ayah).uncertain;
+    }
+
+    /** Shared computation behind missedWordIndices/uncertainWordIndices —
+     *  see their docs above for what each half means. */
+    splitMissedWordIndices(ayah) {
       const v = this.perVerse[ayah];
-      if (v.progress === 0 && v.matched.size === 0) return [];
+      if (v.progress === 0 && v.matched.size === 0) return { missed: [], uncertain: [] };
       const observedFrom = v.progress > 0 ? v.progress : Math.min(...v.matched);
-      const missed = [];
+      const gaps = [];
       for (let i = observedFrom; i < v.totalWords; i++) {
         if (i < v.optionalCount) continue; // Basmala prefix — never accused
-        if (!v.matched.has(i)) missed.push(i);
+        if (!v.matched.has(i)) gaps.push(i);
       }
-      return missed;
+      // The trailing contiguous run of gaps that reaches the verse's very
+      // last word (totalWords-1) is the ambiguous zone. A gap set that
+      // doesn't reach the true last word (the tail WAS confirmed) has no
+      // ambiguity at all — whatever's missing is a real internal gap.
+      const lastIdx = v.totalWords - 1;
+      let tailLen = 0;
+      for (let i = gaps.length - 1; i >= 0; i--) {
+        if (gaps[i] === lastIdx - tailLen) tailLen++;
+        else break;
+      }
+      if (tailLen > this.cfg.trailingUncertainTolerance) tailLen = 0; // too big to be just a lag
+      const splitAt = gaps.length - tailLen;
+      return { missed: gaps.slice(0, splitAt), uncertain: gaps.slice(splitAt) };
     }
 
     /**
@@ -371,25 +417,35 @@
      *  regardless of session state — this is pure bookkeeping, never an
      *  action by itself.
      *
-     *  Requires msg.stable: a single volatile sighting of a multi-verse span
-     *  is not reliable per-verse evidence — tilawa's own joint-match score
-     *  for a span is ONE number covering the whole span, and a strong match
-     *  on one verse can drag a weak/absent second verse's confidence over
-     *  spanEvidenceConfidence too. Field case (build 2026-07-21, Surah 21
-     *  ayahs 25-30): ayah 27 was never recited — the transcript shows ayah
-     *  26's tail flowing directly into ayah 28's opening — but a single,
-     *  never-stable "21:26-27" candidate (confidence up to 0.99, driven
-     *  entirely by ayah 26's strong match) got recorded as evidence for 27
-     *  too, rescuing it from a real skip. Requiring stability (the same bar
-     *  _onVerseCandidate already uses to open a session) filters out
-     *  exactly this kind of one-off, unconfirmed span sighting while
-     *  keeping the original rescue case intact — every existing spanEvidence
-     *  test already uses a stable candidate. */
+     *  A multi-verse SPAN candidate requires msg.stable: a single volatile
+     *  sighting is not reliable per-verse evidence for it — tilawa's own
+     *  joint-match score for a span is ONE number covering the whole span,
+     *  and a strong match on one verse can drag a weak/absent second verse's
+     *  confidence over spanEvidenceConfidence too. Field case (build
+     *  2026-07-21, Surah 21 ayahs 25-30): ayah 27 was never recited — the
+     *  transcript shows ayah 26's tail flowing directly into ayah 28's
+     *  opening — but a single, never-stable "21:26-27" candidate (confidence
+     *  up to 0.99, driven entirely by ayah 26's strong match) got recorded
+     *  as evidence for 27 too, rescuing it from a real skip.
+     *
+     *  A SINGLE-verse candidate (ayah_end absent or === ayah) does NOT need
+     *  msg.stable: its confidence is specific to that one verse, so even one
+     *  sighting is real per-verse evidence — the span conflation risk above
+     *  doesn't apply. Requiring stability here was too strict: field case
+     *  (build 2026-07-21f, Surah 21 ayahs 88-91) — ayahs 88 and 89 were both
+     *  recited in full, 89 word-perfectly, but the coach sat in
+     *  awaiting_start through both (chasing unrelated out-of-range acoustic
+     *  locks) and only settled on ayah 91 late, at which point EVERYTHING
+     *  before it — including the two genuinely-correct verses — got
+     *  blanket-marked skipped in one shot (see _start), because the single
+     *  0.92-confidence single-verse candidate that appeared for 89 during
+     *  the gap never got a second sighting to count as "stable". */
     _recordSpanEvidence(msg) {
-      if (!msg.stable) return;
       for (const c of msg.candidates || []) {
         if (c.surah !== this.surah) continue;
         if ((c.confidence || 0) < this.cfg.spanEvidenceConfidence) continue;
+        const isSpan = (c.ayah_end || c.ayah) > c.ayah;
+        if (isSpan && !msg.stable) continue;
         const start = Math.max(c.ayah, this.ayahStart);
         const end = Math.min(c.ayah_end || c.ayah, this.ayahEnd);
         for (let a = start; a <= end; a++) {
@@ -705,16 +761,27 @@
 
     /**
      * Fires 'passage-complete' once, as soon as the LAST verse in the
-     * picked range meets the same done-criteria _finalize() uses. Every
-     * earlier verse gets a live signal when the cursor advances past it
+     * picked range has REAL word coverage close to done. Every earlier
+     * verse gets a live signal when the cursor advances past it
      * (verse-committed); the last verse never advances anywhere, so without
      * this nothing tells the UI the recitation is actually finished until
      * tilawa's own silence timeout (several seconds) or a manual stop.
+     *
+     * Deliberately does NOT accept a bare `sawCommit` on its own (unlike
+     * _finalize()'s general done-criteria) and uses the stricter
+     * reconcileCoverage (0.8) rather than doneCoverage (0.6). Field case
+     * (build 2026-07-21f, Surah 21 ayah 105): a content-blind "live span
+     * collapsed" commit landed on the passage's last verse with essentially
+     * zero word progress, and firing here on sawCommit alone triggered
+     * js/recitation.js's ~2s auto-stop timer before the verse's own final
+     * words were ever captured — this effect stops the microphone, so
+     * unlike a normal "done" verdict (which can still be corrected later
+     * from more audio) getting it wrong here is unrecoverable. Lean toward
+     * listening a little longer over cutting off too early.
      */
     _checkPassageComplete() {
       if (this.passageCompleteEmitted || this.cursor !== this.ayahEnd) return [];
-      const v = this.perVerse[this.ayahEnd];
-      if (!v.sawCommit && this.coverage(this.ayahEnd) < this.cfg.doneCoverage) return [];
+      if (this.coverage(this.ayahEnd) < this.cfg.reconcileCoverage) return [];
       this.passageCompleteEmitted = true;
       return [{ type: 'passage-complete', ayah: this.ayahEnd }];
     }
@@ -783,6 +850,7 @@
         ayah: cur.ayah,
         unverified: cur.status === 'unverified',
         missedWords: cur.status === 'done' ? this.missedWordIndices(cur.ayah) : [],
+        uncertainWords: cur.status === 'done' ? this.uncertainWordIndices(cur.ayah) : [],
       });
 
       if (toAyah > this.cursor + 1) {
@@ -889,6 +957,7 @@
       const notReached = [];
       const unverified = [];
       const missedWords = {};
+      const uncertainWords = {};
       const substitutedWords = {};
       const repeats = {};
       let matchedTotal = 0;
@@ -899,7 +968,12 @@
         if (v.status === 'done') {
           done.push(a);
           // Misses = unreached tail ∪ alignment-confirmed missing words.
+          // Uncertain (the verse's own trailing words, ambiguous rather
+          // than confirmed-missing — see splitMissedWordIndices) is kept
+          // separate: never merged into missedWords, never scored against
+          // the reciter, surfaced softly to the user instead.
           const missedSet = new Set(this.missedWordIndices(a));
+          const uncertainSet = new Set(this.uncertainWordIndices(a));
           const subs = [];
           for (const idx of Object.keys(v.wordFlags)) {
             const flag = v.wordFlags[idx];
@@ -911,6 +985,11 @@
           }
           if (missedSet.size) {
             missedWords[a] = Array.from(missedSet).sort(function (x, y) {
+              return x - y;
+            });
+          }
+          if (uncertainSet.size) {
+            uncertainWords[a] = Array.from(uncertainSet).sort(function (x, y) {
               return x - y;
             });
           }
@@ -985,6 +1064,7 @@
         versesUnverified: unverified,
         versesNotReached: notReached,
         missedWords: missedWords,
+        uncertainWords: uncertainWords,
         substitutedWords: substitutedWords,
         repeats: repeats,
         contentUnverified: contentUnverified,

@@ -19,7 +19,10 @@
  *   { type: "transcribe", samples: Float32Array }  one-shot (harness/debug)
  *
  * Outbound messages:
- *   { type: "ready" }
+ *   { type: "ready", build }        build = the `?v=` query on this script's
+ *                                   own URL, echoed back so the main thread
+ *                                   can detect a stale-cached worker bundle
+ *                                   (see js/config.js WORKER_PATH)
  *   { type: "event", event: WorkerOutbound }       every tilawa onOutput event
  *   { type: "stopped" }                            stop flush completed
  *   { type: "transcribed", prediction }            one-shot result
@@ -31,6 +34,20 @@ import { createTilawaSession, BALANCED_STREAMING_CONFIG } from "@tilawa/core";
 import { alignTranscript } from "./align.js";
 
 const SAMPLE_RATE = 16000;
+
+// Echoed back on "ready" so the main thread can prove THIS bundle (not a
+// stale cached one) is actually running — see the `?v=` cache-busting query
+// js/config.js appends to WORKER_PATH. A mismatch (or a missing echo, from
+// a worker old enough to predate this field) means the browser is running
+// stale worker code regardless of what the page's own CONFIG.TILAWA.BUILD
+// claims.
+const workerBuild = (() => {
+  try {
+    return new URLSearchParams(self.location.search).get("v");
+  } catch (e) {
+    return null;
+  }
+})();
 
 let session = null;
 let feeding = Promise.resolve();
@@ -216,7 +233,7 @@ async function handleInit(msg) {
   currentConfig = msg.config || {};
   scopedSurah = null;
   session = buildSession(fullQuranData, currentConfig);
-  self.postMessage({ type: "ready" });
+  self.postMessage({ type: "ready", build: workerBuild });
 }
 
 /**

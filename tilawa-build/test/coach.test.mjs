@@ -206,12 +206,16 @@ test("a done verse with ZERO coverage reports no missed words (no data, not an a
   assert.equal(s.missedWords[1], undefined, "no accusation for a verse with no alignment data at all");
 });
 
-test("a done verse with PARTIAL coverage still reports its unreached tail", () => {
+test("a done verse with PARTIAL coverage still reports its unreached tail, as uncertain (small trailing gap)", () => {
+  // 2-word gap reaching the verse's true last word — within
+  // trailingUncertainTolerance, so it's ambiguous (see splitMissedWordIndices)
+  // rather than a confirmed accusation.
   const coach = makeCoach();
   coach.handleEvent(vm(1));
   coach.handleEvent(wp(1, [0, 1])); // some real data: words 0-1 confirmed, 2-3 never reached
   coach.handleEvent(vm(2));
-  assert.deepEqual(coach.missedWordIndices(1), [2, 3]);
+  assert.deepEqual(coach.missedWordIndices(1), []);
+  assert.deepEqual(coach.uncertainWordIndices(1), [2, 3]);
 });
 
 // ---------------------------------------------------------------------------
@@ -260,20 +264,26 @@ test("Al-Fatiha's own verse 1 (the Basmala itself) is NOT stripped", () => {
     [],
     "zero-coverage guard still applies (unrelated to Basmala logic)"
   );
-  // But with PARTIAL coverage, all 4 words of 1:1 are real content and must
-  // still be individually accusable — none of them are "optional" here.
+  // But with PARTIAL coverage, all 4 words of 1:1 are real content — none
+  // are "optional" here. The trailing 2-word gap is still real evidence of
+  // an incomplete verse, just reported as uncertain rather than confirmed
+  // (see splitMissedWordIndices), same as any other small trailing gap.
   const coach2 = makeCoach();
   coach2.handleEvent(vm(1));
   coach2.handleEvent(wp(1, [0, 1]));
   coach2.handleEvent(vm(2));
-  assert.deepEqual(coach2.missedWordIndices(1), [2, 3]);
+  assert.deepEqual(coach2.missedWordIndices(1), []);
+  assert.deepEqual(coach2.uncertainWordIndices(1), [2, 3]);
 });
 
 test("At-Tawbah 9:1 (no Basmala at all) is unaffected by the stripping logic", () => {
   const coach = new RecitationCoach({ surah: 9, ayahStart: 1, ayahEnd: 1, verses: TAWBAH1 });
   coach.handleEvent(vm(1, 0.9, 9));
   coach.handleEvent(wp(1, [0, 1], 9)); // only 2 of 9 real words confirmed
+  // A 7-word gap is well beyond trailingUncertainTolerance — no ambiguity
+  // leniency applies, it's fully and confidently accusable.
   assert.deepEqual(coach.missedWordIndices(1), [2, 3, 4, 5, 6, 7, 8], "all remaining words are real content, fully accusable");
+  assert.deepEqual(coach.uncertainWordIndices(1), []);
 });
 
 test("missed words are counted only when the verse is committed past", () => {
@@ -282,7 +292,66 @@ test("missed words are counted only when the verse is committed past", () => {
   coach.handleEvent(wp(1, [0, 1, 2])); // word 3 of 1:1 never matched
   const effects = coach.handleEvent(vm(2)); // advancing commits verse 1
   const committed = effects.find((e) => e.type === "verse-committed");
-  assert.deepEqual(committed.missedWords, [3]);
+  // A single trailing word is ambiguous (see splitMissedWordIndices), not a
+  // confirmed accusation — reported as uncertain, never in missedWords.
+  assert.deepEqual(committed.missedWords, []);
+  assert.deepEqual(committed.uncertainWords, [3]);
+});
+
+test("a LARGER trailing gap stays a confirmed miss — the leniency only covers a small confirmation lag", () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, [0])); // words 1,2,3 of 1:1 never matched — a 3-word gap
+  const effects = coach.handleEvent(vm(2));
+  const committed = effects.find((e) => e.type === "verse-committed");
+  assert.deepEqual(committed.missedWords, [1, 2, 3], "beyond trailingUncertainTolerance — real incompleteness, not just a lag");
+  assert.deepEqual(committed.uncertainWords, []);
+});
+
+test("a gap that does NOT reach the verse's true last word is always a confirmed miss, never uncertain", () => {
+  // The verse's true last word (index 3) was separately confirmed THIS
+  // cycle even though the position marker is still at 2 — a realistic
+  // lookahead match. Since the tail itself is confirmed, there is no
+  // ambiguity: the gap in between is real, positively-evidenced, and
+  // ineligible for the trailing leniency (which only ever applies to a run
+  // that reaches the true last index).
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent({
+    type: "word_progress",
+    surah: 1,
+    ayah: 1,
+    word_index: 2,
+    total_words: 4,
+    matched_indices: [3],
+  });
+  assert.deepEqual(coach.missedWordIndices(1), [2]);
+  assert.deepEqual(coach.uncertainWordIndices(1), []);
+});
+
+test("field scenario: a verse's own last word, confirmed live moments before the transition, is not wrongly re-flagged", () => {
+  // Reproduces build 2026-07-21f, Surah 21 ayahs 82-83 (log14-6): the real
+  // event stream was word_progress 21:82 idx=11/12 matched=[7,9,10] (word
+  // 82's last word never separately confirmed), then verse_match 21:83 —
+  // the transcript shows "لهم حافظين" (word 82's last word) was genuinely
+  // spoken. A 1-word trailing gap is now uncertain, not a confirmed miss.
+  const words82 = Array.from({ length: 12 }, (_, i) => `ك82_${i}`).join(" ");
+  const words83 = Array.from({ length: 10 }, (_, i) => `ك83_${i}`).join(" ");
+  const coach = new RecitationCoach({
+    surah: 21,
+    ayahStart: 82,
+    ayahEnd: 83,
+    verses: [
+      { ayah: 82, text: words82 },
+      { ayah: 83, text: words83 },
+    ],
+  });
+  coach.handleEvent(vm(82, 0.9, 21));
+  coach.handleEvent({ type: "word_progress", surah: 21, ayah: 82, word_index: 11, total_words: 12, matched_indices: [7, 9, 10] });
+  const effects = coach.handleEvent(vm(83, 0.9, 21));
+  const committed = effects.find((e) => e.type === "verse-committed");
+  assert.deepEqual(committed.missedWords, [], "must not be confirmed-missing — the last word was likely said");
+  assert.deepEqual(committed.uncertainWords, [11]);
 });
 
 test("word repetition only adds coverage — never subtracts", () => {
@@ -474,15 +543,18 @@ test("passage-complete does not fire before the last verse, and fires only once"
   assert.ok(!types(again).includes("passage-complete"));
 });
 
-test("passage-complete also fires from a plain verse_match re-confirming the current last verse", () => {
+test("passage-complete does NOT fire from a bare verse_match with no real word coverage", () => {
+  // Field case (build 2026-07-21f, Surah 21 ayah 105): a content-blind
+  // "live span collapsed" commit landed on the passage's last verse with
+  // essentially zero word progress, and the coach fired passage-complete
+  // immediately — js/recitation.js's auto-stop then cut the mic ~2s later,
+  // before the verse's own final words were ever captured. A bare commit
+  // (sawCommit alone) must never be enough on its own.
   const coach = makeCoach({ ayahStart: 7, ayahEnd: 7 });
-  coach.handleEvent(vm(7));
-  coach.handleEvent(wp(7, allWords(7))); // full coverage already fires it once
-  const coach2 = makeCoach({ ayahStart: 7, ayahEnd: 7 });
-  coach2.handleEvent(vm(7));
-  // A second verse_match for the SAME already-sawCommit cursor verse.
-  const fx = coach2.handleEvent(vm(7));
-  assert.ok(types(fx).includes("passage-complete"));
+  const fx = coach.handleEvent(vm(7));
+  assert.ok(!types(fx).includes("passage-complete"), "no word coverage yet — must not stop the mic");
+  const fx2 = coach.handleEvent(vm(7)); // even a repeated/re-confirmed bare commit
+  assert.ok(!types(fx2).includes("passage-complete"));
 });
 
 test("finalize() is a safe idempotent fallback", () => {
@@ -685,6 +757,32 @@ test("field scenario: an unstable span candidate does NOT rescue a genuinely ski
   assert.ok(skipEffect, "verse 3 must be reported skipped — the only evidence for it was unstable");
   assert.deepEqual(skipEffect.ayahs, [3]);
   assert.equal(coach.perVerse[3].status, "skipped");
+});
+
+test("field scenario: a single never-stabilized SINGLE-verse candidate rescues a genuinely-recited verse from a late-lock cascade skip, while a real skip beside it is still caught", () => {
+  // Reproduces build 2026-07-21f, Surah 21 ayahs 88-91: the coach sat in
+  // awaiting_start chasing unrelated out-of-range acoustic locks while the
+  // reciter correctly recited 88 and 89 (89 word-perfectly), then genuinely
+  // skipped 90, then the coach finally locked onto 91 late — one event that
+  // blanket-flagged EVERYTHING before it, including the genuinely correct
+  // verses, as skipped. Verse 4 here stands in for 89: its only trace is a
+  // single, never-stable, SINGLE-verse candidate at 0.92 — previously
+  // discarded outright because spanEvidence required stability for every
+  // candidate, span or not. Verse 5 stands in for the genuine skip (90): it
+  // has zero evidence and must still be flagged. (88 is deliberately left
+  // out of scope here — with literally zero recorded evidence, it's
+  // indistinguishable from a real skip and correctly stays flagged, the
+  // same accepted tradeoff as any other unevidenced gap.)
+  const coach = makeCoach({ ayahStart: 4, ayahEnd: 6 });
+  // Single-verse (ayah === ayah_end) candidate, seen only once, never stable.
+  coach.handleEvent(vc([{ surah: 1, ayah: 4, ayah_end: 4, confidence: 0.92 }], false));
+  // The coach never actually starts until the late lock on verse 6.
+  const fx = coach.handleEvent(vm(6, 0.99));
+  const skipEffect = fx.find((e) => e.type === "verses-skipped");
+  assert.ok(skipEffect, "verse 5 (the genuine skip) must still be reported");
+  assert.deepEqual(skipEffect.ayahs, [5], "verse 4 must be rescued, not blanket-flagged with the real skip");
+  assert.equal(coach.perVerse[4].status, "done");
+  assert.equal(coach.perVerse[5].status, "skipped");
 });
 
 test("a genuine skip with NO discovery evidence is still reported", () => {

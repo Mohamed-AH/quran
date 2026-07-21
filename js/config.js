@@ -80,7 +80,19 @@ CONFIG.TILAWA.MODEL_SOURCES[0] = CONFIG.API_BASE_URL + '/tilawa/model';
 
 // Recitation build stamp — logged at startup and shown in the debug panel so
 // a stale deploy is immediately recognizable. Bump on every recitation change.
-CONFIG.TILAWA.BUILD = '2026-07-21f';
+CONFIG.TILAWA.BUILD = '2026-07-21i';
+
+// Cache-bust the worker script: without this, `js/config.js` (small, fetched
+// fresh on most loads) can report the latest BUILD while the browser quietly
+// keeps serving an OLD cached js/vendor/tilawa-worker.js (large bundle, no
+// Cache-Control override on the Render static site — see tilawa-build/README.md)
+// indefinitely, so tracker-side fixes never actually reach the user even though
+// the debug panel claims they're on the latest build. Field case: build
+// 2026-07-21f, a session ran with zero `lex_check` events ever reaching the
+// coach — the entire content-verification gate silently inert — because the
+// worker bundle predated that feature despite the page reporting build 'f'.
+// Tying the query string to BUILD forces a fresh fetch on every deploy.
+CONFIG.TILAWA.WORKER_PATH = CONFIG.TILAWA.WORKER_PATH + '?v=' + CONFIG.TILAWA.BUILD;
 
 // Recitation debug mode: verbose console logging through the whole pipeline
 // (audio capture → worker/inference → tilawa diagnostics → coach verdicts)

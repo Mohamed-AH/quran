@@ -650,6 +650,12 @@
             text-decoration-color: rgba(224, 92, 92, 0.6);
             text-underline-offset: 6px;
         }
+        .word-uncertain {
+            color: var(--gold);
+            text-decoration: underline dashed;
+            text-decoration-color: rgba(212, 175, 55, 0.55);
+            text-underline-offset: 6px;
+        }
         .waqf-mark { color: var(--sage); font-size: 0.8em; }
 
         .recite-verse-list { display: flex; flex-direction: column; gap: 8px; }

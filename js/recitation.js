@@ -77,6 +77,9 @@ const recitationUI = {
       statMissed: 'كلمات فائتة',
       statRepeats: 'إعادات',
       missedTitle: 'كلمات فاتتك (بالأحمر)',
+      uncertainTitle: 'كلمات يُحتمل أنك فتّها (غير مؤكدة)',
+      uncertainHint: 'تابع المستمع الآية حتى كلماتها الأخيرة، لكنه لم يتمكن من تأكيد سماعها بشكل قاطع — قد تكون قلتها ولم يلتقطها',
+      statUncertain: 'كلمات غير مؤكدة',
       substitutedTitle: 'كلمات مُبدلة',
       heardInstead: (heard, expected) => `سمعت «${heard}» بدل «${expected}»`,
       skippedTitle: 'آيات تخطيتها',
@@ -135,6 +138,9 @@ const recitationUI = {
       statMissed: 'Missed words',
       statRepeats: 'Repetitions',
       missedTitle: 'Words you missed (in red)',
+      uncertainTitle: 'Words you possibly missed (unconfirmed)',
+      uncertainHint: 'The listener tracked this verse through to its last words, but could not confirm hearing them for certain — you may well have said them and it just missed the confirmation',
+      statUncertain: 'Unconfirmed words',
       substitutedTitle: 'Substituted words',
       heardInstead: (heard, expected) => `heard “${heard}” instead of “${expected}”`,
       skippedTitle: 'Verses you skipped',
@@ -374,8 +380,23 @@ const recitationUI = {
 
   _onWorkerMessage(msg) {
     switch (msg.type) {
-      case 'ready':
+      case 'ready': {
         this._breadcrumb(`engine ready (ONNX init ${Date.now() - (this._engineInitStartedAt || Date.now())}ms)`);
+        // Detect a stale-cached worker bundle: the worker echoes back the
+        // `?v=` it was actually loaded with, which must match the CURRENT
+        // page's build stamp — a mismatch (or a missing echo, from a worker
+        // old enough to predate this check) means tracker-side fixes are
+        // silently not running even though the page reports the latest build.
+        const expectedBuild = CONFIG.TILAWA.BUILD;
+        this._workerBuild = msg.build || null;
+        if (this._workerBuild !== expectedBuild) {
+          console.error(
+            `[recite] STALE WORKER BUNDLE: page build ${expectedBuild}, worker reports ${this._workerBuild || '(none — pre-dates version echo)'}. Hard-refresh to pick up the latest fixes.`
+          );
+        }
+        if (typeof recitationDebug !== 'undefined') {
+          recitationDebug.set('workerBuild', this._workerBuild || '(none — stale worker)');
+        }
         if (CONFIG.TILAWA.DEBUG && this._worker) {
           this._worker.postMessage({ type: 'setDebug', enabled: true });
         }
@@ -385,6 +406,7 @@ const recitationUI = {
           this._engineReject = null;
         }
         break;
+      }
       case 'event':
         this._onTilawaEvent(msg.event);
         break;
@@ -927,7 +949,7 @@ const recitationUI = {
       case 'verse-committed':
         return fx.unverified
           ? `UNVERIFIED ayah ${fx.ayah} (tracked, but no lexical evidence)`
-          : `committed ayah ${fx.ayah}${fx.missedWords && fx.missedWords.length ? ` (missed words: [${fx.missedWords}])` : ''}`;
+          : `committed ayah ${fx.ayah}${fx.missedWords && fx.missedWords.length ? ` (missed words: [${fx.missedWords}])` : ''}${fx.uncertainWords && fx.uncertainWords.length ? ` (uncertain tail words: [${fx.uncertainWords}])` : ''}`;
       case 'verses-skipped':
         return `SKIPPED ayahs [${fx.ayahs}]`;
       case 'repetition':
@@ -1197,6 +1219,7 @@ const recitationUI = {
     }
 
     const missedCount = Object.values(sum.missedWords).reduce((a, m) => a + m.length, 0);
+    const uncertainCount = Object.values(sum.uncertainWords || {}).reduce((a, m) => a + m.length, 0);
     const repeatCount = Object.values(sum.repeats).reduce((a, n) => a + n, 0);
     const ring = 339.292;
     const offset = ring * (1 - sum.score / 100);
@@ -1223,6 +1246,26 @@ const recitationUI = {
         })
         .join('');
       mistakes += `<h4 class="recite-section-title">${t.missedTitle}</h4>${rows}`;
+    }
+    const uncertainByAyah = sum.uncertainWords || {};
+    if (Object.keys(uncertainByAyah).length && versesByAyah) {
+      const rows = Object.keys(uncertainByAyah)
+        .map((ayah) => {
+          const verse = versesByAyah[ayah];
+          if (!verse) return '';
+          const uncertain = new Set(uncertainByAyah[ayah]);
+          const tokens = RecitationCoach.splitDisplayTokens(verse.text);
+          const html = tokens
+            .map((tok) =>
+              tok.isWord
+                ? `<span class="word${uncertain.has(tok.wordIndex) ? ' word-uncertain' : ''}">${tok.text}</span>`
+                : `<span class="waqf-mark">${tok.text}</span>`
+            )
+            .join(' ');
+          return `<div class="recite-mistake-verse"><span class="recite-verse-num">${this._num(Number(ayah))}</span><div class="verse-text-sm" dir="rtl">${html}</div></div>`;
+        })
+        .join('');
+      mistakes += `<h4 class="recite-section-title">${t.uncertainTitle}</h4>${rows}<p class="recite-note">${t.uncertainHint}</p>`;
     }
     const subsByAyah = sum.substitutedWords || {};
     if (Object.keys(subsByAyah).length) {
@@ -1289,6 +1332,7 @@ const recitationUI = {
         <div class="stat-card"><div class="stat-value">${this._num(sum.versesSkipped.length)}</div><div class="stat-label">${t.statSkipped}</div></div>
         ${sum.versesUnverified && sum.versesUnverified.length ? `<div class="stat-card"><div class="stat-value">${this._num(sum.versesUnverified.length)}</div><div class="stat-label">${t.statUnverified}</div></div>` : ''}
         <div class="stat-card"><div class="stat-value">${this._num(missedCount)}</div><div class="stat-label">${t.statMissed}</div></div>
+        ${uncertainCount ? `<div class="stat-card"><div class="stat-value">${this._num(uncertainCount)}</div><div class="stat-label">${t.statUncertain}</div></div>` : ''}
         <div class="stat-card"><div class="stat-value">${this._num(repeatCount)}</div><div class="stat-label">${t.statRepeats}</div></div>
       </div>
       <div class="recite-mistakes">${mistakes}</div>

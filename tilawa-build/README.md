@@ -302,6 +302,28 @@ parameter defaults to `true`). A single volatile sighting no longer counts;
 the span needs to persist across tilawa's own stability window before its
 confidence is trusted as evidence for every verse inside it.
 
+### ...but only for multi-verse SPANS — a single-verse candidate needs no stability
+
+Field case (build 2026-07-21f, Surah 21 ayahs 88-91): the coach sat in
+`awaiting_start` chasing unrelated out-of-range acoustic locks while the
+reciter correctly recited 88 and 89 — 89 word-perfectly — then genuinely
+skipped 90, then the coach finally locked onto 91 late. That one late lock
+blanket-flagged everything before it, INCLUDING the two genuinely-correct
+verses, as skipped. The stability requirement above was the direct cause:
+verse 89's only trace was a single 0.92-confidence discovery candidate that
+never got a second sighting, so it was discarded outright — the same rule
+that (correctly) protected against the ayah-27 case also threw away
+perfectly good evidence here.
+
+The distinction that resolves both cases without reintroducing either bug:
+the conflation risk described above is specific to multi-verse SPANS, where
+tilawa's one joint confidence number can be dragged up by just one strongly-
+matching member. A SINGLE-verse candidate's confidence is specific to that
+one verse — there's nothing for it to be conflated with, so even a single
+sighting is real per-verse evidence. `_recordSpanEvidence` now only requires
+`msg.stable` when `ayah_end > ayah` (a real span); a single-verse candidate
+(`ayah_end` absent or equal to `ayah`) counts on its first sighting.
+
 ## missedWordIndices only accuses from where observation actually began
 
 Field case (build 2026-07-21, Surah 21 ayah 97): the opening 9 words got
@@ -324,6 +346,47 @@ before that point were never observed at all and are no longer accused; a
 genuine gap AFTER observation began is still real positive evidence and
 stays accused exactly as before.
 
+## A verse's own last word(s) can be said but never confirmed — a third "uncertain" verdict
+
+Field cases (build 2026-07-21f, Surah 21): ayah 82's last word ("حافظين")
+and ayah 90's last two words ("وكانوا لنا") were both clearly present in
+the raw decoded transcript — even reflected in a live `word_progress`
+match moments earlier for 82 — but both got reported "missed" in the final
+summary. Mechanism: tilawa's own `tracking_cycle` for the OUTGOING verse
+doesn't always get one more confirming cycle before the tracker advances
+into the next verse's discovery window (the two verses' audio lands in the
+same buffer), so the verse's own trailing word(s) never individually reach
+`matched_indices` even though they were genuinely spoken.
+
+This is a real precision/recall tension, not a simple bug: from the
+coach's information alone (`word_progress`'s `word_index`/`matched_indices`
+only), a genuine last-word omission and "said but tilawa's tracker didn't
+get a confirming cycle" are **indistinguishable** — both look like
+"progress stalls 1-2 words short, then the next verse commits." An
+existing test (`wp(1,[0,1,2])` → `vm(2)`) deliberately protected accusing
+a 1-word trailing gap for exactly this shape of evidence, so silently
+suppressing it would also forgive real last-word omissions elsewhere —
+directly against this app's standing priority that missing a real mistake
+is worse than a false flag.
+
+Resolution: rather than picking a side, `missedWordIndices` now splits into
+two verdicts (`splitMissedWordIndices`):
+- **`missed`** (confirmed) — unchanged algorithm, still a positively-evidenced
+  accusation.
+- **`uncertain`** — the verse's own TRAILING contiguous gap, only when it
+  reaches the verse's true last word index (so a gap that stops short of
+  the end, because the last word WAS separately confirmed, has no
+  ambiguity and stays a confirmed miss) and is small
+  (`trailingUncertainTolerance`, 2 words — a larger trailing gap is real
+  evidence of incompleteness, not just a confirmation lag).
+
+`uncertain` is never merged into `missedWords`, never scored against the
+reciter (word coverage/score are driven by `coveredCount`, untouched by
+this split), and surfaces softly in the UI as "words you possibly missed
+(unconfirmed)" — visually distinct from a confirmed accusation, honestly
+reporting the coach's actual certainty instead of forcing a binary
+yes/no verdict onto genuinely ambiguous evidence.
+
 ## The mic stops when the picked passage's last verse is done
 
 Field complaint (build 2026-07-21): picking an end verse and finishing it
@@ -335,14 +398,74 @@ Every verse before the last one already gets a live signal the moment the
 cursor advances past it (`verse-committed`). The LAST verse never advances
 anywhere, so nothing previously told the UI "the recitation the user asked
 for is actually finished" until the tracker's own flush machinery kicked
-in. `RecitationCoach._checkPassageComplete()` now fires a `passage-complete`
-effect exactly once, the moment the last verse meets the same done-criteria
-`_finalize()` already uses (`sawCommit` or `coverage >= doneCoverage`) —
-checked from both the word_progress and verse_match paths, since either can
-be what pushes the last verse over that bar. `js/recitation.js` shows a
-"reached the end — stopping" hint and calls `stopSession()` ~2 seconds
-later (a short debounce so trailing elongation on the very last word isn't
-cut off mid-sound), rather than leaving the mic open indefinitely.
+in. `RecitationCoach._checkPassageComplete()` fires a `passage-complete`
+effect exactly once, checked from both the word_progress and verse_match
+paths, since either can be what pushes the last verse over the bar.
+`js/recitation.js` shows a "reached the end — stopping" hint and calls
+`stopSession()` ~2 seconds later (a short debounce so trailing elongation on
+the very last word isn't cut off mid-sound), rather than leaving the mic
+open indefinitely.
+
+### passage-complete needs REAL coverage, not just a bare commit
+
+Field case (build 2026-07-21f, Surah 21 ayah 105): a content-blind "live
+span collapsed" commit (see the collapsed-span section above) landed on the
+passage's last verse with essentially zero word progress, and
+`_checkPassageComplete()`'s original bar — `sawCommit` OR
+`coverage >= doneCoverage` — accepted the bare commit on its own. That fired
+`passage-complete` immediately, and the ~2 second auto-stop timer cut the
+mic before the verse's own final 2 words were ever captured — which then
+surfaced as a false `missedWords` accusation on words the reciter likely
+still would have said, because the recording literally stopped before they
+could be. This effect is unlike a normal "done" verdict: a wrong "done" can
+still be corrected by more audio arriving later, but a wrong
+`passage-complete` stops the mic — there is no more audio to correct it
+with.
+
+Fix: dropped the `sawCommit`-alone bypass entirely and raised the bar from
+`doneCoverage` (0.6) to the stricter `reconcileCoverage` (0.8, already used
+elsewhere for coverage-only reconciliation) — passage-complete now always
+requires real word coverage close to done before it will stop the mic.
 
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.
+
+## A stale cached worker bundle can silently disable every fix in this file
+
+Field case (build 2026-07-21f, Surah 99): the coach reported a clean
+`99/100, contentUnverified:false` on a session where the raw diagnostics
+show **63 consecutive `tracking_cycle` events, every one with
+`word_matches:0`** — a too-quiet mic decoding to garbage the entire time,
+zero real lexical alignment ever occurring. Replaying the equivalent
+`lex_check` stream directly against `RecitationCoach` in isolation produces
+the *correct* result (`contentUnverified:true, score:0`) — the gate logic
+itself is sound. The only way the real session diverged is if the
+`lex_check` events never reached the coach at all, which means the browser
+was running a `js/vendor/tilawa-worker.js` bundle from *before* that wiring
+was added (see "Content-verification gate" above), despite the page's own
+`CONFIG.TILAWA.BUILD` reporting the current stamp.
+
+Root cause: `js/config.js` pointed `new Worker(...)` at a bare,
+unversioned `js/vendor/tilawa-worker.js`. The static site (Render, `env:
+static`, see `render.yaml`) sets no explicit `Cache-Control` for `/js/*`.
+Small files like `config.js` tend to revalidate quickly; the large worker
+bundle can sit cached well past a deploy, so a returning user's browser
+keeps running old tracker code — including old *or missing* safety gates —
+while every other signal in the app insists it's on the latest build. This
+plausibly explains several other "already-fixed bug recurred" field reports
+across the same build stamp: the fix genuinely shipped, it just never
+reached that browser.
+
+Fix, two parts:
+- `js/config.js` appends `?v=<BUILD>` to `WORKER_PATH` once `BUILD` is set,
+  so every build bump forces a fresh fetch of the worker script regardless
+  of whatever caching layer sits in front of it.
+- The worker reads that same `?v=` back off `self.location.search` and
+  echoes it in its `ready` message (`{type:"ready", build}`).
+  `js/recitation.js`'s `ready` handler compares it against
+  `CONFIG.TILAWA.BUILD` and logs `STALE WORKER BUNDLE` to the console (plus
+  a `workerBuild` field in the debug panel and report) on any mismatch —
+  including a worker old enough to have no `build` field at all. This is
+  the piece that was actually missing before: without an echo, a stale
+  worker is completely invisible from the page's own reporting, which is
+  exactly what made this bug take 8 field logs to catch.
