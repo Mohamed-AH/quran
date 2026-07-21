@@ -474,15 +474,18 @@ test("passage-complete does not fire before the last verse, and fires only once"
   assert.ok(!types(again).includes("passage-complete"));
 });
 
-test("passage-complete also fires from a plain verse_match re-confirming the current last verse", () => {
+test("passage-complete does NOT fire from a bare verse_match with no real word coverage", () => {
+  // Field case (build 2026-07-21f, Surah 21 ayah 105): a content-blind
+  // "live span collapsed" commit landed on the passage's last verse with
+  // essentially zero word progress, and the coach fired passage-complete
+  // immediately — js/recitation.js's auto-stop then cut the mic ~2s later,
+  // before the verse's own final words were ever captured. A bare commit
+  // (sawCommit alone) must never be enough on its own.
   const coach = makeCoach({ ayahStart: 7, ayahEnd: 7 });
-  coach.handleEvent(vm(7));
-  coach.handleEvent(wp(7, allWords(7))); // full coverage already fires it once
-  const coach2 = makeCoach({ ayahStart: 7, ayahEnd: 7 });
-  coach2.handleEvent(vm(7));
-  // A second verse_match for the SAME already-sawCommit cursor verse.
-  const fx = coach2.handleEvent(vm(7));
-  assert.ok(types(fx).includes("passage-complete"));
+  const fx = coach.handleEvent(vm(7));
+  assert.ok(!types(fx).includes("passage-complete"), "no word coverage yet — must not stop the mic");
+  const fx2 = coach.handleEvent(vm(7)); // even a repeated/re-confirmed bare commit
+  assert.ok(!types(fx2).includes("passage-complete"));
 });
 
 test("finalize() is a safe idempotent fallback", () => {
@@ -685,6 +688,32 @@ test("field scenario: an unstable span candidate does NOT rescue a genuinely ski
   assert.ok(skipEffect, "verse 3 must be reported skipped — the only evidence for it was unstable");
   assert.deepEqual(skipEffect.ayahs, [3]);
   assert.equal(coach.perVerse[3].status, "skipped");
+});
+
+test("field scenario: a single never-stabilized SINGLE-verse candidate rescues a genuinely-recited verse from a late-lock cascade skip, while a real skip beside it is still caught", () => {
+  // Reproduces build 2026-07-21f, Surah 21 ayahs 88-91: the coach sat in
+  // awaiting_start chasing unrelated out-of-range acoustic locks while the
+  // reciter correctly recited 88 and 89 (89 word-perfectly), then genuinely
+  // skipped 90, then the coach finally locked onto 91 late — one event that
+  // blanket-flagged EVERYTHING before it, including the genuinely correct
+  // verses, as skipped. Verse 4 here stands in for 89: its only trace is a
+  // single, never-stable, SINGLE-verse candidate at 0.92 — previously
+  // discarded outright because spanEvidence required stability for every
+  // candidate, span or not. Verse 5 stands in for the genuine skip (90): it
+  // has zero evidence and must still be flagged. (88 is deliberately left
+  // out of scope here — with literally zero recorded evidence, it's
+  // indistinguishable from a real skip and correctly stays flagged, the
+  // same accepted tradeoff as any other unevidenced gap.)
+  const coach = makeCoach({ ayahStart: 4, ayahEnd: 6 });
+  // Single-verse (ayah === ayah_end) candidate, seen only once, never stable.
+  coach.handleEvent(vc([{ surah: 1, ayah: 4, ayah_end: 4, confidence: 0.92 }], false));
+  // The coach never actually starts until the late lock on verse 6.
+  const fx = coach.handleEvent(vm(6, 0.99));
+  const skipEffect = fx.find((e) => e.type === "verses-skipped");
+  assert.ok(skipEffect, "verse 5 (the genuine skip) must still be reported");
+  assert.deepEqual(skipEffect.ayahs, [5], "verse 4 must be rescued, not blanket-flagged with the real skip");
+  assert.equal(coach.perVerse[4].status, "done");
+  assert.equal(coach.perVerse[5].status, "skipped");
 });
 
 test("a genuine skip with NO discovery evidence is still reported", () => {
