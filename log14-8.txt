@@ -1,0 +1,619 @@
+{
+  "build": "2026-07-21f",
+  "appVersion": "2.0.0",
+  "when": "2026-07-21T10:02:40.769Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15",
+  "hardwareConcurrency": 8,
+  "origin": "https://hafiz-frontend.onrender.com",
+  "audio": {
+    "active": false,
+    "contextSampleRate": null,
+    "capturePath": "AudioWorklet",
+    "chunks": 201
+  },
+  "coach": {
+    "phase": "summary",
+    "freestyle": false,
+    "surah": 21,
+    "range": [
+      102,
+      105
+    ],
+    "cursor": 105,
+    "state": "completed"
+  },
+  "summary": {
+    "surah": 21,
+    "ayahStart": 102,
+    "ayahEnd": 105,
+    "started": true,
+    "versesDone": [
+      104,
+      105
+    ],
+    "versesSkipped": [
+      102,
+      103
+    ],
+    "versesUnverified": [],
+    "versesNotReached": [],
+    "missedWords": {
+      "105": [
+        10,
+        11
+      ]
+    },
+    "substitutedWords": {},
+    "repeats": {},
+    "contentUnverified": false,
+    "wordCoverage": 0.54,
+    "avgConfidence": 0.87,
+    "score": 55,
+    "durationSec": 24
+  },
+  "live": {
+    "build": "2026-07-21f",
+    "note": "no server logs during recitation — pipeline is 100% on-device",
+    "session": "surah 21 (102–105)",
+    "mic": "16000Hz via AudioWorklet",
+    "level": "rms=0.0027 peak=0.01 (9%)",
+    "chunks": 201,
+    "scope": "surah 21 (112 verses)",
+    "coach": "state=completed cursor=105",
+    "inference": "708.4ms avg, queue 3, rtFactor 0.71",
+    "result": "score=55 done=[104,105] skipped=[102,103] unverified=[] notReached=[]"
+  },
+  "milestones": [
+    {
+      "t": "10:01:23.469",
+      "text": "tracker scoped to surah 21 (112 verses)"
+    },
+    {
+      "t": "10:01:42.720",
+      "text": "SKIPPED ayahs [102,103]"
+    },
+    {
+      "t": "10:01:42.720",
+      "text": "STARTED at ayah 104"
+    },
+    {
+      "t": "10:01:42.721",
+      "text": "now on ayah 104"
+    },
+    {
+      "t": "10:01:45.136",
+      "text": "word-progress"
+    },
+    {
+      "t": "10:01:47.569",
+      "text": "word-progress"
+    },
+    {
+      "t": "10:01:50.920",
+      "text": "word-progress"
+    },
+    {
+      "t": "10:01:53.305",
+      "text": "word-progress"
+    },
+    {
+      "t": "10:01:58.353",
+      "text": "word-progress"
+    },
+    {
+      "t": "10:01:58.353",
+      "text": "committed ayah 104"
+    },
+    {
+      "t": "10:01:58.353",
+      "text": "now on ayah 105"
+    },
+    {
+      "t": "10:02:01.702",
+      "text": "PASSAGE COMPLETE at ayah 105 — auto-stopping shortly"
+    },
+    {
+      "t": "10:02:02.128",
+      "text": "word-progress"
+    },
+    {
+      "t": "10:02:02.714",
+      "text": "word-progress"
+    },
+    {
+      "t": "10:02:03.702",
+      "text": "stopSession() called"
+    },
+    {
+      "t": "10:02:06.967",
+      "text": "COMPLETED — score=55 done=[104,105] skipped=[102,103] unverified=[] notReached=[]"
+    }
+  ],
+  "log": [
+    {
+      "t": "10:01:18.547",
+      "kind": "ui",
+      "text": "assets ready in 443ms (model 88307366 bytes)"
+    },
+    {
+      "t": "10:01:25.941",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2,\"text\":\"ش اعوذ باللهيه\",\"tokenCount\":7,\"champion\":{\"ref\":\"21:106\",\"score\":0.525}}"
+    },
+    {
+      "t": "10:01:26.032",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"ش اعوذ باللهيه\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:100\",\"kind\":\"single\",\"stageA\":0.556,\"acoustic\":9.107,\"acousticMar"
+    },
+    {
+      "t": "10:01:26.033",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:28.220",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4,\"text\":\"اعوذ بالله من الشيطان الرجيم\",\"tokenCount\":13,\"champion\":{\"ref\":\"21:62\",\"score\":0.6667}}"
+    },
+    {
+      "t": "10:01:28.433",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"اعوذ بالله من الشيطان الرجيم\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:21\",\"kind\":\"single\",\"stageA\":0.661,\"acoustic\":11.95"
+    },
+    {
+      "t": "10:01:28.433",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:30.479",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":6,\"text\":\"اعوذ بالله من الشيطان الرجيم\",\"tokenCount\":13,\"champion\":{\"ref\":\"21:62\",\"score\":0.6667}}"
+    },
+    {
+      "t": "10:01:30.693",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"اعوذ بالله من الشيطان الرجيم\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:21\",\"kind\":\"single\",\"stageA\":0.661,\"acoustic\":12.14"
+    },
+    {
+      "t": "10:01:30.693",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:32.685",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":8,\"text\":\"اعوذ بالله من الشيطان الرجيم ا يسمعون\",\"tokenCount\":17,\"champion\":{\"ref\":\"21:110\",\"score\":0.6842}}"
+    },
+    {
+      "t": "10:01:33.004",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"اعوذ بالله من الشيطان الرجيم ا يسمعون\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:108\",\"kind\":\"single\",\"stageA\":0.618,\"acous"
+    },
+    {
+      "t": "10:01:33.004",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:34.973",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":10,\"text\":\"اعوذ بالله من الشيطان الر لا يسمعون السم يهم\",\"tokenCount\":19,\"champion\":{\"ref\":\"21:83\",\"score\":0.6559}}"
+    },
+    {
+      "t": "10:01:35.382",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"اعوذ بالله من الشيطان الر لا يسمعون السم يهم\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:21\",\"kind\":\"single\",\"stageA\":0.681,"
+    },
+    {
+      "t": "10:01:35.382",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:35.382",
+      "kind": "ui",
+      "text": "event: word_verdicts [102.0:m,102.1:m] → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:37.309",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":12,\"text\":\"اعوذ بالله من الشيطان الرج لا يسمعون اسها فهم في ما اشتهت انفسهم\",\"tokenCount\":40,\"champion\":{\"ref\":\"21:101-102\",\"score\":0.7436}}"
+    },
+    {
+      "t": "10:01:37.979",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"اعوذ بالله من الشيطان الرج لا يسمعون اسها فهم في ما اشتهت انفسهم\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:101-102\",\"kind\""
+    },
+    {
+      "t": "10:01:37.979",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"21:101-102\",\"to_ref\":\"21:101\",\"action\":\"blocked\",\"reason\":\"live span collapsed to first ayah\",\"word_position\":0,\"total_wo"
+    },
+    {
+      "t": "10:01:37.979",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"21:101\",\"reason\":\"live_span_collapsed\",\"confidence\":0.868,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusi"
+    },
+    {
+      "t": "10:01:37.979",
+      "kind": "ui",
+      "text": "event: verse_candidate [21:101-102@0.84, 21:21-22@0.76, 21:95-96@0.76] → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:37.980",
+      "kind": "ui",
+      "text": "tracker reset: locked on 21:101 outside expected passage"
+    },
+    {
+      "t": "10:01:37.980",
+      "kind": "ui",
+      "text": "event: verse_match 21:101 conf=0.87 → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:38.051",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"silence_skip\",\"mode\":\"discovery\",\"reason\":\"no speech detected\"}"
+    },
+    {
+      "t": "10:01:40.345",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2,\"text\":\"يو نطول السماء\",\"tokenCount\":8,\"champion\":{\"ref\":\"21:104\",\"score\":0.735}}"
+    },
+    {
+      "t": "10:01:40.460",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"يو نطول السماء\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:107\",\"kind\":\"single\",\"stageA\":0.607,\"acoustic\":10.992,\"acousticMa"
+    },
+    {
+      "t": "10:01:40.460",
+      "kind": "ui",
+      "text": "event: verse_candidate [21:104-104@0.93, 21:107-107@0.77, 21:104-105@0.44] → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:40.460",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:40.467",
+      "kind": "ui",
+      "text": "event: word_verdicts [104.1:m,104.2:m] → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "10:01:42.612",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4,\"text\":\"يوم نطوي السماء كطي السجل\",\"tokenCount\":24,\"champion\":{\"ref\":\"21:104\",\"score\":0.9057}}"
+    },
+    {
+      "t": "10:01:42.720",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"يوم نطوي السماء كطي السجل\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:4\",\"kind\":\"single\",\"stageA\":0.587,\"acoustic\":13.646,\"a"
+    },
+    {
+      "t": "10:01:42.720",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"21:104\",\"reason\":\"repeat_leader\",\"confidence\":0.906,\"origin\":\"discovery\",\"selected_rank\":7,\"selected_feasible\":false,\"selected_fusion\":0"
+    },
+    {
+      "t": "10:01:42.720",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [21:104@0.91, 21:4-4@0.73, 21:21-21@0.72] → coach[cursor=104 state=tracking]: verses-skipped, started, verse-active"
+    },
+    {
+      "t": "10:01:42.721",
+      "kind": "ui",
+      "text": "tracker reset: tracker was off-passage at session start"
+    },
+    {
+      "t": "10:01:42.721",
+      "kind": "ui",
+      "text": "event: verse_match 21:104 conf=0.91 → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:45.097",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2,\"text\":\"س كما بدانا\",\"tokenCount\":5,\"champion\":{\"ref\":\"21:104\",\"score\":0.8189}}"
+    },
+    {
+      "t": "10:01:45.136",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"س كما بدانا\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:107\",\"kind\":\"single\",\"stageA\":0.56,\"acoustic\":9.621,\"acousticMargin\""
+    },
+    {
+      "t": "10:01:45.136",
+      "kind": "ui",
+      "text": "event: verse_candidate [21:104@0.82, 21:107-107@0.71, 21:98-98@0.33] → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:45.136",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:45.136",
+      "kind": "ui",
+      "text": "event: word_verdicts [104.6:m,104.7:m] → coach[cursor=104 state=tracking]: word-progress"
+    },
+    {
+      "t": "10:01:47.399",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4,\"text\":\"كما بدانا اول خلق اليوم\",\"tokenCount\":7,\"champion\":{\"ref\":\"21:104\",\"score\":0.7243}}"
+    },
+    {
+      "t": "10:01:47.569",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"كما بدانا اول خلق اليوم\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:107\",\"kind\":\"single\",\"stageA\":0.66,\"acoustic\":8.928,\"aco"
+    },
+    {
+      "t": "10:01:47.569",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:47.569",
+      "kind": "ui",
+      "text": "event: word_verdicts [104.6:m,104.7:m,104.8:m,104.9:m] → coach[cursor=104 state=tracking]: word-progress"
+    },
+    {
+      "t": "10:01:49.654",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":6,\"text\":\"كما دانا اولل خلق نعيده وعدا عليه\",\"tokenCount\":16,\"champion\":{\"ref\":\"21:104\",\"score\":0.8292}}"
+    },
+    {
+      "t": "10:01:49.791",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"كما دانا اولل خلق نعيده وعدا عليه\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:104\",\"kind\":\"single\",\"stageA\":0.794,\"acoustic\""
+    },
+    {
+      "t": "10:01:49.792",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"21:104\",\"reason\":\"repeat_leader\",\"confidence\":0.99,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusion\":0.7"
+    },
+    {
+      "t": "10:01:49.792",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [21:104@0.83, 21:69-69@0.69, 21:108-108@0.69] → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:49.792",
+      "kind": "ui",
+      "text": "event: verse_match 21:104 conf=0.99 → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:50.916",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":7,\"text\":\"كما بدنا اولل خلق نعيده وعدا علينا\",\"tokenCount\":16,\"champion\":{\"ref\":\"21:104\",\"score\":0.8656}}"
+    },
+    {
+      "t": "10:01:50.919",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"21:104\",\"text_length\":34,\"word_matches\":0,\"acoustic_word\":15,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position"
+    },
+    {
+      "t": "10:01:50.919",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"21:104\",\"to_ref\":\"21:105\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":16,\"total_words\":16,\"covera"
+    },
+    {
+      "t": "10:01:50.920",
+      "kind": "ui",
+      "text": "event: word_progress 21:104 idx=16/16 matched=[15] → coach[cursor=104 state=tracking]: word-progress"
+    },
+    {
+      "t": "10:01:53.071",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":9,\"text\":\"كما بدنا اول خلقق نعيده وعدا عليلنا انا كا فاعلين\",\"tokenCount\":28,\"champion\":{\"ref\":\"21:104\",\"score\":0.8459}}"
+    },
+    {
+      "t": "10:01:53.305",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"كما بدنا اول خلقق نعيده وعدا عليلنا انا كا فاعلين\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:104\",\"kind\":\"single\",\"stageA\":"
+    },
+    {
+      "t": "10:01:53.305",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"21:104\",\"to_ref\":\"21:104\",\"action\":\"blocked\",\"reason\":\"live non-continuation discovery blocked\",\"word_position\":0,\"total_"
+    },
+    {
+      "t": "10:01:53.305",
+      "kind": "ui",
+      "text": "event: verse_candidate [21:104@0.86, 21:17-17@0.76, 21:105-105@0.76] → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:53.305",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:53.305",
+      "kind": "ui",
+      "text": "event: word_verdicts [104.6:m,104.7:m,104.8:m,104.9:m,104.10:m,104.11:m,104.12:m,104.13:m,104.14:f,104.15:m] → coach[cursor=104 state=tracking]: word-progress"
+    },
+    {
+      "t": "10:01:55.324",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":11,\"text\":\"كما بدانا اول خلق نعيده وعدا علينا انا كنا فاعلين\",\"tokenCount\":44,\"champion\":{\"ref\":\"21:104\",\"score\":0.9335}}"
+    },
+    {
+      "t": "10:01:55.576",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"كما بدانا اول خلق نعيده وعدا علينا انا كنا فاعلين\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:104\",\"kind\":\"single\",\"stageA\":"
+    },
+    {
+      "t": "10:01:55.576",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"21:104\",\"to_ref\":\"21:104\",\"action\":\"blocked\",\"reason\":\"live non-continuation discovery blocked\",\"word_position\":0,\"total_"
+    },
+    {
+      "t": "10:01:55.576",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [21:104@0.93, 21:105-107@0.87, 21:105-106@0.84] → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:55.576",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:55.576",
+      "kind": "ui",
+      "text": "event: word_verdicts [104.6:m,104.7:m,104.8:m,104.9:m,104.10:m,104.11:m,104.12:m,104.13:m,104.14:m,104.15:m] → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:57.662",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":13,\"text\":\"كما بدانا اول خلق نعيده وعدا علينا اا كنا فاعللين ولقد كتبنا في الزب\",\"tokenCount\":54,\"champion\":{\"ref\":\"21:25\",\"score\":0.6593}}"
+    },
+    {
+      "t": "10:01:58.343",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"كما بدانا اول خلق نعيده وعدا علينا اا كنا فاعللين ولقد كتبنا في الزب\",\"final_flush\":false,\"candidates\":[{\"ref\":\"21:105-107\",\"k"
+    },
+    {
+      "t": "10:01:58.343",
+      "kind": "ui",
+      "text": "event: verse_candidate [21:105-107@0.86, 21:105-108@0.85, 21:106-108@0.83] → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:58.343",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=104 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:01:58.353",
+      "kind": "ui",
+      "text": "event: word_verdicts [104.6:m,104.7:m,104.8:m,104.9:m,104.10:m,104.11:m,104.12:m,104.13:f,104.14:m,104.15:f,105.0:m,105.1:m,105.2:m] → coach[cursor=105 state=tracking]: word-progress, verse-committed, verse-active"
+    },
+    {
+      "t": "10:02:00.710",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":15,\"text\":\"كما بدانا اول خلق نعيده وعدا علينا اا كنا فاعللين ولقد كتبنا في الزبور من بععد الذكر\",\"tokenCount\":65,\"champion\":{\"ref\":\"21:104-105\",\"sco"
+    },
+    {
+      "t": "10:02:01.701",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"كما بدانا اول خلق نعيده وعدا علينا اا كنا فاعللين ولقد كتبنا في الزبور من بععد الذكر\",\"final_flush\":false,\"candidates\":[{\"ref\""
+    },
+    {
+      "t": "10:02:01.701",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"21:105-108\",\"to_ref\":\"21:105\",\"action\":\"blocked\",\"reason\":\"live span collapsed to first ayah\",\"word_position\":0,\"total_wo"
+    },
+    {
+      "t": "10:02:01.701",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"21:105\",\"reason\":\"live_span_collapsed\",\"confidence\":0.869,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusi"
+    },
+    {
+      "t": "10:02:01.702",
+      "kind": "ui",
+      "text": "event: verse_candidate [21:105-108@0.87, 21:105-107@0.84, 21:104-105@0.82] → coach[cursor=105 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:02:01.702",
+      "kind": "ui",
+      "text": "event: verse_match 21:105 conf=0.87 → coach[cursor=105 state=tracking]: passage-complete"
+    },
+    {
+      "t": "10:02:02.128",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.75,\"text\":\"وبالذكرر ا\",\"tokenCount\":7,\"champion\":{\"ref\":\"21:26\",\"score\":0.6667}}"
+    },
+    {
+      "t": "10:02:02.128",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"21:105\",\"text_length\":10,\"word_matches\":0,\"acoustic_word\":3,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\""
+    },
+    {
+      "t": "10:02:02.128",
+      "kind": "ui",
+      "text": "event: word_progress 21:105 idx=4/12 matched=[3] → coach[cursor=105 state=tracking]: word-progress"
+    },
+    {
+      "t": "10:02:02.714",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.75,\"text\":\"كر ان الارض يلثها\",\"tokenCount\":13,\"champion\":{\"ref\":\"21:105\",\"score\":0.8366}}"
+    },
+    {
+      "t": "10:02:02.714",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"21:105\",\"text_length\":17,\"word_matches\":3,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "10:02:02.714",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"21:105\",\"to_ref\":\"21:106\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":10,\"total_words\":12,\"covera"
+    },
+    {
+      "t": "10:02:02.714",
+      "kind": "ui",
+      "text": "event: word_progress 21:105 idx=10/12 matched=[7,8,9] → coach[cursor=105 state=tracking]: word-progress"
+    },
+    {
+      "t": "10:02:03.335",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.75,\"text\":\"يرثها عبادادي الصالحون\",\"tokenCount\":10,\"champion\":{\"ref\":\"21:105\",\"score\":0.7784}}"
+    },
+    {
+      "t": "10:02:03.336",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"silence_skip\",\"mode\":\"discovery\",\"reason\":\"residual=0.864\"}"
+    },
+    {
+      "t": "10:02:04.502",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4.75,\"text\":\"قد يرثها عبادي الصالحون\",\"tokenCount\":10,\"champion\":{\"ref\":\"21:105\",\"score\":0.7902}}"
+    },
+    {
+      "t": "10:02:04.503",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"silence_skip\",\"mode\":\"discovery\",\"reason\":\"residual=0.913\"}"
+    },
+    {
+      "t": "10:02:05.527",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":6.75,\"text\":\"يرثها عبادي الصالحونيه\",\"tokenCount\":10,\"champion\":{\"ref\":\"21:105\",\"score\":0.7784}}"
+    },
+    {
+      "t": "10:02:05.528",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"silence_skip\",\"mode\":\"discovery\",\"reason\":\"residual=0.864\"}"
+    },
+    {
+      "t": "10:02:06.761",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":8.85,\"text\":\"يرثها عبادي الصالحونيه\",\"tokenCount\":10,\"champion\":{\"ref\":\"21:105\",\"score\":0.7784}}"
+    },
+    {
+      "t": "10:02:06.966",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"يرثها عبادي الصالحونيه\",\"final_flush\":true,\"candidates\":[{\"ref\":\"21:14\",\"kind\":\"single\",\"stageA\":0.583,\"acoustic\":8.401,\"acous"
+    },
+    {
+      "t": "10:02:06.966",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"21:106\",\"reason\":\"repeat_leader\",\"confidence\":0.803,\"origin\":\"discovery\",\"selected_rank\":2,\"selected_feasible\":true,\"selected_fusion\":0."
+    },
+    {
+      "t": "10:02:06.966",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"flush\",\"mode\":\"tracking\",\"duration_sec\":8.85}"
+    },
+    {
+      "t": "10:02:06.966",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [21:106-106@0.8, 21:14-14@0.77, 21:93-93@0.73] → coach[cursor=105 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:02:06.966",
+      "kind": "ui",
+      "text": "event: verse_match 21:106 conf=0.8 → coach[cursor=105 state=tracking]: (no effect)"
+    },
+    {
+      "t": "10:02:06.967",
+      "kind": "ui",
+      "text": "event: final_sequence → coach[cursor=105 state=completed]: completed"
+    }
+  ]
+}
