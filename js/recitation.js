@@ -54,6 +54,7 @@ const recitationUI = {
       micHot: '🎤 الصوت مرتفع جداً — ابتعد قليلاً عن الميكروفون',
       relisten: '🔄 أعيد الاستماع من جديد — تابع التلاوة',
       summaryMicHint: '🎤 كان مستوى الصوت منخفضاً جداً طوال الجلسة — جرّب رفع صوتك أو الاقتراب من الميكروفون',
+      contentUnverifiedNote: '⚠️ لم أتمكن من التحقق من أن ما قيل هو هذا المقطع فعلاً — لم يتطابق أي جزء لفظياً مع الآيات المتوقعة، رغم أن الجلسة تتبعت الوقت حتى النهاية. لم يتم احتساب نتيجة لهذه الجلسة.',
       summaryHeardOther: '👂 سمعتُ صوتاً لكن لم أتعرف على السورة المختارة — جرّب البدء مباشرة بالتلاوة في مكان هادئ',
       offTrack: 'يبدو أنك تتلو موضعاً آخر — أتابع السورة المختارة',
       stopping: 'لحظة… أراجع ما سمعت',
@@ -106,6 +107,7 @@ const recitationUI = {
       micHot: '🎤 Too loud — move back a little from the mic',
       relisten: '🔄 Listening afresh — keep reciting',
       summaryMicHint: '🎤 Your audio level was very low throughout — try speaking up or moving closer to the microphone',
+      contentUnverifiedNote: '⚠️ I could not verify that this was actually the chosen passage — nothing lexically matched the expected verses, even though the session tracked through to the end. This session was not scored.',
       summaryHeardOther: '👂 I heard sound but could not recognize the chosen surah — try starting directly with the recitation in a quiet place',
       offTrack: 'You seem to be reciting a different passage — following your chosen surah',
       stopping: 'One moment… reviewing what I heard',
@@ -1228,6 +1230,7 @@ const recitationUI = {
     panel.innerHTML = `
       <h2 style="color: var(--gold); margin-bottom: 6px;">${t.summaryTitle}</h2>
       <p style="color: var(--sage); margin-bottom: 20px;">${surahInfo.name} — ${t.range} ${this._num(sum.ayahStart)}–${this._num(sum.ayahEnd)} · ${t.duration}: ${this._num(durM)}${t.minutes} ${this._num(durS)}${t.seconds}</p>
+      ${sum.contentUnverified ? `<p class="recite-note" style="color: var(--gold); font-weight: 600;">${t.contentUnverifiedNote}</p>` : ''}
       <div class="recite-summary-grid">
         <div class="stat-card">
           <svg class="progress-ring" viewBox="0 0 120 120">

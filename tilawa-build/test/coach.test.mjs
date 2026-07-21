@@ -67,6 +67,15 @@ const wp = (ayah, matched, surah = 1) => ({
   matched_indices: matched,
 });
 
+// tilawa's tracking_cycle diagnostic: word_matches>0 (real lexical) vs
+// acoustic_word/char_word fallback (position-only, duration-based).
+const lc = (surah, ayah, lexical) => ({
+  type: 'lex_check',
+  surah,
+  ayah,
+  lexical,
+});
+
 const fin = (ayahs, confidence = 0.9) => ({
   type: "final_sequence",
   verses: ayahs.map((a) => ({ surah: 1, ayah: a, confidence })),
@@ -759,4 +768,60 @@ test("wandering to another passage triggers one gentle off-track hint", () => {
   // An in-range event resets the strikes.
   coach.handleEvent(vm(2));
   assert.equal(coach.offTrackStrikes, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Content-verification gate (tracking_cycle.word_matches vs acoustic/char
+// fallback — see js/recitation-coach.js _onLexCheck)
+// ---------------------------------------------------------------------------
+
+test('field scenario: gibberish tracked to completion on fallback alone scores 0 and is flagged unverified', () => {
+  // Reproduces build-2026-07-21 (Surah 106, Al-Quraysh): reciting the
+  // English alphabet against a picked passage completed all 4 verses via
+  // acoustic-position fallback alone (tracking_cycle showed word_matches:0
+  // on every single cycle) and scored 100 before this gate existed.
+  const coach = makeCoach({ ayahEnd: 4 });
+  for (let a = 1; a <= 4; a++) {
+    coach.handleEvent(lc(1, a, false));
+    coach.handleEvent(lc(1, a, false));
+    reciteVerse(coach, a);
+  }
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2, 3, 4]))[0].summary;
+  assert.equal(s.contentUnverified, true);
+  assert.equal(s.score, 0);
+});
+
+test('a short verse clearing on fallback alone does not trigger the gate when the session has real lexical matches elsewhere', () => {
+  // Reproduces the real (correct) Surah 87 ayah 13 case from the SAME log
+  // that motivated the gate: a short verse's entire tracking span was just
+  // 2 fallback-only cycles with zero word_matches — legitimate, since short
+  // verses can clear before any single cycle reaches tilawa's own
+  // alignPosition() bar. The gate must not punish this in isolation.
+  const coach = makeCoach({ ayahEnd: 4 });
+  coach.handleEvent(lc(1, 1, true));
+  for (let i = 0; i < 7; i++) coach.handleEvent(lc(1, 2, false));
+  for (let a = 1; a <= 4; a++) reciteVerse(coach, a);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2, 3, 4]))[0].summary;
+  assert.equal(s.contentUnverified, false);
+  assert.ok(s.score > 0);
+});
+
+test('too few fallback advances to judge — content trusted by default even with zero lexical matches', () => {
+  const coach = makeCoach({ ayahEnd: 2 });
+  coach.handleEvent(lc(1, 1, false));
+  coach.handleEvent(lc(1, 1, false));
+  reciteVerse(coach, 1);
+  reciteVerse(coach, 2);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2]))[0].summary;
+  assert.equal(s.contentUnverified, false);
+});
+
+test('lex_check events for a different surah are ignored', () => {
+  const coach = makeCoach();
+  coach.handleEvent(lc(99, 1, false));
+  assert.equal(coach.fallbackAdvances, 0);
+  assert.equal(coach.lexAdvances, 0);
 });

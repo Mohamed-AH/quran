@@ -190,7 +190,42 @@ which IS wired up (`tilawa-build/src/align.js`) but gated off by
 real wrong-recitation clips (the "positive evidence only" bar: zero false
 accusations on clean recitations is non-negotiable before this can accuse
 anyone of anything). Not a regression — this is the documented, intentional
-scope limit from the original Workstream B design.
+scope limit from the original Workstream B design. See below for a coarser,
+already-shipped defense against the worst case this enables.
+
+## Content-verification gate: a session can't score without ANY real lexical evidence
+
+Field case (build 2026-07-21, Surah 106 / Al-Quraysh): reciting the English
+alphabet against a picked passage completed all 4 verses and scored 100.
+Every `tracking_cycle` diagnostic for the whole session showed
+`word_matches: 0` — tilawa's tracker advances `word_progress` via a fallback
+(`acoustic_word`/`char_word`: position-only, duration-based) whenever its own
+lexical alignment (`alignPosition()` against the tracked verse's actual
+words, exposed as `word_matches`) finds nothing. The fallback is invisible
+downstream — `word_progress.matched_indices` doesn't distinguish a real
+lexical hit from a fallback advance — so a verse (or an entire session) can
+complete tilawa's own tracking with zero real content verification, ever.
+
+`worker-entry.js`'s `onDiagnostic` hook now forwards every `tracking_cycle`
+as a synthetic `lex_check` event (`{surah, ayah, lexical}`, where `lexical =
+word_matches > 0`), letting `RecitationCoach` (`_onLexCheck`) accumulate
+session-wide `lexAdvances`/`fallbackAdvances` counters. At finalize, if
+`fallbackAdvances >= minFallbackForJudgment` (6) and `lexAdvances === 0` —
+sustained tracking activity with not one single real lexical match anywhere
+— the summary gets `contentUnverified: true` and the score is forced to 0.
+
+This is deliberately **session-wide, not per-verse**: a genuinely short verse
+can clear in 1-2 fallback-only cycles with zero lexical matches purely
+because it's short, and per-cycle fragments are frequently too small (often
+1 word) to reach tilawa's own lexical-alignment bar — field-verified in the
+SAME log that motivated this gate (build 2026-07-20j, the real, correct
+recitation of Surah 87 ayah 13 cleared on exactly 2 fallback cycles with
+`word_matches: 0` both times). Gating on that in isolation would have been a
+false accusation. A single real lexical match anywhere in the session
+(`lexAdvances >= 1`) clears the gate permanently, since genuine multi-verse
+recitation reliably produces at least one somewhere; gibberish typically
+never does, because tilawa's own alignment is being compared against
+completely unrelated text throughout.
 
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.

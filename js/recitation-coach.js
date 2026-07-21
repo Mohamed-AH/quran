@@ -123,6 +123,16 @@
     // Off until calibrated against real wrong-recitation clips — see
     // CONFIG.FEATURES.WORD_VERDICTS.
     useWordVerdicts: false,
+    // Content-verification gate (worker `lex_check` events, from tilawa's
+    // own tracking_cycle.word_matches diagnostic — see _onLexCheck). A
+    // session needs at least this many fallback-only (non-lexical) advances
+    // accumulated, with ZERO real lexical advances anywhere in the whole
+    // session, before its content is judged unverified. Session-wide, not
+    // per-verse: a single short verse can legitimately clear in 1-2
+    // fallback cycles with no lexical hit (field-observed in genuine
+    // correct recitation), so only a sustained absence across the whole
+    // session is trustworthy negative evidence.
+    minFallbackForJudgment: 6,
   };
 
   class RecitationCoach {
@@ -152,6 +162,9 @@
       this.pendingJump = null; // {ayah} — forward-jump hysteresis
       this.pendingBack = null; // {ayah} — backward-repetition hysteresis
       this.confidences = [];
+      // Session-wide content-verification counters — see _onLexCheck.
+      this.lexAdvances = 0;
+      this.fallbackAdvances = 0;
       // ayah -> confidence, from ANY in-range verse_candidate seen so far
       // (tracking or awaiting_start). tilawa's discovery often identifies a
       // multi-verse span (e.g. "1:2-4") and then — by design — commits only
@@ -285,6 +298,8 @@
           return this._onWordProgress(event);
         case 'word_verdicts':
           return this._onWordVerdicts(event);
+        case 'lex_check':
+          return this._onLexCheck(event);
         case 'verse_candidate':
           return this._onVerseCandidate(event);
         case 'final_sequence':
@@ -360,6 +375,22 @@
         effects.push(...this._commitAndAdvance(a));
       }
       return effects;
+    }
+
+    /**
+     * Session-wide content-verification bookkeeping — see `lex_check` in
+     * tilawa-build/src/worker-entry.js and minFallbackForJudgment above.
+     * Pure counting; the actual gate is applied once, at finalize (see
+     * _buildSummary), against the whole session's totals.
+     */
+    _onLexCheck(msg) {
+      if (!this.inRange(msg.surah, msg.ayah)) return [];
+      if (msg.lexical) {
+        this.lexAdvances++;
+      } else {
+        this.fallbackAdvances++;
+      }
+      return [];
     }
 
     _onWordVerdicts(msg) {
@@ -800,19 +831,33 @@
 
       const w = this.cfg.scoreWeights;
       const started = this.startedAt !== null;
-      const score = started
-        ? Math.max(
-            0,
-            Math.min(
-              100,
-              Math.round(
-                w.verses * verseRatio +
-                  w.words * wordRatio +
-                  w.confidence * Math.min(1, avgConfidence)
+      // Content-verification gate: tilawa's own tracking can complete a
+      // verse purely on acoustic/char-position fallback (duration alone),
+      // with ZERO real lexical corroboration (see _onLexCheck). A genuine
+      // multi-verse recitation reliably produces SOME real lexical advances
+      // somewhere; a session with none at all, despite a real volume of
+      // tracked advances, was never actually verified as this passage —
+      // field case: reciting the English alphabet against a picked surah
+      // otherwise scored 100 (build 2026-07-21, Surah 106).
+      const contentUnverified =
+        started &&
+        this.fallbackAdvances >= this.cfg.minFallbackForJudgment &&
+        this.lexAdvances === 0;
+      const score = contentUnverified
+        ? 0
+        : started
+          ? Math.max(
+              0,
+              Math.min(
+                100,
+                Math.round(
+                  w.verses * verseRatio +
+                    w.words * wordRatio +
+                    w.confidence * Math.min(1, avgConfidence)
+                )
               )
             )
-          )
-        : 0;
+          : 0;
 
       return {
         surah: this.surah,
@@ -825,6 +870,7 @@
         missedWords: missedWords,
         substitutedWords: substitutedWords,
         repeats: repeats,
+        contentUnverified: contentUnverified,
         wordCoverage: Math.round(wordRatio * 100) / 100,
         avgConfidence: Math.round(avgConfidence * 100) / 100,
         score: score,

@@ -173,6 +173,36 @@ function buildSession(quranSubset, config) {
       // output (see drainLoop / resetEpoch).
       onDiagnostic: (event, data) => {
         if (debugEnabled) self.postMessage({ type: "diag", event, data });
+        // tracking_cycle's `word_matches` is tilawa's own per-cycle LEXICAL
+        // alignment count (alignPosition() against the tracked verse's real
+        // words) — distinct from `matched_indices` in the word_progress
+        // event, which falls back to acoustic_word/char_word (position-only,
+        // duration-based) advances whenever word_matches is 0. That fallback
+        // is invisible downstream, so a verse can complete tilawa's own
+        // tracking with ZERO real lexical corroboration, ever (field case:
+        // build 2026-07-21, reciting the English alphabet against a picked
+        // surah scored 100 — every tracking_cycle showed word_matches:0).
+        // Forwarded here as a session-wide signal (see coach _onLexCheck)
+        // rather than per-verse: a short verse can legitimately clear on
+        // 1-2 fallback cycles alone (observed in real correct recitation),
+        // so only a sustained, whole-session absence of any real lexical
+        // match is trustworthy negative evidence.
+        if (
+          event === "tracking_cycle" &&
+          data &&
+          data.advanced &&
+          typeof data.ref === "string"
+        ) {
+          const sep = data.ref.indexOf(":");
+          if (sep > 0) {
+            postEvent({
+              type: "lex_check",
+              surah: Number(data.ref.slice(0, sep)),
+              ayah: Number(data.ref.slice(sep + 1)),
+              lexical: (data.word_matches || 0) > 0,
+            });
+          }
+        }
       },
     },
   );
