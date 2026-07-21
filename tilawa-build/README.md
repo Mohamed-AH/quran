@@ -123,10 +123,13 @@ Basmala, Basmala only, isti'adhah only, or straight into the surah. All are
 accepted; none should be flagged.
 
 - **Isti'adhah** ("أعوذ بالله من الشيطان الرجيم") isn't Quran text at all —
-  it never appears in any verse's word list, so it was never scored. With
-  the surah-scoping above, that audio also can't match anything in the
-  scoped DB and is silently ignored by discovery until real recitation
-  starts.
+  it never appears in any verse's word list, so it was never scored. Note
+  it is NOT acoustically invisible, though: discovery's span matcher always
+  returns its *best-fit* verse for whatever audio it's given, so isti'adhah
+  and Basmala audio can still generate weak-to-moderate confidence matches
+  against arbitrary in-range verses (field-observed up to 0.83) before real
+  recitation starts. See "Pre-recitation noise cannot open a mid-passage
+  session" below for how the coach guards against that.
 - **Basmala**: this text source (`assets/tilawa/quran.json`) embeds it as
   the literal first 4 words of ayah 1 for every surah except Al-Fatiha (1,
   where it IS the verse) and At-Tawbah (9, which has none) — mirroring
@@ -142,6 +145,52 @@ accepted; none should be flagged.
 Field motivation: build 2026-07-20h found a real recitation of Surah 85
 flagged all 4 opening words "missed" purely because of this text
 convention, independent of the tracker-lock issue that compounded it.
+
+## Pre-recitation noise cannot open a mid-passage session
+
+`RecitationCoach._onVerseMatch` uses two different confidence bars for
+opening a session from `awaiting_start`:
+
+- `startConfidence` (0.55) — a plain start at `ayahStart`. Being wrong here
+  costs nothing: no earlier verse gets accused of anything.
+- `candidateStartConfidence` (0.85) — required instead whenever the match is
+  for `ayah > ayahStart`, because opening there immediately marks every verse
+  from `ayahStart` up to it as provisionally skipped.
+
+Field motivation (build 2026-07-20j, Surah 87, 19-verse pick): isti'adhah +
+Basmala audio — which doesn't exist in the scoped DB as literal text (see
+above) — got fuzzy-matched by tilawa's span discovery to ayah 11-12, and the
+tracker's own conservative "commit only the first ayah of a collapsed span"
+fallback (`live_span_collapsed`) turned that into a `verse_match` for ayah 11
+at confidence 0.83. The coach accepted it as the real start (0.83 clears the
+0.55 floor) and reported ayahs 1, 2, 5-10 as skipped — while the reciter was
+still on the isti'adhah/Basmala, about to recite verse 1. Once locked, the
+tracker's word-by-word confirmation is acoustic/positional (duration-based),
+not lexical, so it self-confirmed through ayahs 11-19 by timing alone as the
+reciter's real (but misattributed) audio streamed in, and the whole session
+finished having tracked the right *amount* of speech against the wrong verse
+numbers. 0.83 is comfortably below `candidateStartConfidence` (0.85), so
+gating mid-passage starts at that bar closes this specific hole; a genuine
+low-confidence mid-passage start still opens the session via word_progress's
+own defensive path (`_onWordProgress`, `matched_indices.length >= 2`), which
+requires actual cumulative word-level evidence rather than a single
+borderline commit.
+
+## Lexical substitutions within a tracked verse are not yet flagged
+
+Tilawa's in-tracking word-progress confirmation (`matched_indices`) is
+acoustic/positional — it confirms "N words' worth of audio happened," not
+"the Nth word was word X." So a reciter who substitutes one word for another
+of similar length/duration (field case: build 2026-07-20j, Surah 87 ayah 19,
+"مُوسَىٰ" recited as "دَاوُۥد") completes the verse with a normal, unflagged
+`verse_match`/`word_progress` sequence — the substitution is only visible in
+tilawa's separately-streamed `raw_transcript`/`word_verdicts` (decoded text),
+which IS wired up (`tilawa-build/src/align.js`) but gated off by
+`CONFIG.FEATURES.WORD_VERDICTS = false` pending calibration against more
+real wrong-recitation clips (the "positive evidence only" bar: zero false
+accusations on clean recitations is non-negotiable before this can accuse
+anyone of anything). Not a regression — this is the documented, intentional
+scope limit from the original Workstream B design.
 
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.

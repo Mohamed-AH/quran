@@ -464,6 +464,17 @@
 
       if (this.state === 'awaiting_start') {
         if ((msg.confidence || 0) < this.cfg.startConfidence) return effects;
+        if (A > this.ayahStart && (msg.confidence || 0) < this.cfg.candidateStartConfidence) {
+          // Starting mid-passage immediately accuses the skipped-over verses —
+          // demand the same bar as a discovery-candidate start (0.85), not the
+          // low bar (0.55) meant for starting cleanly at ayahStart. Field bug
+          // (build 2026-07-20j, Surah 87): isti'adhah + Basmala pre-recitation
+          // audio spuriously committed to ayah 11 at confidence 0.83 via
+          // tilawa's "live_span_collapsed" fallback, and the coach accepted it
+          // as the real start — falsely accusing 1,2,5-10 of being skipped
+          // while the reciter was still on the isti'adhah/Basmala.
+          return effects;
+        }
         return this._start(A);
       }
 

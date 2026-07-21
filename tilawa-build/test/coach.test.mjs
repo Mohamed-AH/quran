@@ -135,6 +135,28 @@ test("starting mid-range marks earlier verses provisionally skipped", () => {
   assert.deepEqual(effects[0].ayahs, [1, 2]);
 });
 
+test("field scenario: a borderline mid-range commit from pre-recitation noise does not start the session", () => {
+  // Reproduces build-2026-07-20j (Surah 87): isti'adhah + Basmala audio,
+  // which doesn't exist in the scoped DB, spuriously committed to ayah 11
+  // via tilawa's "live_span_collapsed" fallback at confidence 0.83 — well
+  // above the general startConfidence floor (0.55) but below the bar a
+  // mid-passage start (which accuses 1,2 of being skipped) should require.
+  const coach = makeCoach();
+  assert.deepEqual(coach.handleEvent(vm(3, 0.83)), []);
+  assert.equal(coach.state, "awaiting_start");
+  assert.equal(coach.cursor, null);
+
+  // A later, properly confident match still starts the session normally.
+  const effects = coach.handleEvent(vm(3, 0.9));
+  assert.deepEqual(types(effects), ["verses-skipped", "started", "verse-active"]);
+});
+
+test("starting exactly at ayahStart is unaffected by the mid-range confidence bar", () => {
+  const coach = makeCoach();
+  const effects = coach.handleEvent(vm(1, 0.6)); // below candidateStartConfidence
+  assert.deepEqual(types(effects), ["started", "verse-active"]);
+});
+
 test("strong word_progress opens the session even without a confident commit", () => {
   const coach = makeCoach();
   const effects = coach.handleEvent(wp(1, [0, 1]));
