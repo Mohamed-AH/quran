@@ -27,6 +27,7 @@
  *   {type:'word-progress', ayah, matched:[i...], totalWords}
  *   {type:'verse-committed', ayah, missedWords:[i...], uncertainWords:[i...]}
  *   {type:'verses-skipped', ayahs:[...]}   (provisional until finalize)
+ *   {type:'start-retracted', ayah}   an uncorroborated opening commit was undone
  *   {type:'repetition', ayah, count}
  *   {type:'off-track'}
  *   {type:'checkpoint'}
@@ -189,6 +190,7 @@
 
       this.state = 'awaiting_start';
       this.cursor = null; // ayah currently being recited
+      this.startAyah = null; // the ayah the session actually opened on — see _onTrackingAbandoned
       this.startedAt = null;
       this.endedAt = null;
       this.stopRequested = false;
@@ -398,6 +400,8 @@
           return this._onWordVerdicts(event);
         case 'lex_check':
           return this._onLexCheck(event);
+        case 'tracking_abandoned':
+          return this._onTrackingAbandoned(event);
         case 'verse_candidate':
           return this._onVerseCandidate(event);
         case 'final_sequence':
@@ -827,6 +831,7 @@
       this.state = 'tracking';
       this.startedAt = this.now();
       this.cursor = ayah;
+      this.startAyah = ayah; // remembered for _onTrackingAbandoned
       const v = this.perVerse[ayah];
       v.status = 'active';
       v.sawCommit = true;
@@ -849,6 +854,61 @@
       effects.push({ type: 'started', ayah: ayah });
       effects.push({ type: 'verse-active', ayah: ayah });
       return effects;
+    }
+
+    /**
+     * tilawa's own tracker gave up on the CURRENT verse (stale_exit —
+     * several cycles with no real advance) without ever confirming genuine
+     * content — see `tracking_abandoned` in tilawa-build/src/worker-entry.js.
+     *
+     * Only acts when this is the verse the session OPENED on and the
+     * cursor has never advanced past it since (this.cursor === this.startAyah)
+     * — a later verse abandoning tracking mid-session already has its own
+     * safety net (the per-verse content-verification gate marks it
+     * 'unverified', not 'done'; see _looksUnverified). This is specifically
+     * about undoing the OPENING commit itself, which is uniquely risky: it
+     * retroactively accuses every earlier verse of being skipped on the
+     * strength of ONE acoustic match.
+     *
+     * Field case (build 2026-07-21j, Surah 87): "اعوذ" — 4 tokens of the
+     * isti'adhah, not surah content at all — short_rescue-committed to
+     * ayah 14 at confidence 0.85 (tilawa's own fallback for sparse audio,
+     * disconnected from real lexical content). The coach immediately
+     * flagged ayahs 1-13 as skipped. Four tracking cycles later, tilawa
+     * itself gave up (stale_exit) having never confirmed a single real
+     * word of ayah 14 — but by then the false "verses skipped" verdict was
+     * already locked in. A real listener wouldn't conclude anything from
+     * a few acoustic tokens before the actual recitation even began; ONE
+     * unstable, uncorroborated commit shouldn't either. Undo the false
+     * start entirely — revert to awaiting_start — rather than let a single
+     * acoustic guess stand as an accusation.
+     */
+    _onTrackingAbandoned(msg) {
+      if (!this.inRange(msg.surah, msg.ayah)) return [];
+      if (this.state !== 'tracking' || msg.ayah !== this.cursor) return [];
+      if (this.cursor !== this.startAyah) return []; // already advanced past the opening verse
+      const v = this.perVerse[this.cursor];
+      if (v.lexAdvances > 0) return []; // real corroboration exists — trust it
+      const retracted = this.cursor;
+      for (let a = this.ayahStart; a <= retracted; a++) {
+        const pv = this.perVerse[a];
+        pv.status = 'pending';
+        pv.sawCommit = false;
+        pv.progress = 0;
+        pv.matched = new Set();
+        pv.lexAdvances = 0;
+        pv.fallbackAdvances = 0;
+      }
+      this.state = 'awaiting_start';
+      this.cursor = null;
+      this.startAyah = null;
+      this.startedAt = null;
+      this.confidences = []; // the retracted commit's confidence shouldn't count
+      this.offTrackStrikes = 0;
+      this.pendingJump = null;
+      this.pendingBack = null;
+      this.pendingCandidate = null;
+      return [{ type: 'start-retracted', ayah: retracted }];
     }
 
     _commitAndAdvance(toAyah) {

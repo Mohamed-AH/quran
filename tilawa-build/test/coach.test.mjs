@@ -76,6 +76,14 @@ const lc = (surah, ayah, lexical) => ({
   lexical,
 });
 
+// tilawa's stale_exit diagnostic, forwarded as a structured event when the
+// tracker gives up on the current verse without confirming real content.
+const ta = (surah, ayah) => ({
+  type: 'tracking_abandoned',
+  surah,
+  ayah,
+});
+
 const fin = (ayahs, confidence = 0.9) => ({
   type: "final_sequence",
   verses: ayahs.map((a) => ({ surah: 1, ayah: a, confidence })),
@@ -1149,4 +1157,58 @@ test('an unverified verse effect flags the UI and reports no missed-word claim',
   assert.equal(committed.unverified, true);
   assert.deepEqual(committed.missedWords, []);
   assert.equal(coach.perVerse[1].status, 'unverified');
+});
+
+// ---------------------------------------------------------------------------
+// tracking_abandoned: undoing an uncorroborated OPENING commit
+// ---------------------------------------------------------------------------
+
+test('field scenario: an uncorroborated opening commit is retracted when tilawa gives up on it', () => {
+  // Reproduces build 2026-07-21j, Surah 87: "اعوذ" — 4 tokens of the
+  // isti'adhah, not surah content — short_rescue-committed to ayah 14 at
+  // confidence 0.85 (mirrored here as ayah 4 in Fatiha). Four tracking
+  // cycles later tilawa itself gave up (stale_exit) having never confirmed
+  // a single real word, but the coach had already flagged ayahs 1-3 as
+  // skipped. The false start must be undone entirely, not left standing.
+  const coach = makeCoach();
+  const fx1 = coach.handleEvent(vm(4, 0.85));
+  assert.ok(fx1.find((e) => e.type === 'verses-skipped'), 'the false start initially (wrongly) flags earlier verses skipped');
+  assert.equal(coach.perVerse[4].status, 'active');
+  coach.handleEvent(lc(1, 4, false)); // fallback-only — no real content ever confirmed
+  const fx2 = coach.handleEvent(ta(1, 4));
+  assert.deepEqual(types(fx2), ['start-retracted']);
+  assert.equal(coach.state, 'awaiting_start');
+  assert.equal(coach.cursor, null);
+  for (let a = 1; a <= 4; a++) {
+    assert.equal(coach.perVerse[a].status, 'pending', `ayah ${a} must be reset, not left skipped`);
+  }
+});
+
+test('tracking_abandoned does NOT retract a verse that has real lexical corroboration', () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(4, 0.85));
+  coach.handleEvent(lc(1, 4, true)); // a real word was confirmed
+  const fx = coach.handleEvent(ta(1, 4));
+  assert.deepEqual(fx, [], 'real evidence exists — trust it, do not retract');
+  assert.equal(coach.state, 'tracking');
+  assert.equal(coach.cursor, 4);
+});
+
+test('tracking_abandoned only retracts the OPENING commit, never a verse reached later mid-session', () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(1)); // clean start at ayahStart — nothing skipped
+  coach.handleEvent(vm(2)); // advances past verse 1 to verse 2
+  const fx = coach.handleEvent(ta(1, 2));
+  assert.deepEqual(fx, [], 'verse 2 already has its own unverified safety net — not a full-session retraction');
+  assert.equal(coach.state, 'tracking');
+  assert.equal(coach.cursor, 2);
+});
+
+test('tracking_abandoned for a different ayah or surah is ignored', () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(4, 0.85));
+  assert.deepEqual(coach.handleEvent(ta(1, 5)), []);
+  assert.deepEqual(coach.handleEvent(ta(2, 4)), []);
+  assert.equal(coach.state, 'tracking');
+  assert.equal(coach.cursor, 4);
 });
