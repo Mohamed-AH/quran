@@ -331,8 +331,24 @@
      */
     /** Record every in-range candidate as corroborating span evidence,
      *  regardless of session state — this is pure bookkeeping, never an
-     *  action by itself. */
+     *  action by itself.
+     *
+     *  Requires msg.stable: a single volatile sighting of a multi-verse span
+     *  is not reliable per-verse evidence — tilawa's own joint-match score
+     *  for a span is ONE number covering the whole span, and a strong match
+     *  on one verse can drag a weak/absent second verse's confidence over
+     *  spanEvidenceConfidence too. Field case (build 2026-07-21, Surah 21
+     *  ayahs 25-30): ayah 27 was never recited — the transcript shows ayah
+     *  26's tail flowing directly into ayah 28's opening — but a single,
+     *  never-stable "21:26-27" candidate (confidence up to 0.99, driven
+     *  entirely by ayah 26's strong match) got recorded as evidence for 27
+     *  too, rescuing it from a real skip. Requiring stability (the same bar
+     *  _onVerseCandidate already uses to open a session) filters out
+     *  exactly this kind of one-off, unconfirmed span sighting while
+     *  keeping the original rescue case intact — every existing spanEvidence
+     *  test already uses a stable candidate. */
     _recordSpanEvidence(msg) {
+      if (!msg.stable) return;
       for (const c of msg.candidates || []) {
         if (c.surah !== this.surah) continue;
         if ((c.confidence || 0) < this.cfg.spanEvidenceConfidence) continue;

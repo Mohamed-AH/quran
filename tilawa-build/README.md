@@ -258,5 +258,30 @@ reciters catch a skipped verse before reciting to a real teacher, so a
 missed skip is a worse failure than an occasional false "unverified" flag on
 a fast, short verse. Revisit this threshold as more real field logs arrive.
 
+## spanEvidence requires a STABLE candidate
+
+Field case (build 2026-07-21, Surah 21 / Al-Anbiya, ayahs 25-30): ayah 27 was
+never recited. The decoded transcript shows ayah 26's tail flowing directly
+into ayah 28's opening, with no trace of ayah 27's words anywhere — but the
+summary reported it `done`, no skip. Cause: a single, never-stable `"21:26-
+27"` discovery candidate (confidence up to 0.99) got recorded as
+`spanEvidence` for BOTH ayahs in the span, and `_commitAndAdvance`'s gap-fill
+rescue (see "Round 4" / the collapsed-span section above) used that evidence
+to mark 27 `done` when the tracker jumped straight from 26 to 28.
+
+The root problem: tilawa's `VerseCandidate` carries ONE joint-match
+confidence for the WHOLE span (`{ayah, ayah_end, confidence}` — no
+per-verse breakdown), and that score can be dominated by just one strongly-
+matching verse in the span while the other has no support at all — exactly
+what happened here (26 was fully, clearly recited; 27 never was; the pair's
+joint score still cleared `spanEvidenceConfidence` on 26's strength alone).
+
+Fix: `_recordSpanEvidence` now requires `msg.stable` — the same bar
+`_onVerseCandidate` already uses to open a session, and the value every
+existing spanEvidence test already used by default (`vc()`'s `stable`
+parameter defaults to `true`). A single volatile sighting no longer counts;
+the span needs to persist across tilawa's own stability window before its
+confidence is trusted as evidence for every verse inside it.
+
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.

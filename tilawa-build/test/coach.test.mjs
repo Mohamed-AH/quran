@@ -592,6 +592,28 @@ test("field scenario: a collapsed span commit no longer accuses the covered vers
   assert.ok(s.versesDone.includes(3) && s.versesDone.includes(4));
 });
 
+test("field scenario: an unstable span candidate does NOT rescue a genuinely skipped verse", () => {
+  // Reproduces build-2026-07-21 (Surah 21 / Al-Anbiya, ayahs 25-30): ayah 27
+  // was never recited — the decoded transcript shows ayah 26's tail flowing
+  // directly into ayah 28's opening — but a single, never-stable "1:2-4"
+  // (mirroring the real "21:26-27") candidate, its confidence dominated by
+  // the strongly-matching FIRST verse, got recorded as spanEvidence for the
+  // second verse too, wrongly rescuing it from a real skip.
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, allWords(1)));
+  coach.handleEvent(vm(2));
+  coach.handleEvent(wp(2, allWords(2)));
+  // Unstable span candidate (stable: false) — must NOT count as evidence.
+  coach.handleEvent(vc([{ surah: 1, ayah: 2, ayah_end: 3, confidence: 0.93 }], false));
+  coach.handleEvent(vm(4)); // forward-jump hysteresis: first sighting only arms it
+  const fx = coach.handleEvent(wp(4, allWords(4))); // second consistent event confirms
+  const skipEffect = fx.find((e) => e.type === "verses-skipped");
+  assert.ok(skipEffect, "verse 3 must be reported skipped — the only evidence for it was unstable");
+  assert.deepEqual(skipEffect.ayahs, [3]);
+  assert.equal(coach.perVerse[3].status, "skipped");
+});
+
 test("a genuine skip with NO discovery evidence is still reported", () => {
   const coach = makeCoach();
   coach.handleEvent(vm(1));
