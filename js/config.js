@@ -80,7 +80,18 @@ CONFIG.TILAWA.MODEL_SOURCES[0] = CONFIG.API_BASE_URL + '/tilawa/model';
 
 // Recitation build stamp — logged at startup and shown in the debug panel so
 // a stale deploy is immediately recognizable. Bump on every recitation change.
-CONFIG.TILAWA.BUILD = '2026-07-21j';
+//
+// IMPORTANT: this alone does NOT guarantee recitation-coach.js/recitation.js
+// etc. are fresh — config.js is a small file that happens to revalidate
+// reliably, but that's a coincidence of size/timing, not a guarantee shared
+// by every <script> tag. Field case (build 2026-07-21j): a session showed
+// verses correctly marked 'done' that should have been 'unverified' or
+// 'skipped' per the CURRENT coach logic, config.js/worker both confirmed
+// fresh — meaning recitation-coach.js itself was stale-cached independently.
+// Every `<script src="js/...">` tag in app.html/test-recitation.html/etc.
+// now carries its own `?v=` query string — bump ALL of them (grep for the
+// previous date stamp) together with this constant on every recitation change.
+CONFIG.TILAWA.BUILD = '2026-07-21k';
 
 // Cache-bust the worker script: without this, `js/config.js` (small, fetched
 // fresh on most loads) can report the latest BUILD while the browser quietly
