@@ -49,6 +49,7 @@ const recitationUI = {
       stillListening: 'لم أسمع تلاوة بعد — ما زلت أستمع',
       repetition: '🔁 إعادة — أحسنت التدبر',
       checkpoint: 'توقفت للتأمل؟ خذ وقتك، ما زلت أستمع',
+      passageComplete: '🎉 وصلت إلى نهاية المقطع — سأتوقف عن الاستماع الآن',
       micSilent: '🎤 لا أسمع أي صوت — تحقق من الميكروفون',
       micLow: '🎤 صوتك منخفض — ارفع صوتك قليلاً أو اقترب من الميكروفون',
       micHot: '🎤 الصوت مرتفع جداً — ابتعد قليلاً عن الميكروفون',
@@ -106,6 +107,7 @@ const recitationUI = {
       stillListening: 'No recitation heard yet — still listening',
       repetition: '🔁 Repetition — beautiful contemplation',
       checkpoint: 'Pausing to reflect? Take your time — still listening',
+      passageComplete: '🎉 Reached the end of the passage — stopping the mic now',
       micSilent: '🎤 I hear no sound at all — check your microphone',
       micLow: '🎤 Your voice is faint — speak up a little or move closer to the mic',
       micHot: '🎤 Too loud — move back a little from the mic',
@@ -803,7 +805,8 @@ const recitationUI = {
     if (this._awaitTimer) clearTimeout(this._awaitTimer);
     if (this._meterRaf) cancelAnimationFrame(this._meterRaf);
     if (this._watchdogTimer) clearInterval(this._watchdogTimer);
-    this._elapsedTimer = this._hintTimer = this._stopFallbackTimer = this._awaitTimer = this._meterRaf = this._watchdogTimer = null;
+    if (this._passageCompleteTimer) clearTimeout(this._passageCompleteTimer);
+    this._elapsedTimer = this._hintTimer = this._stopFallbackTimer = this._awaitTimer = this._meterRaf = this._watchdogTimer = this._passageCompleteTimer = null;
   },
 
   // -------------------------------------------------------------------------
@@ -933,6 +936,8 @@ const recitationUI = {
         return 'off-track hint shown';
       case 'checkpoint':
         return 'checkpoint (silence flush mid-session)';
+      case 'passage-complete':
+        return `PASSAGE COMPLETE at ayah ${fx.ayah} — auto-stopping shortly`;
       case 'completed':
         return `COMPLETED — score=${fx.summary.score} done=[${fx.summary.versesDone}] skipped=[${fx.summary.versesSkipped}] unverified=[${fx.summary.versesUnverified}] notReached=[${fx.summary.versesNotReached}]`;
       default:
@@ -985,6 +990,20 @@ const recitationUI = {
         case 'checkpoint':
           this._showHint(this._t().checkpoint, 4000);
           break;
+        case 'passage-complete': {
+          // The picked passage's last verse is done — stop listening here
+          // instead of leaving the mic open until tilawa's own silence
+          // timeout or a manual tap. Small debounce so trailing elongation
+          // on the very last word isn't cut off mid-sound.
+          this._breadcrumb('reached the end of the picked passage — auto-stopping');
+          this._showHint(this._t().passageComplete, 0);
+          if (this._passageCompleteTimer) clearTimeout(this._passageCompleteTimer);
+          this._passageCompleteTimer = setTimeout(() => {
+            this._passageCompleteTimer = null;
+            if (this.isSessionActive()) this.stopSession();
+          }, 2000);
+          break;
+        }
         case 'off-track': {
           const s = this._session;
           if (s.freestyle && !s.committed && s.lastOutOfRange) {

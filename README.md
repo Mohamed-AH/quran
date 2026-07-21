@@ -230,7 +230,7 @@ The **"التلاوة" (Recite)** tab is a personal listening coach: it hears yo
 - **Pauses are welcome** — breathe, reflect, take your time between verses; nothing counts down and nothing is flagged
 - **Repetition is welcome** — repeating a word or returning to an earlier verse shows a gentle "إعادة — أحسنت التدبر" note, never an error
 - Completed verses appear below with a ✓; verses you jumped over are marked ↷
-- Tap **"⏹ إنهاء" (Stop)** whenever you're done — or just finish the passage and pause; the coach wraps up on its own
+- Tap **"⏹ إنهاء" (Stop)** whenever you're done — or just finish reciting the last verse of the picked passage and the coach stops listening on its own, a couple of seconds later, without waiting for you to tap anything
 
 **The summary shows:**
 - A score out of 100 (verses completed, word coverage, recognition confidence)
