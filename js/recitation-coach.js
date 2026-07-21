@@ -25,7 +25,7 @@
  *   {type:'started', ayah}
  *   {type:'verse-active', ayah}
  *   {type:'word-progress', ayah, matched:[i...], totalWords}
- *   {type:'verse-committed', ayah, missedWords:[i...]}
+ *   {type:'verse-committed', ayah, missedWords:[i...], uncertainWords:[i...]}
  *   {type:'verses-skipped', ayahs:[...]}   (provisional until finalize)
  *   {type:'repetition', ayah, count}
  *   {type:'off-track'}
@@ -156,6 +156,17 @@
     // an accepted, deliberate tradeoff: for this app, a missed skip is
     // worse than an occasional false "unverified" flag on a fast verse.
     minLexAdvancesForVerse: 2,
+    // A verse's own trailing words can be genuinely spoken but never
+    // confirmed by tilawa's own word_progress if the tracker advances to
+    // the next verse's discovery window before one more tracking_cycle
+    // would have caught them (field cases, build 2026-07-21f, Surah 21:
+    // ayah 82's last word, ayah 90's last two words — both clearly present
+    // in the raw decoded transcript, both dropped from missedWordIndices
+    // purely because of this timing gap). Genuinely indistinguishable from
+    // an actual omission using tilawa's data alone — see
+    // splitMissedWordIndices. Capped small (2): a LARGER trailing gap is
+    // real evidence of incompleteness, not just a confirmation lag.
+    trailingUncertainTolerance: 2,
   };
 
   class RecitationCoach {
@@ -307,17 +318,52 @@
      * the first ~9 words' worth of real audio before the coach's own
      * tracking took over; those words were very likely said, just never
      * individually observed, and got reported "missed" wholesale.
+     *
+     * Returns only the CONFIRMED half of the gap — see uncertainWordIndices
+     * below for the verse's own trailing words, which get a softer verdict.
      */
     missedWordIndices(ayah) {
+      return this.splitMissedWordIndices(ayah).missed;
+    }
+
+    /**
+     * A verse's own LAST word(s) can be genuinely spoken but never
+     * confirmed by tilawa's own word_progress, if the tracker advances to
+     * the next verse's discovery window before one more tracking_cycle
+     * would have caught them — see trailingUncertainTolerance above. This
+     * is only ever a TAIL phenomenon (the transition consuming the
+     * confirmation opportunity for whatever was still unconfirmed at that
+     * exact moment) — an earlier, non-trailing gap is unaffected and stays
+     * a confirmed miss exactly as before.
+     */
+    uncertainWordIndices(ayah) {
+      return this.splitMissedWordIndices(ayah).uncertain;
+    }
+
+    /** Shared computation behind missedWordIndices/uncertainWordIndices —
+     *  see their docs above for what each half means. */
+    splitMissedWordIndices(ayah) {
       const v = this.perVerse[ayah];
-      if (v.progress === 0 && v.matched.size === 0) return [];
+      if (v.progress === 0 && v.matched.size === 0) return { missed: [], uncertain: [] };
       const observedFrom = v.progress > 0 ? v.progress : Math.min(...v.matched);
-      const missed = [];
+      const gaps = [];
       for (let i = observedFrom; i < v.totalWords; i++) {
         if (i < v.optionalCount) continue; // Basmala prefix — never accused
-        if (!v.matched.has(i)) missed.push(i);
+        if (!v.matched.has(i)) gaps.push(i);
       }
-      return missed;
+      // The trailing contiguous run of gaps that reaches the verse's very
+      // last word (totalWords-1) is the ambiguous zone. A gap set that
+      // doesn't reach the true last word (the tail WAS confirmed) has no
+      // ambiguity at all — whatever's missing is a real internal gap.
+      const lastIdx = v.totalWords - 1;
+      let tailLen = 0;
+      for (let i = gaps.length - 1; i >= 0; i--) {
+        if (gaps[i] === lastIdx - tailLen) tailLen++;
+        else break;
+      }
+      if (tailLen > this.cfg.trailingUncertainTolerance) tailLen = 0; // too big to be just a lag
+      const splitAt = gaps.length - tailLen;
+      return { missed: gaps.slice(0, splitAt), uncertain: gaps.slice(splitAt) };
     }
 
     /**
@@ -804,6 +850,7 @@
         ayah: cur.ayah,
         unverified: cur.status === 'unverified',
         missedWords: cur.status === 'done' ? this.missedWordIndices(cur.ayah) : [],
+        uncertainWords: cur.status === 'done' ? this.uncertainWordIndices(cur.ayah) : [],
       });
 
       if (toAyah > this.cursor + 1) {
@@ -910,6 +957,7 @@
       const notReached = [];
       const unverified = [];
       const missedWords = {};
+      const uncertainWords = {};
       const substitutedWords = {};
       const repeats = {};
       let matchedTotal = 0;
@@ -920,7 +968,12 @@
         if (v.status === 'done') {
           done.push(a);
           // Misses = unreached tail ∪ alignment-confirmed missing words.
+          // Uncertain (the verse's own trailing words, ambiguous rather
+          // than confirmed-missing — see splitMissedWordIndices) is kept
+          // separate: never merged into missedWords, never scored against
+          // the reciter, surfaced softly to the user instead.
           const missedSet = new Set(this.missedWordIndices(a));
+          const uncertainSet = new Set(this.uncertainWordIndices(a));
           const subs = [];
           for (const idx of Object.keys(v.wordFlags)) {
             const flag = v.wordFlags[idx];
@@ -932,6 +985,11 @@
           }
           if (missedSet.size) {
             missedWords[a] = Array.from(missedSet).sort(function (x, y) {
+              return x - y;
+            });
+          }
+          if (uncertainSet.size) {
+            uncertainWords[a] = Array.from(uncertainSet).sort(function (x, y) {
               return x - y;
             });
           }
@@ -1006,6 +1064,7 @@
         versesUnverified: unverified,
         versesNotReached: notReached,
         missedWords: missedWords,
+        uncertainWords: uncertainWords,
         substitutedWords: substitutedWords,
         repeats: repeats,
         contentUnverified: contentUnverified,

@@ -80,7 +80,7 @@ CONFIG.TILAWA.MODEL_SOURCES[0] = CONFIG.API_BASE_URL + '/tilawa/model';
 
 // Recitation build stamp — logged at startup and shown in the debug panel so
 // a stale deploy is immediately recognizable. Bump on every recitation change.
-CONFIG.TILAWA.BUILD = '2026-07-21h';
+CONFIG.TILAWA.BUILD = '2026-07-21i';
 
 // Cache-bust the worker script: without this, `js/config.js` (small, fetched
 // fresh on most loads) can report the latest BUILD while the browser quietly

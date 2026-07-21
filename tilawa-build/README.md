@@ -346,6 +346,47 @@ before that point were never observed at all and are no longer accused; a
 genuine gap AFTER observation began is still real positive evidence and
 stays accused exactly as before.
 
+## A verse's own last word(s) can be said but never confirmed — a third "uncertain" verdict
+
+Field cases (build 2026-07-21f, Surah 21): ayah 82's last word ("حافظين")
+and ayah 90's last two words ("وكانوا لنا") were both clearly present in
+the raw decoded transcript — even reflected in a live `word_progress`
+match moments earlier for 82 — but both got reported "missed" in the final
+summary. Mechanism: tilawa's own `tracking_cycle` for the OUTGOING verse
+doesn't always get one more confirming cycle before the tracker advances
+into the next verse's discovery window (the two verses' audio lands in the
+same buffer), so the verse's own trailing word(s) never individually reach
+`matched_indices` even though they were genuinely spoken.
+
+This is a real precision/recall tension, not a simple bug: from the
+coach's information alone (`word_progress`'s `word_index`/`matched_indices`
+only), a genuine last-word omission and "said but tilawa's tracker didn't
+get a confirming cycle" are **indistinguishable** — both look like
+"progress stalls 1-2 words short, then the next verse commits." An
+existing test (`wp(1,[0,1,2])` → `vm(2)`) deliberately protected accusing
+a 1-word trailing gap for exactly this shape of evidence, so silently
+suppressing it would also forgive real last-word omissions elsewhere —
+directly against this app's standing priority that missing a real mistake
+is worse than a false flag.
+
+Resolution: rather than picking a side, `missedWordIndices` now splits into
+two verdicts (`splitMissedWordIndices`):
+- **`missed`** (confirmed) — unchanged algorithm, still a positively-evidenced
+  accusation.
+- **`uncertain`** — the verse's own TRAILING contiguous gap, only when it
+  reaches the verse's true last word index (so a gap that stops short of
+  the end, because the last word WAS separately confirmed, has no
+  ambiguity and stays a confirmed miss) and is small
+  (`trailingUncertainTolerance`, 2 words — a larger trailing gap is real
+  evidence of incompleteness, not just a confirmation lag).
+
+`uncertain` is never merged into `missedWords`, never scored against the
+reciter (word coverage/score are driven by `coveredCount`, untouched by
+this split), and surfaces softly in the UI as "words you possibly missed
+(unconfirmed)" — visually distinct from a confirmed accusation, honestly
+reporting the coach's actual certainty instead of forcing a binary
+yes/no verdict onto genuinely ambiguous evidence.
+
 ## The mic stops when the picked passage's last verse is done
 
 Field complaint (build 2026-07-21): picking an end verse and finishing it
