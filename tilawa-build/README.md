@@ -290,5 +290,27 @@ parameter defaults to `true`). A single volatile sighting no longer counts;
 the span needs to persist across tilawa's own stability window before its
 confidence is trusted as evidence for every verse inside it.
 
+## missedWordIndices only accuses from where observation actually began
+
+Field case (build 2026-07-21, Surah 21 ayah 97): the opening 9 words got
+reported "missed" even though the reciter very likely said them. What
+actually happened: pre-recitation audio (isti'adhah) briefly locked the
+tracker onto an out-of-range verse; while it was locked, the coach's own
+tracking hadn't started yet, so those first ~9 words' worth of real audio
+passed by unobserved. The wrong-track watchdog correctly reset the lock and
+the session started via transcript-alignment (`word_verdicts`) at word index
+9 — but `missedWordIndices` looped from `v.progress` (0, since a
+transcript-started verse never gets touched by tilawa's own
+`word_progress`) all the way to the end, treating "never observed" the same
+as "observed and absent."
+
+Fix: the loop now starts from `v.progress` when tilawa's own tracker
+established it (unchanged — that's a real high-water mark), but from the
+EARLIEST confirmed `word_verdicts` index when `v.progress` is still 0 (a
+verse whose coverage came entirely from transcript-alignment). Indices
+before that point were never observed at all and are no longer accused; a
+genuine gap AFTER observation began is still real positive evidence and
+stays accused exactly as before.
+
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.

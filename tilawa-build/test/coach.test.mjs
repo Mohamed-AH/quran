@@ -542,6 +542,39 @@ test("transcript-aligned words start the session with no tracker involvement", (
   );
 });
 
+test("field scenario: words spoken during a pre-recitation false lock are not accused, but a later real gap still is", () => {
+  // Reproduces build-2026-07-21 (Surah 21 ayah 97): a pre-recitation false
+  // lock on an out-of-range verse consumed the real audio for this verse's
+  // first several words before the coach's own tracking (transcript-start,
+  // never touching v.progress) took over mid-verse — those early words were
+  // very likely said, just never observed, and must not be reported missed.
+  // A genuine gap AFTER observation began (word 6, never confirmed even
+  // though 3-5 and 7-8 were) is still real positive evidence and stays
+  // accused.
+  const coach = makeCoach();
+  const fx = coach.handleEvent(
+    wv([
+      { ayah: 7, index: 3, status: "matched", expected: "w" },
+      { ayah: 7, index: 4, status: "matched", expected: "w" },
+      { ayah: 7, index: 5, status: "matched", expected: "w" },
+    ])
+  );
+  assert.ok(types(fx).includes("started"), "transcript-start opens the session mid-verse");
+  assert.equal(coach.cursor, 7);
+  assert.equal(coach.perVerse[7].progress, 0, "tilawa's own tracker never touched this verse");
+  coach.handleEvent(
+    wv([
+      { ayah: 7, index: 7, status: "matched", expected: "w" },
+      { ayah: 7, index: 8, status: "matched", expected: "w" },
+    ])
+  );
+  assert.deepEqual(
+    coach.missedWordIndices(7),
+    [6],
+    "words 0-2 (before observation began) are not accused; word 6 (a real gap) still is"
+  );
+});
+
 test("transcript-aligned words in the next verse advance the cursor", () => {
   const coach = makeCoach();
   coach.handleEvent(vm(1));

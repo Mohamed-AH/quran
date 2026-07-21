@@ -275,12 +275,26 @@
      * would misrepresent an absence of data as an accusation; field-tested
      * case (build 2026-07-20e): a session that recited verse 1:1 correctly
      * still had all 4 of its words reported "missed" this way.
+     *
+     * v.progress is tilawa's own high-water mark, so the loop below
+     * correctly starts there — indices before it are implicitly covered.
+     * But a verse can accumulate ALL its coverage via word_verdicts /
+     * transcript-alignment alone (progress never touched by tilawa's own
+     * word_progress at all — e.g. the session's opening verse, started via
+     * transcript-start rather than a tracker commit). There, progress stays
+     * 0 even though real observation only began at the first confirmed
+     * index, not at word 0 — field case (build 2026-07-21, Surah 21 ayah
+     * 97): a pre-recitation false lock on an out-of-range verse consumed
+     * the first ~9 words' worth of real audio before the coach's own
+     * tracking took over; those words were very likely said, just never
+     * individually observed, and got reported "missed" wholesale.
      */
     missedWordIndices(ayah) {
       const v = this.perVerse[ayah];
       if (v.progress === 0 && v.matched.size === 0) return [];
+      const observedFrom = v.progress > 0 ? v.progress : Math.min(...v.matched);
       const missed = [];
-      for (let i = v.progress; i < v.totalWords; i++) {
+      for (let i = observedFrom; i < v.totalWords; i++) {
         if (i < v.optionalCount) continue; // Basmala prefix — never accused
         if (!v.matched.has(i)) missed.push(i);
       }
