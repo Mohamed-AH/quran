@@ -133,6 +133,16 @@
     // correct recitation), so only a sustained absence across the whole
     // session is trustworthy negative evidence.
     minFallbackForJudgment: 6,
+    // Per-verse counterpart: catches a SINGLE fabricated verse sandwiched
+    // inside an otherwise well-verified session (session-wide totals never
+    // cross minFallbackForJudgment there, since the rest of the session has
+    // plenty of real matches). Deliberately imprecise — the only two real
+    // data points available sit right on either side of this number (2
+    // fallback cycles / genuinely correct, Surah 87 ayah 13; 3 fallback
+    // cycles / genuinely fabricated, Surah 20 ayah 91) — but shipped anyway:
+    // for this app, a missed skip is worse than an occasional false
+    // "unverified" flag on a fast, short verse.
+    minFallbackForVerseJudgment: 3,
   };
 
   class RecitationCoach {
@@ -203,7 +213,11 @@
           wordFlags: {},
           repeats: 0,
           sawCommit: false,
-          status: 'pending', // pending | active | done | skipped
+          status: 'pending', // pending | active | done | skipped | unverified
+          // Per-verse content-verification counters — see _onLexCheck /
+          // _looksUnverified.
+          lexAdvances: 0,
+          fallbackAdvances: 0,
         };
       }
     }
@@ -385,12 +399,31 @@
      */
     _onLexCheck(msg) {
       if (!this.inRange(msg.surah, msg.ayah)) return [];
+      const v = this.perVerse[msg.ayah];
       if (msg.lexical) {
         this.lexAdvances++;
+        v.lexAdvances++;
       } else {
         this.fallbackAdvances++;
+        v.fallbackAdvances++;
       }
       return [];
+    }
+
+    /**
+     * Per-verse counterpart to the session-wide content-verification gate
+     * (minFallbackForJudgment) — see minFallbackForVerseJudgment above for
+     * the field motivation and the two data points the threshold sits
+     * between. Checked at the moment a verse would otherwise be marked
+     * 'done' (_commitAndAdvance, _finalize) so it can be marked 'unverified'
+     * instead.
+     */
+    _looksUnverified(ayah) {
+      const v = this.perVerse[ayah];
+      return (
+        v.fallbackAdvances >= this.cfg.minFallbackForVerseJudgment &&
+        v.lexAdvances === 0
+      );
     }
 
     _onWordVerdicts(msg) {
@@ -672,11 +705,12 @@
     _commitAndAdvance(toAyah) {
       const effects = [];
       const cur = this.perVerse[this.cursor];
-      cur.status = 'done';
+      cur.status = this._looksUnverified(this.cursor) ? 'unverified' : 'done';
       effects.push({
         type: 'verse-committed',
         ayah: cur.ayah,
-        missedWords: this.missedWordIndices(cur.ayah),
+        unverified: cur.status === 'unverified',
+        missedWords: cur.status === 'done' ? this.missedWordIndices(cur.ayah) : [],
       });
 
       if (toAyah > this.cursor + 1) {
@@ -746,7 +780,7 @@
           (v.sawCommit && v.status !== 'pending') ||
           this.coverage(a) >= this.cfg.reconcileCoverage;
         if (recited) {
-          v.status = 'done';
+          v.status = this._looksUnverified(a) ? 'unverified' : 'done';
           lastRecited = a;
         }
       }
@@ -754,16 +788,19 @@
       if (
         this.cursor !== null &&
         this.perVerse[this.cursor].status !== 'done' &&
+        this.perVerse[this.cursor].status !== 'unverified' &&
         this.coverage(this.cursor) >= this.cfg.doneCoverage
       ) {
-        this.perVerse[this.cursor].status = 'done';
+        this.perVerse[this.cursor].status = this._looksUnverified(this.cursor)
+          ? 'unverified'
+          : 'done';
         if (lastRecited === null || this.cursor > lastRecited) {
           lastRecited = this.cursor;
         }
       }
       for (let a = this.ayahStart; a <= this.ayahEnd; a++) {
         const v = this.perVerse[a];
-        if (v.status !== 'done') {
+        if (v.status !== 'done' && v.status !== 'unverified') {
           v.status = lastRecited !== null && a < lastRecited ? 'skipped' : 'pending';
         }
       }
@@ -778,6 +815,7 @@
       const done = [];
       const skipped = [];
       const notReached = [];
+      const unverified = [];
       const missedWords = {};
       const substitutedWords = {};
       const repeats = {};
@@ -811,6 +849,12 @@
           }
           matchedTotal += this.coveredCount(a);
           wordTotal += this._scoredWordTotal(a);
+        } else if (v.status === 'unverified') {
+          // Tracked to apparent completion, but with no real lexical
+          // corroboration anywhere — counts against the reciter like a
+          // skip (a "go check this verse again" flag), never as done.
+          unverified.push(a);
+          wordTotal += v.totalWords;
         } else if (v.status === 'skipped') {
           skipped.push(a);
           wordTotal += v.totalWords;
@@ -820,7 +864,7 @@
         if (v.repeats > 0) repeats[a] = v.repeats;
       }
 
-      const expectedCount = done.length + skipped.length;
+      const expectedCount = done.length + skipped.length + unverified.length;
       const verseRatio = expectedCount ? done.length / expectedCount : 0;
       const wordRatio = wordTotal ? matchedTotal / wordTotal : 0;
       const avgConfidence = this.confidences.length
@@ -866,6 +910,7 @@
         started: started,
         versesDone: done,
         versesSkipped: skipped,
+        versesUnverified: unverified,
         versesNotReached: notReached,
         missedWords: missedWords,
         substitutedWords: substitutedWords,

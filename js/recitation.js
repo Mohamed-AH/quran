@@ -61,6 +61,7 @@ const recitationUI = {
       verseOf: (n, m) => `آية ${n} من ${m}`,
       chipDone: 'تمت',
       chipSkipped: 'تخطيتها',
+      chipUnverified: 'تعذّر التحقق',
       chipRepeated: (n) => `تكرار ×${n}`,
       micDenied: 'لم أستطع الوصول للميكروفون. اسمح بالوصول من إعدادات المتصفح ثم أعد المحاولة',
       micMissing: 'لم يتم العثور على ميكروفون',
@@ -71,12 +72,15 @@ const recitationUI = {
       scoreLabel: 'النتيجة',
       statDone: 'آيات مُتلوّة',
       statSkipped: 'آيات مُتخطّاة',
+      statUnverified: 'آيات تعذّر التحقق منها',
       statMissed: 'كلمات فائتة',
       statRepeats: 'إعادات',
       missedTitle: 'كلمات فاتتك (بالأحمر)',
       substitutedTitle: 'كلمات مُبدلة',
       heardInstead: (heard, expected) => `سمعت «${heard}» بدل «${expected}»`,
       skippedTitle: 'آيات تخطيتها',
+      unverifiedTitle: 'آيات تعذّر التحقق منها — راجعها',
+      unverifiedHint: 'تابع المستمع تتبّع الوقت حتى النهاية، لكنه لم يسمع كلمات هذه الآية فعلياً — قد تكون تخطّيتها',
       notReachedNote: (n) => `توقفت قبل ${n} آية من نهاية المقطع`,
       repeatsNote: 'الإعادة للتدبر ليست خطأ — أحسنت',
       noMistakes: 'ما شاء الله — تلاوة متقنة بلا أخطاء! 🌟',
@@ -114,6 +118,7 @@ const recitationUI = {
       verseOf: (n, m) => `Ayah ${n} of ${m}`,
       chipDone: 'done',
       chipSkipped: 'skipped',
+      chipUnverified: 'unverified',
       chipRepeated: (n) => `repeated ×${n}`,
       micDenied: 'Microphone access was blocked. Allow it in your browser settings and try again',
       micMissing: 'No microphone found',
@@ -124,12 +129,15 @@ const recitationUI = {
       scoreLabel: 'Score',
       statDone: 'Verses recited',
       statSkipped: 'Verses skipped',
+      statUnverified: 'Verses unverified',
       statMissed: 'Missed words',
       statRepeats: 'Repetitions',
       missedTitle: 'Words you missed (in red)',
       substitutedTitle: 'Substituted words',
       heardInstead: (heard, expected) => `heard “${heard}” instead of “${expected}”`,
       skippedTitle: 'Verses you skipped',
+      unverifiedTitle: 'Verses I could not verify — please double-check these',
+      unverifiedHint: 'The listener tracked through to the end, but never actually heard this verse’s words — you may have skipped it',
       notReachedNote: (n) => `You stopped ${n} ayah(s) before the end of the passage`,
       repeatsNote: 'Repetition for reflection is never a mistake — well done',
       noMistakes: 'Masha’Allah — a flawless recitation! 🌟',
@@ -914,7 +922,9 @@ const recitationUI = {
       case 'verse-active':
         return `now on ayah ${fx.ayah}`;
       case 'verse-committed':
-        return `committed ayah ${fx.ayah}${fx.missedWords && fx.missedWords.length ? ` (missed words: [${fx.missedWords}])` : ''}`;
+        return fx.unverified
+          ? `UNVERIFIED ayah ${fx.ayah} (tracked, but no lexical evidence)`
+          : `committed ayah ${fx.ayah}${fx.missedWords && fx.missedWords.length ? ` (missed words: [${fx.missedWords}])` : ''}`;
       case 'verses-skipped':
         return `SKIPPED ayahs [${fx.ayahs}]`;
       case 'repetition':
@@ -924,7 +934,7 @@ const recitationUI = {
       case 'checkpoint':
         return 'checkpoint (silence flush mid-session)';
       case 'completed':
-        return `COMPLETED — score=${fx.summary.score} done=[${fx.summary.versesDone}] skipped=[${fx.summary.versesSkipped}] notReached=[${fx.summary.versesNotReached}]`;
+        return `COMPLETED — score=${fx.summary.score} done=[${fx.summary.versesDone}] skipped=[${fx.summary.versesSkipped}] unverified=[${fx.summary.versesUnverified}] notReached=[${fx.summary.versesNotReached}]`;
       default:
         return fx.type;
     }
@@ -995,13 +1005,15 @@ const recitationUI = {
         case 'completed':
           this._breadcrumb(
             `session ended — score ${fx.summary.score}, done ${fx.summary.versesDone ? fx.summary.versesDone.length : 0}, ` +
-              `skipped ${fx.summary.versesSkipped ? fx.summary.versesSkipped.length : 0}`
+              `skipped ${fx.summary.versesSkipped ? fx.summary.versesSkipped.length : 0}, ` +
+              `unverified ${fx.summary.versesUnverified ? fx.summary.versesUnverified.length : 0}`
           );
           if (typeof recitationDebug !== 'undefined') {
             recitationDebug.set(
               'result',
               `score=${fx.summary.score} done=${JSON.stringify(fx.summary.versesDone)} ` +
-                `skipped=${JSON.stringify(fx.summary.versesSkipped)} notReached=${JSON.stringify(fx.summary.versesNotReached)}`
+                `skipped=${JSON.stringify(fx.summary.versesSkipped)} unverified=${JSON.stringify(fx.summary.versesUnverified)} ` +
+                `notReached=${JSON.stringify(fx.summary.versesNotReached)}`
             );
           }
           this._session.ended = true;
@@ -1090,6 +1102,7 @@ const recitationUI = {
       if (st.status === 'pending') continue;
       let chip = '';
       if (st.status === 'done') chip = `<span class="recite-chip chip-done">✓ ${t.chipDone}</span>`;
+      else if (st.status === 'unverified') chip = `<span class="recite-chip chip-unverified">⚠ ${t.chipUnverified}</span>`;
       else if (st.status === 'skipped') chip = `<span class="recite-chip chip-skipped">↷ ${t.chipSkipped}</span>`;
       if (st.repeats > 0) chip += ` <span class="recite-chip chip-repeat">↻ ${t.chipRepeated(this._num(st.repeats))}</span>`;
       if (!chip) continue;
@@ -1217,6 +1230,17 @@ const recitationUI = {
         .join('');
       mistakes += `<h4 class="recite-section-title">${t.skippedTitle}</h4>${rows}`;
     }
+    if (sum.versesUnverified && sum.versesUnverified.length && versesByAyah) {
+      const rows = sum.versesUnverified
+        .map((ayah) => {
+          const verse = versesByAyah[ayah];
+          return verse
+            ? `<div class="recite-mistake-verse"><span class="recite-verse-num">${this._num(ayah)}</span><div class="verse-text-sm" dir="rtl">${verse.text}</div></div>`
+            : '';
+        })
+        .join('');
+      mistakes += `<h4 class="recite-section-title">${t.unverifiedTitle}</h4>${rows}<p class="recite-note">${t.unverifiedHint}</p>`;
+    }
     if (!mistakes) {
       mistakes = `<p class="recite-no-mistakes">${t.noMistakes}</p>`;
     }
@@ -1244,6 +1268,7 @@ const recitationUI = {
         </div>
         <div class="stat-card"><div class="stat-value">${this._num(sum.versesDone.length)}</div><div class="stat-label">${t.statDone}</div></div>
         <div class="stat-card"><div class="stat-value">${this._num(sum.versesSkipped.length)}</div><div class="stat-label">${t.statSkipped}</div></div>
+        ${sum.versesUnverified && sum.versesUnverified.length ? `<div class="stat-card"><div class="stat-value">${this._num(sum.versesUnverified.length)}</div><div class="stat-label">${t.statUnverified}</div></div>` : ''}
         <div class="stat-card"><div class="stat-value">${this._num(missedCount)}</div><div class="stat-label">${t.statMissed}</div></div>
         <div class="stat-card"><div class="stat-value">${this._num(repeatCount)}</div><div class="stat-label">${t.statRepeats}</div></div>
       </div>

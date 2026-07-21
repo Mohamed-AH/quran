@@ -675,6 +675,7 @@
         }
         .chip-done { background: rgba(30, 122, 84, 0.35); color: #9fd6b8; }
         .chip-skipped { background: rgba(212, 160, 23, 0.25); color: var(--gold-light); }
+        .chip-unverified { background: rgba(196, 90, 40, 0.3); color: #f0b088; }
         .chip-repeat { background: rgba(139, 168, 136, 0.2); color: var(--sage); }
 
         .recite-summary-grid {
