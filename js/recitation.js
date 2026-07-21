@@ -374,8 +374,23 @@ const recitationUI = {
 
   _onWorkerMessage(msg) {
     switch (msg.type) {
-      case 'ready':
+      case 'ready': {
         this._breadcrumb(`engine ready (ONNX init ${Date.now() - (this._engineInitStartedAt || Date.now())}ms)`);
+        // Detect a stale-cached worker bundle: the worker echoes back the
+        // `?v=` it was actually loaded with, which must match the CURRENT
+        // page's build stamp — a mismatch (or a missing echo, from a worker
+        // old enough to predate this check) means tracker-side fixes are
+        // silently not running even though the page reports the latest build.
+        const expectedBuild = CONFIG.TILAWA.BUILD;
+        this._workerBuild = msg.build || null;
+        if (this._workerBuild !== expectedBuild) {
+          console.error(
+            `[recite] STALE WORKER BUNDLE: page build ${expectedBuild}, worker reports ${this._workerBuild || '(none — pre-dates version echo)'}. Hard-refresh to pick up the latest fixes.`
+          );
+        }
+        if (typeof recitationDebug !== 'undefined') {
+          recitationDebug.set('workerBuild', this._workerBuild || '(none — stale worker)');
+        }
         if (CONFIG.TILAWA.DEBUG && this._worker) {
           this._worker.postMessage({ type: 'setDebug', enabled: true });
         }
@@ -385,6 +400,7 @@ const recitationUI = {
           this._engineReject = null;
         }
         break;
+      }
       case 'event':
         this._onTilawaEvent(msg.event);
         break;

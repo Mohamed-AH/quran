@@ -346,3 +346,43 @@ cut off mid-sound), rather than leaving the mic open indefinitely.
 
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.
+
+## A stale cached worker bundle can silently disable every fix in this file
+
+Field case (build 2026-07-21f, Surah 99): the coach reported a clean
+`99/100, contentUnverified:false` on a session where the raw diagnostics
+show **63 consecutive `tracking_cycle` events, every one with
+`word_matches:0`** — a too-quiet mic decoding to garbage the entire time,
+zero real lexical alignment ever occurring. Replaying the equivalent
+`lex_check` stream directly against `RecitationCoach` in isolation produces
+the *correct* result (`contentUnverified:true, score:0`) — the gate logic
+itself is sound. The only way the real session diverged is if the
+`lex_check` events never reached the coach at all, which means the browser
+was running a `js/vendor/tilawa-worker.js` bundle from *before* that wiring
+was added (see "Content-verification gate" above), despite the page's own
+`CONFIG.TILAWA.BUILD` reporting the current stamp.
+
+Root cause: `js/config.js` pointed `new Worker(...)` at a bare,
+unversioned `js/vendor/tilawa-worker.js`. The static site (Render, `env:
+static`, see `render.yaml`) sets no explicit `Cache-Control` for `/js/*`.
+Small files like `config.js` tend to revalidate quickly; the large worker
+bundle can sit cached well past a deploy, so a returning user's browser
+keeps running old tracker code — including old *or missing* safety gates —
+while every other signal in the app insists it's on the latest build. This
+plausibly explains several other "already-fixed bug recurred" field reports
+across the same build stamp: the fix genuinely shipped, it just never
+reached that browser.
+
+Fix, two parts:
+- `js/config.js` appends `?v=<BUILD>` to `WORKER_PATH` once `BUILD` is set,
+  so every build bump forces a fresh fetch of the worker script regardless
+  of whatever caching layer sits in front of it.
+- The worker reads that same `?v=` back off `self.location.search` and
+  echoes it in its `ready` message (`{type:"ready", build}`).
+  `js/recitation.js`'s `ready` handler compares it against
+  `CONFIG.TILAWA.BUILD` and logs `STALE WORKER BUNDLE` to the console (plus
+  a `workerBuild` field in the debug panel and report) on any mismatch —
+  including a worker old enough to have no `build` field at all. This is
+  the piece that was actually missing before: without an echo, a stale
+  worker is completely invisible from the page's own reporting, which is
+  exactly what made this bug take 8 field logs to catch.

@@ -171,6 +171,13 @@ const recitationDebug = {
     return JSON.stringify(
       {
         build: CONFIG.TILAWA.BUILD,
+        // The worker's own echoed build stamp (see js/recitation.js 'ready'
+        // handler) — must match `build` above. A mismatch, or "(none —
+        // stale worker)", means the browser ran an OLD cached
+        // js/vendor/tilawa-worker.js despite the page reporting the latest
+        // build; every tracker-side fix since that cached version is silently
+        // not running. See tilawa-build/README.md.
+        workerBuild: this._live.workerBuild || null,
         appVersion: CONFIG.VERSION,
         when: new Date().toISOString(),
         userAgent: navigator.userAgent,
