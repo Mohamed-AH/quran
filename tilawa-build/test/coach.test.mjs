@@ -445,6 +445,46 @@ test("finishing the last verse auto-completes on the silence flush", () => {
   assert.deepEqual(fx[0].summary.versesDone, [6, 7]);
 });
 
+test("passage-complete fires as soon as the last verse is covered, not just on the silence flush", () => {
+  // Field complaint: picking an end verse doesn't stop the mic there —
+  // nothing signals "done" until tilawa's own silence timeout (several
+  // seconds) or a manual stop. reciteVerse() commits via vm() then fully
+  // covers via wp(ayah, allWords(ayah)) — the word_progress reaching full
+  // coverage is what fires passage-complete (the transition vm(7) itself,
+  // A===cursor+1, doesn't — only a verse_match for the SAME cursor verse or
+  // word_progress checks it, mirroring exactly what _finalize() already
+  // uses to decide the last verse is done).
+  const coach = makeCoach({ ayahStart: 6, ayahEnd: 7 });
+  reciteVerse(coach, 6);
+  const fx = reciteVerse(coach, 7);
+  assert.ok(types(fx).includes("passage-complete"));
+  const effect = fx.find((e) => e.type === "passage-complete");
+  assert.equal(effect.ayah, 7);
+});
+
+test("passage-complete does not fire before the last verse, and fires only once", () => {
+  const coach = makeCoach({ ayahStart: 6, ayahEnd: 7 });
+  const early = reciteVerse(coach, 6);
+  assert.ok(!types(early).includes("passage-complete"), "verse 6 is not the last verse");
+  const first = reciteVerse(coach, 7);
+  assert.ok(types(first).includes("passage-complete"));
+  // A duplicate verse_match for the same (already-committed) last verse
+  // must not refire it.
+  const again = coach.handleEvent(vm(7));
+  assert.ok(!types(again).includes("passage-complete"));
+});
+
+test("passage-complete also fires from a plain verse_match re-confirming the current last verse", () => {
+  const coach = makeCoach({ ayahStart: 7, ayahEnd: 7 });
+  coach.handleEvent(vm(7));
+  coach.handleEvent(wp(7, allWords(7))); // full coverage already fires it once
+  const coach2 = makeCoach({ ayahStart: 7, ayahEnd: 7 });
+  coach2.handleEvent(vm(7));
+  // A second verse_match for the SAME already-sawCommit cursor verse.
+  const fx = coach2.handleEvent(vm(7));
+  assert.ok(types(fx).includes("passage-complete"));
+});
+
 test("finalize() is a safe idempotent fallback", () => {
   const coach = makeCoach();
   reciteVerse(coach, 1);
@@ -891,10 +931,12 @@ test('field scenario: a single verse fabricated on fallback alone is flagged unv
   // must catch the specific fabricated verse.
   const coach = makeCoach({ ayahEnd: 3 });
   coach.handleEvent(lc(1, 1, true)); // verse 1: genuinely verified
+  coach.handleEvent(lc(1, 1, true));
   coach.handleEvent(lc(1, 2, false)); // verse 2: fabricated, like ayah 91
   coach.handleEvent(lc(1, 2, false));
   coach.handleEvent(lc(1, 2, false));
   coach.handleEvent(lc(1, 3, true)); // verse 3: genuinely verified
+  coach.handleEvent(lc(1, 3, true));
   for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
   coach.requestStop();
   const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
@@ -913,8 +955,10 @@ test('field scenario: a verse skipped via a single fallback-only cycle right aft
   // Judgment was lowered from 3 to 1 specifically because of this case.
   const coach = makeCoach({ ayahEnd: 3 });
   coach.handleEvent(lc(1, 1, true)); // verse 1: genuinely verified
+  coach.handleEvent(lc(1, 1, true));
   coach.handleEvent(lc(1, 2, false)); // verse 2: fabricated on ONE cycle
   coach.handleEvent(lc(1, 3, true)); // verse 3: genuinely verified
+  coach.handleEvent(lc(1, 3, true));
   for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
   coach.requestStop();
   const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
@@ -922,15 +966,40 @@ test('field scenario: a verse skipped via a single fallback-only cycle right aft
   assert.ok(!s.versesDone.includes(2));
 });
 
-test('a verse with at least one real lexical match is never flagged, no matter how many fallback cycles it also had', () => {
+test('a verse with 2+ real lexical matches is never flagged, no matter how many fallback cycles it also had', () => {
   const coach = makeCoach({ ayahEnd: 3 });
-  coach.handleEvent(lc(1, 2, true)); // one real lexical hit is enough
+  coach.handleEvent(lc(1, 2, true));
+  coach.handleEvent(lc(1, 2, true)); // 2 real lexical hits clears the bar
   for (let i = 0; i < 5; i++) coach.handleEvent(lc(1, 2, false));
   for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
   coach.requestStop();
   const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
   assert.deepEqual(s.versesUnverified, []);
   assert.ok(s.versesDone.includes(2));
+});
+
+test('field scenario: a single COINCIDENTAL lexical match from a mislabeled neighboring verse is still caught', () => {
+  // Reproduces build-2026-07-21 (Surah 21 / Al-Anbiya, ayah 110): ayah 110
+  // was never recited — the transcript shows ayah 109's tail flowing
+  // directly into ayah 111's real content — but tilawa's own "live span
+  // collapsed to first ayah" commit mislabeled ayah 111's audio as ayah
+  // 110's tracking window, and ONE of ayah 111's words happened to
+  // resemble one of ayah 110's closely enough to register as a genuine
+  // (non-fallback) word_matches hit. Zero fallback cycles, exactly one
+  // real lexical cycle — below minLexAdvancesForVerse (2), so still
+  // flagged even though the session-wide gate and the (former) "any real
+  // match is enough" per-verse bar would both have missed it.
+  const coach = makeCoach({ ayahEnd: 3 });
+  coach.handleEvent(lc(1, 1, true));
+  coach.handleEvent(lc(1, 1, true));
+  coach.handleEvent(lc(1, 2, true)); // the one coincidental match — no fallback at all
+  coach.handleEvent(lc(1, 3, true));
+  coach.handleEvent(lc(1, 3, true));
+  for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
+  assert.deepEqual(s.versesUnverified, [2]);
+  assert.ok(!s.versesDone.includes(2));
 });
 
 test('a verse rescued via spanEvidence (no tracking_cycle data at all) is unaffected by the per-verse gate', () => {

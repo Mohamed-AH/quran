@@ -133,21 +133,29 @@
     // correct recitation), so only a sustained absence across the whole
     // session is trustworthy negative evidence.
     minFallbackForJudgment: 6,
-    // Per-verse counterpart: catches a SINGLE fabricated verse sandwiched
-    // inside an otherwise well-verified session (session-wide totals never
-    // cross minFallbackForJudgment there, since the rest of the session has
-    // plenty of real matches). Originally 3, lowered to 1 after a real skip
-    // (Surah 21 ayah 99) completed via exactly ONE fallback cycle right
-    // after a discovery-triggered commit — too fast to ever reach 3.
-    // Verified empirically before lowering: the full real-ONNX e2e corpus
-    // (An-Naas, Al-Falaq, Fatiha fragments, freestyle) shows ZERO verses
-    // ever completing on fallback alone with zero lexical matches at
-    // threshold 1 — not a single false positive found. A hand-traced field
-    // case (Surah 87 ayah 13, 2 fallback cycles, genuinely correct) WILL
-    // now get flagged too — an accepted, deliberate tradeoff: for this
-    // app, a missed skip is worse than an occasional false "unverified"
-    // flag on a fast, short verse.
-    minFallbackForVerseJudgment: 1,
+    // Per-verse counterpart: catches a fabricated verse sandwiched inside an
+    // otherwise well-verified session (session-wide totals never cross
+    // minFallbackForJudgment there, since the rest of the session has
+    // plenty of real matches). A verse needs at least this many DISTINCT
+    // real-lexical-match cycles before its completion is trusted; below
+    // that (with SOME tracking activity — fallback or lexical — having
+    // happened at all) it's flagged unverified instead of done. Started at
+    // "any real match is enough" (1), but a single real match can itself be
+    // a coincidental leak from a NEIGHBORING verse's content getting
+    // mislabeled — field case (Surah 21 ayah 110): tilawa's own "live span
+    // collapsed to first ayah" commit mislabeled ayah 111's real audio as
+    // ayah 110's tracking window, and one of 111's words happened to
+    // resemble one of 110's closely enough to register as a genuine
+    // word_matches hit — ayah 110 itself was never recited at all. Raised
+    // to 2 after that: a single coincidental match is far more plausible
+    // than two. Verified empirically before raising: the full real-ONNX
+    // e2e corpus (An-Naas, Al-Falaq, Fatiha fragments, freestyle) shows
+    // zero false positives at threshold 2 either. A hand-traced field case
+    // (Surah 87 ayah 13, 2 fallback cycles, genuinely correct, zero real
+    // lexical matches) already got flagged at threshold 1 and still does —
+    // an accepted, deliberate tradeoff: for this app, a missed skip is
+    // worse than an occasional false "unverified" flag on a fast verse.
+    minLexAdvancesForVerse: 2,
   };
 
   class RecitationCoach {
@@ -177,6 +185,17 @@
       this.pendingJump = null; // {ayah} — forward-jump hysteresis
       this.pendingBack = null; // {ayah} — backward-repetition hysteresis
       this.confidences = [];
+      // Fires 'passage-complete' once, the first time the LAST verse in the
+      // picked range meets the same done-criteria _finalize() uses
+      // (sawCommit or coverage>=doneCoverage) — see _checkPassageComplete.
+      // Only the last verse needs this: every earlier verse already gets a
+      // live 'verse-committed' effect when the cursor advances past it, but
+      // the last verse never advances anywhere, so nothing else ever
+      // signals "the recitation the user asked for is actually finished"
+      // before the tracker's own silence-timeout (several seconds) or a
+      // manual stop — field complaint: picking an end verse and reciting
+      // it doesn't stop the mic there, recording "just continues".
+      this.passageCompleteEmitted = false;
       // Session-wide content-verification counters — see _onLexCheck.
       this.lexAdvances = 0;
       this.fallbackAdvances = 0;
@@ -447,18 +466,18 @@
 
     /**
      * Per-verse counterpart to the session-wide content-verification gate
-     * (minFallbackForJudgment) — see minFallbackForVerseJudgment above for
-     * the field motivation and the two data points the threshold sits
-     * between. Checked at the moment a verse would otherwise be marked
-     * 'done' (_commitAndAdvance, _finalize) so it can be marked 'unverified'
-     * instead.
+     * (minFallbackForJudgment) — see minLexAdvancesForVerse above for the
+     * field motivation. Checked at the moment a verse would otherwise be
+     * marked 'done' (_commitAndAdvance, _finalize) so it can be marked
+     * 'unverified' instead. Only applies once SOME tracking activity
+     * happened for this verse (fallback or lexical) — a verse rescued via
+     * spanEvidence with zero tracking_cycle data at all is a different,
+     * already-corroborated situation and stays untouched here.
      */
     _looksUnverified(ayah) {
       const v = this.perVerse[ayah];
-      return (
-        v.fallbackAdvances >= this.cfg.minFallbackForVerseJudgment &&
-        v.lexAdvances === 0
-      );
+      const tracked = v.fallbackAdvances + v.lexAdvances > 0;
+      return tracked && v.lexAdvances < this.cfg.minLexAdvancesForVerse;
     }
 
     _onWordVerdicts(msg) {
@@ -589,6 +608,7 @@
         cur.sawCommit = true;
         this.pendingJump = null;
         this.pendingBack = null;
+        effects.push(...this._checkPassageComplete());
         return effects;
       }
 
@@ -678,8 +698,25 @@
           });
         }
         this.offTrackStrikes = 0;
+        effects.push(...this._checkPassageComplete());
       }
       return effects;
+    }
+
+    /**
+     * Fires 'passage-complete' once, as soon as the LAST verse in the
+     * picked range meets the same done-criteria _finalize() uses. Every
+     * earlier verse gets a live signal when the cursor advances past it
+     * (verse-committed); the last verse never advances anywhere, so without
+     * this nothing tells the UI the recitation is actually finished until
+     * tilawa's own silence timeout (several seconds) or a manual stop.
+     */
+    _checkPassageComplete() {
+      if (this.passageCompleteEmitted || this.cursor !== this.ayahEnd) return [];
+      const v = this.perVerse[this.ayahEnd];
+      if (!v.sawCommit && this.coverage(this.ayahEnd) < this.cfg.doneCoverage) return [];
+      this.passageCompleteEmitted = true;
+      return [{ type: 'passage-complete', ayah: this.ayahEnd }];
     }
 
     _onFinalSequence(msg) {

@@ -241,29 +241,41 @@ the session had real lexical matches, so the session total never crossed
 `minFallbackForJudgment`.
 
 `RecitationCoach._looksUnverified(ayah)` adds the same check per-verse:
-`fallbackAdvances[ayah] >= minFallbackForVerseJudgment` and
-`lexAdvances[ayah] === 0`. Checked at the moment a verse would otherwise be
-marked `done` (`_commitAndAdvance`, `_finalize`); if it fires, the verse is
-marked `unverified` instead — excluded from `versesDone`, counted against
-`versesUnverified` (reported and rendered separately in the UI, distinct
-from `versesSkipped` since the verse WAS tracked, just never lexically
-confirmed), and contributes to the verse-ratio denominator like a skip.
+some tracking activity happened for the verse at all
+(`fallbackAdvances[ayah] + lexAdvances[ayah] > 0`) but
+`lexAdvances[ayah] < minLexAdvancesForVerse`. Checked at the moment a verse
+would otherwise be marked `done` (`_commitAndAdvance`, `_finalize`); if it
+fires, the verse is marked `unverified` instead — excluded from
+`versesDone`, counted against `versesUnverified` (reported and rendered
+separately in the UI, distinct from `versesSkipped` since the verse WAS
+tracked, just never lexically confirmed), and contributes to the
+verse-ratio denominator like a skip.
 
-**The threshold started as a guess (3) and was lowered to 1** after a third
-field case (build 2026-07-21, Surah 21 / Al-Anbiya, ayah 99): ayah 98's
-content flowed directly into ayah 100's with zero trace of 99 anywhere, but
-99 completed via a normal 98→99 sequential advance (no gap, so
-spanEvidence/jump-hysteresis never even looked at it) on exactly ONE
-fallback cycle — below the original threshold of 3. Before lowering it, the
-full real-ONNX e2e corpus (An-Naas, Al-Falaq, Fatiha fragments, freestyle)
-was re-run at threshold 1: zero verses ever completed on fallback alone with
-no lexical match, on any clean recitation — a much stronger empirical result
-than the original guess had. A hand-traced field case (Surah 87 ayah 13, 2
-fallback cycles, genuinely correct) will now also get flagged — an accepted,
-deliberate tradeoff on explicit product direction: this app's entire purpose
-is helping reciters catch a skipped verse before reciting to a real teacher,
-so a missed skip is a worse failure than an occasional false "unverified"
-flag on a fast, short verse.
+**The threshold moved twice, each time on real field evidence.** Started as
+a guess (3 fallback-only cycles with zero lexical matches). A third field
+case (Surah 21 ayah 99) completed via exactly ONE fallback cycle right
+after a normal sequential advance — too fast to ever reach 3 — so the bar
+became "any real lexical match clears it" (`lexAdvances >= 1`). Verified
+against the full real-ONNX e2e corpus before shipping that: zero clean
+recitations ever completed a verse on fallback alone with no lexical match.
+
+That still wasn't enough. A fourth field case (Surah 21 ayah 110) showed a
+single real lexical match can itself be a **coincidental leak from a
+neighboring verse**: tilawa's own "live span collapsed to first ayah"
+commit mislabeled ayah 111's real audio as ayah 110's tracking window, and
+one of 111's words happened to resemble one of 110's closely enough to
+register as a genuine (non-fallback) `word_matches` hit — ayah 110 itself
+was never recited at all. The bar is now `minLexAdvancesForVerse: 2` — a
+single coincidental match is far more plausible than two. Re-verified
+against the same full e2e corpus before raising it: still zero false
+positives on any clean recitation.
+
+A hand-traced field case (Surah 87 ayah 13, 2 fallback cycles, genuinely
+correct, zero real lexical matches) got flagged as soon as the bar left "0"
+and still does — an accepted, deliberate tradeoff on explicit product
+direction: this app's entire purpose is helping reciters catch a skipped
+verse before reciting to a real teacher, so a missed skip is a worse
+failure than an occasional false "unverified" flag on a fast, short verse.
 
 ## spanEvidence requires a STABLE candidate
 
@@ -311,6 +323,26 @@ verse whose coverage came entirely from transcript-alignment). Indices
 before that point were never observed at all and are no longer accused; a
 genuine gap AFTER observation began is still real positive evidence and
 stays accused exactly as before.
+
+## The mic stops when the picked passage's last verse is done
+
+Field complaint (build 2026-07-21): picking an end verse and finishing it
+didn't stop the recording — the session just kept listening until either
+tilawa's own silence-timeout flush (several seconds of quiet) or a manual
+tap on Stop, which read as the app "not noticing" the recitation was over.
+
+Every verse before the last one already gets a live signal the moment the
+cursor advances past it (`verse-committed`). The LAST verse never advances
+anywhere, so nothing previously told the UI "the recitation the user asked
+for is actually finished" until the tracker's own flush machinery kicked
+in. `RecitationCoach._checkPassageComplete()` now fires a `passage-complete`
+effect exactly once, the moment the last verse meets the same done-criteria
+`_finalize()` already uses (`sawCommit` or `coverage >= doneCoverage`) —
+checked from both the word_progress and verse_match paths, since either can
+be what pushes the last verse over that bar. `js/recitation.js` shows a
+"reached the end — stopping" hint and calls `stopSession()` ~2 seconds
+later (a short debounce so trailing elongation on the very last word isn't
+cut off mid-sound), rather than leaving the mic open indefinitely.
 
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.
