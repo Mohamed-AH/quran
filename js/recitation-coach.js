@@ -136,13 +136,18 @@
     // Per-verse counterpart: catches a SINGLE fabricated verse sandwiched
     // inside an otherwise well-verified session (session-wide totals never
     // cross minFallbackForJudgment there, since the rest of the session has
-    // plenty of real matches). Deliberately imprecise — the only two real
-    // data points available sit right on either side of this number (2
-    // fallback cycles / genuinely correct, Surah 87 ayah 13; 3 fallback
-    // cycles / genuinely fabricated, Surah 20 ayah 91) — but shipped anyway:
-    // for this app, a missed skip is worse than an occasional false
-    // "unverified" flag on a fast, short verse.
-    minFallbackForVerseJudgment: 3,
+    // plenty of real matches). Originally 3, lowered to 1 after a real skip
+    // (Surah 21 ayah 99) completed via exactly ONE fallback cycle right
+    // after a discovery-triggered commit — too fast to ever reach 3.
+    // Verified empirically before lowering: the full real-ONNX e2e corpus
+    // (An-Naas, Al-Falaq, Fatiha fragments, freestyle) shows ZERO verses
+    // ever completing on fallback alone with zero lexical matches at
+    // threshold 1 — not a single false positive found. A hand-traced field
+    // case (Surah 87 ayah 13, 2 fallback cycles, genuinely correct) WILL
+    // now get flagged too — an accepted, deliberate tradeoff: for this
+    // app, a missed skip is worse than an occasional false "unverified"
+    // flag on a fast, short verse.
+    minFallbackForVerseJudgment: 1,
   };
 
   class RecitationCoach {
