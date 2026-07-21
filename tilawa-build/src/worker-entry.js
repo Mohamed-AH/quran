@@ -220,6 +220,25 @@ function buildSession(quranSubset, config) {
             });
           }
         }
+        // stale_exit: tilawa's OWN tracker gave up on the current verse
+        // after several cycles with no real advance — it never confirmed
+        // this was genuinely the verse being recited. Forwarded so the
+        // coach can detect a fallback-only OPENING commit (short_rescue /
+        // acoustic_margin locking onto a verse from a handful of acoustic
+        // tokens, e.g. the isti'adhah) that tilawa itself is now
+        // abandoning, and undo a false "verses skipped" start rather than
+        // let a bogus one-shot acoustic match stand — see coach
+        // _onTrackingAbandoned.
+        if (event === "stale_exit" && data && typeof data.ref === "string") {
+          const sep = data.ref.indexOf(":");
+          if (sep > 0) {
+            postEvent({
+              type: "tracking_abandoned",
+              surah: Number(data.ref.slice(0, sep)),
+              ayah: Number(data.ref.slice(sep + 1)),
+            });
+          }
+        }
       },
     },
   );

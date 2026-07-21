@@ -485,3 +485,67 @@ Fix, two parts:
   the piece that was actually missing before: without an echo, a stale
   worker is completely invisible from the page's own reporting, which is
   exactly what made this bug take 8 field logs to catch.
+
+## ...and it wasn't just the worker — EVERY script tag needed the same fix
+
+Field case (build 2026-07-21j, Surah 87): a session showed verses marked
+`done` that the CURRENT `recitation-coach.js` should have marked
+`unverified` or left `skipped`, with both `build` and `workerBuild`
+confirmed on the latest stamp. `config.js` reading the latest `BUILD` never
+actually proved anything else was fresh — it's a coincidence of that one
+file's small size revalidating reliably, not a guarantee shared by every
+`<script>` tag. `js/recitation-coach.js` itself — the file carrying every
+fix in this document — was stale-cached, completely independently of the
+worker fix above.
+
+Fix: every `<script src="js/...">` tag in `app.html`, `admin.html`,
+`callback.html`, `index.html`, and `test-recitation.html` now carries its
+own `?v=` query string. There's no HTML build step in this repo, so this is
+a manual convention: bump every script tag's `?v=` alongside
+`CONFIG.TILAWA.BUILD` on every recitation change (documented directly next
+to the `BUILD` constant).
+
+## An uncorroborated OPENING commit is retracted, not trusted
+
+The user's framing of the remaining problem, verbatim: *"Try to mimic a
+real ustad. He is going to listen [to] each verse and judge if it is
+correct or not. He is not going to listen [to] the first word he hears and
+jump to some wild goose chase."* Field case (build 2026-07-21j, Surah 87):
+"اعوذ" — 4 tokens of the isti'adhah, not surah content at all —
+short_rescue-committed to ayah 14 at confidence 0.85 (tilawa's own
+fallback for sparse audio, an acoustic guess disconnected from real lexical
+content — see the `short_rescue`/`acoustic_margin` commit reasons discussed
+throughout this document). The coach immediately flagged ayahs 1-13 as
+skipped. Four tracking cycles later, tilawa's own tracker gave up on ayah
+14 (`stale_exit`) having never confirmed a single real word — but by then
+the false "verses skipped" verdict was already locked in and irreversible.
+
+This is the SAME acoustic-fallback problem behind several fixes already in
+this document (`short_rescue`/`acoustic_margin` commits with confidence
+disconnected from real content), but none of the existing gates catch it
+at the moment it matters: the per-verse content-verification gate
+(`minLexAdvancesForVerse`) only ever downgrades a verse to `unverified` —
+it never un-skips the EARLIER verses a bogus opening commit accused. The
+`spanEvidence` rescue only helps if some OTHER candidate happened to cover
+those verses; here nothing did.
+
+Fix: the worker forwards tilawa's own `stale_exit` diagnostic (a fresh
+signal, previously debug-only) as a structured `tracking_abandoned`
+event. `RecitationCoach._onTrackingAbandoned()` — when this fires for the
+verse the session actually **opened** on (`this.cursor === this.startAyah`,
+tracked via a new `startAyah` field set in `_start()`), and that verse has
+zero real lexical corroboration (`lexAdvances === 0`) — undoes the entire
+opening commit: resets every verse back to `pending`, returns the coach to
+`awaiting_start`, and emits a `start-retracted` effect instead of leaving
+the false "verses skipped" verdict standing. A verse abandoned LATER in a
+session (already advanced past the opening) is untouched here — it already
+has its own safety net (the per-verse gate marks it `unverified`, not
+`done`). `js/recitation.js` shows the same "listening afresh" hint used
+elsewhere for a tracker reset, rather than an alarming skip notice.
+
+This only ever makes the coach MORE cautious, never less: it can't turn a
+real skip into a false pass (a genuinely well-corroborated opening commit
+is untouched; `lexAdvances > 0` is required to trust it), and the worst
+case if tilawa's stale_exit fires on a genuinely-correct-but-slow opening
+commit is simply re-listening for the start signal again — not an
+incorrect verdict.

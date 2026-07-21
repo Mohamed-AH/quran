@@ -952,6 +952,8 @@ const recitationUI = {
           : `committed ayah ${fx.ayah}${fx.missedWords && fx.missedWords.length ? ` (missed words: [${fx.missedWords}])` : ''}${fx.uncertainWords && fx.uncertainWords.length ? ` (uncertain tail words: [${fx.uncertainWords}])` : ''}`;
       case 'verses-skipped':
         return `SKIPPED ayahs [${fx.ayahs}]`;
+      case 'start-retracted':
+        return `START RETRACTED at ayah ${fx.ayah} — tilawa gave up without confirming real content, undoing the false "skipped" verdict`;
       case 'repetition':
         return `repetition of ayah ${fx.ayah} (x${fx.count})`;
       case 'off-track':
@@ -1003,6 +1005,11 @@ const recitationUI = {
           this._renderVerseList();
           break;
         case 'verses-skipped':
+          this._renderVerseList();
+          break;
+        case 'start-retracted':
+          this._session.committed = false;
+          this._showHint(this._t().relisten, 3000);
           this._renderVerseList();
           break;
         case 'repetition':
