@@ -557,6 +557,31 @@ test("passage-complete does NOT fire from a bare verse_match with no real word c
   assert.ok(!types(fx2).includes("passage-complete"));
 });
 
+test("field scenario: passage-complete waits for near-full coverage on a long last verse, not just 80%", () => {
+  // Reproduces build 2026-07-21i, Surah 98 ayah 8 (21 words): the reciter
+  // was still audibly continuing (raw transcribe activity for 4+ more
+  // seconds) when word coverage merely crossed 18/21 (85.7%) — comfortably
+  // above the old reconcileCoverage (0.8) bar — and the ~2s auto-stop timer
+  // cut the mic before the last 2 words were ever captured. A coverage
+  // FRACTION doesn't scale: 20% of 21 words is 4 words left uncaptured. The
+  // bar is now absolute (at most 1 word may remain), regardless of verse
+  // length.
+  const words8 = Array.from({ length: 21 }, (_, i) => `ك8_${i}`).join(" ");
+  const coach = new RecitationCoach({
+    surah: 98,
+    ayahStart: 8,
+    ayahEnd: 8,
+    verses: [{ ayah: 8, text: words8 }],
+  });
+  coach.handleEvent(vm(8, 0.99, 98));
+  let fx = coach.handleEvent(wp(8, Array.from({ length: 18 }, (_, i) => i), 98)); // 18/21
+  assert.ok(!types(fx).includes("passage-complete"), "18/21 (85.7%) is not near-done on a 21-word verse");
+  fx = coach.handleEvent(wp(8, Array.from({ length: 19 }, (_, i) => i), 98)); // 19/21
+  assert.ok(!types(fx).includes("passage-complete"), "19/21 still leaves 2 words — must keep listening");
+  fx = coach.handleEvent(wp(8, Array.from({ length: 20 }, (_, i) => i), 98)); // 20/21 — only the last word left
+  assert.ok(types(fx).includes("passage-complete"), "only 1 word remaining is close enough to stop safely");
+});
+
 test("finalize() is a safe idempotent fallback", () => {
   const coach = makeCoach();
   reciteVerse(coach, 1);

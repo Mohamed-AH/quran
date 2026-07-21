@@ -427,6 +427,22 @@ Fix: dropped the `sawCommit`-alone bypass entirely and raised the bar from
 elsewhere for coverage-only reconciliation) — passage-complete now always
 requires real word coverage close to done before it will stop the mic.
 
+### ...but a coverage FRACTION doesn't scale to long verses
+
+Field case (build 2026-07-21i, Surah 98 ayah 8, 21 words): the reciter was
+still audibly continuing (raw `transcribe` activity for 4+ more seconds)
+when word coverage merely crossed 18/21 (85.7%) — comfortably above the
+`reconcileCoverage` (0.8) bar above — and the ~2s auto-stop timer cut the
+mic before the last 2 words were ever captured. The fix immediately above
+this one wasn't wrong, just insufficiently scaled: 20% of a 21-word verse
+is 4 words left uncaptured, versus 20% of a 4-word verse being under 1.
+
+Fix: `_checkPassageComplete()` now uses an ABSOLUTE word-count bar instead
+of a coverage fraction — at most 1 word may remain unconfirmed
+(`v.totalWords - v.progress <= 1`), mirroring tilawa's own "final word
+reached" completion concept. This scales correctly regardless of verse
+length, where a percentage cannot.
+
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.
 

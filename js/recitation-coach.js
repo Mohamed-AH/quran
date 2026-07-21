@@ -768,20 +768,30 @@
      * tilawa's own silence timeout (several seconds) or a manual stop.
      *
      * Deliberately does NOT accept a bare `sawCommit` on its own (unlike
-     * _finalize()'s general done-criteria) and uses the stricter
-     * reconcileCoverage (0.8) rather than doneCoverage (0.6). Field case
-     * (build 2026-07-21f, Surah 21 ayah 105): a content-blind "live span
-     * collapsed" commit landed on the passage's last verse with essentially
-     * zero word progress, and firing here on sawCommit alone triggered
+     * _finalize()'s general done-criteria). Field case (build 2026-07-21f,
+     * Surah 21 ayah 105): a content-blind "live span collapsed" commit
+     * landed on the passage's last verse with essentially zero word
+     * progress, and firing here on sawCommit alone triggered
      * js/recitation.js's ~2s auto-stop timer before the verse's own final
      * words were ever captured — this effect stops the microphone, so
      * unlike a normal "done" verdict (which can still be corrected later
      * from more audio) getting it wrong here is unrecoverable. Lean toward
      * listening a little longer over cutting off too early.
+     *
+     * Uses an ABSOLUTE word-count bar (at most 1 word may remain
+     * unconfirmed), not a coverage FRACTION — a fraction like
+     * reconcileCoverage (0.8) still leaves ~4 words uncaptured on a long
+     * verse. Field case (build 2026-07-21i, Surah 98 ayah 8, 21 words): the
+     * reciter was still audibly continuing (raw transcribe activity for 4+
+     * more seconds) when coverage merely crossed 18/21 (85.7% > 0.8), and
+     * the mic cut before word 21. "final word reached" (tilawa's own
+     * completion concept) is the right bar here: it scales with the
+     * verse's actual length instead of a blanket percentage.
      */
     _checkPassageComplete() {
       if (this.passageCompleteEmitted || this.cursor !== this.ayahEnd) return [];
-      if (this.coverage(this.ayahEnd) < this.cfg.reconcileCoverage) return [];
+      const v = this.perVerse[this.ayahEnd];
+      if (v.totalWords - v.progress > 1) return [];
       this.passageCompleteEmitted = true;
       return [{ type: 'passage-complete', ayah: this.ayahEnd }];
     }
