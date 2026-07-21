@@ -125,38 +125,57 @@
     // CONFIG.FEATURES.WORD_VERDICTS.
     useWordVerdicts: false,
     // Content-verification gate (worker `lex_check` events, from tilawa's
-    // own tracking_cycle.word_matches diagnostic — see _onLexCheck). A
-    // session needs at least this many fallback-only (non-lexical) advances
-    // accumulated, with ZERO real lexical advances anywhere in the whole
-    // session, before its content is judged unverified. Session-wide, not
-    // per-verse: a single short verse can legitimately clear in 1-2
-    // fallback cycles with no lexical hit (field-observed in genuine
-    // correct recitation), so only a sustained absence across the whole
-    // session is trustworthy negative evidence.
+    // own tracking_cycle.word_matches diagnostic — see _onLexCheck).
+    //
+    // IMPORTANT HISTORY (build 2026-07-21l and earlier): every threshold
+    // below this comment, and the whole "verified empirically against the
+    // e2e corpus" claim in the history that used to be here, was WRONG —
+    // not miscalibrated, but never actually exercised at all. The worker's
+    // onDiagnostic callback receives the tracker's diagnostics wrapped as
+    // `("tracker", {...theRealDiagnostic})` — the first argument is ALWAYS
+    // the literal string "tracker", never the diagnostic's own type
+    // ("tracking_cycle", "stale_exit", etc). The code checked `event ===
+    // "tracking_cycle"`, a comparison that can never be true. lex_check
+    // NEVER fired, in any build, in production OR in the e2e harness
+    // (whose hand-written mirror of this logic had the exact same bug).
+    // Every "zero false positives" claim below was measured against a
+    // pipeline emitting no signal at all — confirmed by running the real
+    // compiled worker bundle directly (not the e2e mirror) and by replaying
+    // real field logs against the current coach. Fixed in worker-entry.js
+    // (check data.type, not event). Once the real signal started flowing,
+    // it forced a full recalibration from scratch against 6 real clean
+    // multi-verse recitations (An-Naas, Al-Falaq, Ya-Sin, Ar-Rahman,
+    // Al-Mulk, Al-Asr — 24 verses total) via a new test harness
+    // (scratchpad e2e/realworker_multi.mjs) that runs the actual compiled
+    // bundle end-to-end, unlike the old e2e.mjs mirror.
+    //
+    // That real data forced a second, more fundamental finding: tilawa's
+    // own `word_matches` (real lexical alignment) is NOT a reliable
+    // indicator of correctness at the SESSION level either — Ya-Sin's
+    // first 5 verses, entirely correctly recited, produced ZERO real
+    // lexical hits across the whole session (13 fallback-only cycles, 0
+    // lexical), because tilawa's own tracker relied entirely on
+    // acoustic/position fallback for that passage's short, repetitive
+    // vocabulary. The session-wide gate below (`minFallbackForJudgment`)
+    // would have zeroed a completely correct recitation's score. No finite
+    // threshold fixes this: a longer clean recitation of similarly sparse
+    // vocabulary can always exceed it. The score-zeroing effect of this
+    // gate is therefore DISABLED below (see _buildSummary) until a
+    // genuinely reliable signal is found — real wrong-recitation audio to
+    // calibrate against, which doesn't exist in this repo yet. The field
+    // is still computed and reported for visibility/future calibration.
     minFallbackForJudgment: 6,
-    // Per-verse counterpart: catches a fabricated verse sandwiched inside an
-    // otherwise well-verified session (session-wide totals never cross
-    // minFallbackForJudgment there, since the rest of the session has
-    // plenty of real matches). A verse needs at least this many DISTINCT
-    // real-lexical-match cycles before its completion is trusted; below
-    // that (with SOME tracking activity — fallback or lexical — having
-    // happened at all) it's flagged unverified instead of done. Started at
-    // "any real match is enough" (1), but a single real match can itself be
-    // a coincidental leak from a NEIGHBORING verse's content getting
-    // mislabeled — field case (Surah 21 ayah 110): tilawa's own "live span
-    // collapsed to first ayah" commit mislabeled ayah 111's real audio as
-    // ayah 110's tracking window, and one of 111's words happened to
-    // resemble one of 110's closely enough to register as a genuine
-    // word_matches hit — ayah 110 itself was never recited at all. Raised
-    // to 2 after that: a single coincidental match is far more plausible
-    // than two. Verified empirically before raising: the full real-ONNX
-    // e2e corpus (An-Naas, Al-Falaq, Fatiha fragments, freestyle) shows
-    // zero false positives at threshold 2 either. A hand-traced field case
-    // (Surah 87 ayah 13, 2 fallback cycles, genuinely correct, zero real
-    // lexical matches) already got flagged at threshold 1 and still does —
-    // an accepted, deliberate tradeoff: for this app, a missed skip is
-    // worse than an occasional false "unverified" flag on a fast verse.
-    minLexAdvancesForVerse: 2,
+    // Per-verse counterpart. Recalibrated from scratch (see history above)
+    // against the same 24 real per-verse data points: flags a verse
+    // unverified only when it had ZERO real lexical hits AND at least this
+    // many fallback-only cycles — every one of the 24 real clean verses
+    // stays safely under this bar (max real fallback-with-zero-lexical
+    // observed: 4). Unlike the session-wide gate, per-verse totals this
+    // small are far less likely to accumulate purely from a passage's
+    // vocabulary being hard to lexically track, so this bar is kept active
+    // (unlike the session-wide one) — but it should be re-validated against
+    // more real fixtures before being trusted at production scale.
+    minFallbackForVerseJudgment: 6,
     // A verse's own trailing words can be genuinely spoken but never
     // confirmed by tilawa's own word_progress if the tracker advances to
     // the next verse's discovery window before one more tracking_cycle
@@ -526,18 +545,17 @@
 
     /**
      * Per-verse counterpart to the session-wide content-verification gate
-     * (minFallbackForJudgment) — see minLexAdvancesForVerse above for the
-     * field motivation. Checked at the moment a verse would otherwise be
-     * marked 'done' (_commitAndAdvance, _finalize) so it can be marked
-     * 'unverified' instead. Only applies once SOME tracking activity
-     * happened for this verse (fallback or lexical) — a verse rescued via
-     * spanEvidence with zero tracking_cycle data at all is a different,
-     * already-corroborated situation and stays untouched here.
+     * — see minFallbackForVerseJudgment above for the field motivation and
+     * recalibration history. Checked at the moment a verse would otherwise
+     * be marked 'done' (_commitAndAdvance, _finalize) so it can be marked
+     * 'unverified' instead: zero real lexical hits AND a sustained run of
+     * fallback-only cycles. A verse with only 1-4 fallback cycles and no
+     * lexical hit is NOT flagged — real clean data shows that's routine for
+     * genuinely correct recitation, not evidence of a problem.
      */
     _looksUnverified(ayah) {
       const v = this.perVerse[ayah];
-      const tracked = v.fallbackAdvances + v.lexAdvances > 0;
-      return tracked && v.lexAdvances < this.cfg.minLexAdvancesForVerse;
+      return v.lexAdvances === 0 && v.fallbackAdvances >= this.cfg.minFallbackForVerseJudgment;
     }
 
     _onWordVerdicts(msg) {
@@ -861,14 +879,20 @@
      * several cycles with no real advance) without ever confirming genuine
      * content — see `tracking_abandoned` in tilawa-build/src/worker-entry.js.
      *
-     * Only acts when this is the verse the session OPENED on and the
-     * cursor has never advanced past it since (this.cursor === this.startAyah)
-     * — a later verse abandoning tracking mid-session already has its own
+     * Only acts when this is the verse the session OPENED on, the cursor
+     * has never advanced past it since (this.cursor === this.startAyah),
+     * AND that opening was mid-passage (this.startAyah > this.ayahStart) —
+     * a later verse abandoning tracking mid-session already has its own
      * safety net (the per-verse content-verification gate marks it
      * 'unverified', not 'done'; see _looksUnverified). This is specifically
-     * about undoing the OPENING commit itself, which is uniquely risky: it
-     * retroactively accuses every earlier verse of being skipped on the
-     * strength of ONE acoustic match.
+     * about undoing the OPENING commit itself, which is uniquely risky ONLY
+     * when it's mid-passage: it retroactively accuses every earlier verse
+     * of being skipped on the strength of ONE acoustic match. A clean start
+     * AT ayahStart carries no such risk (there's nothing before it to
+     * falsely accuse), so it's left alone even if later abandoned — the
+     * per-verse gate is enough there, and retracting it is actively
+     * harmful for a short, complete, correct recitation that simply ends
+     * right after (see the regression note below).
      *
      * Field case (build 2026-07-21j, Surah 87): "اعوذ" — 4 tokens of the
      * isti'adhah, not surah content at all — short_rescue-committed to
@@ -882,11 +906,22 @@
      * unstable, uncorroborated commit shouldn't either. Undo the false
      * start entirely — revert to awaiting_start — rather than let a single
      * acoustic guess stand as an accusation.
+     *
+     * Regression caught by the real-ONNX e2e suite once this mechanism
+     * actually started firing (see tilawa-build/README.md's "lex_check and
+     * tracking_abandoned never fired" section): stale_exit ALSO fires on
+     * the tracker's normal final flush at session end, not just genuine
+     * mid-session give-up. Without the ayahStart guard, a short, correct,
+     * single-verse recitation that simply ends (e.g. "Fatiha 1:1 only,
+     * stops early") could have its entire — otherwise perfectly valid —
+     * start wiped right as the session closes, for no better reason than
+     * running out of audio before a real lexical hit happened to land.
      */
     _onTrackingAbandoned(msg) {
       if (!this.inRange(msg.surah, msg.ayah)) return [];
       if (this.state !== 'tracking' || msg.ayah !== this.cursor) return [];
       if (this.cursor !== this.startAyah) return []; // already advanced past the opening verse
+      if (this.startAyah <= this.ayahStart) return []; // clean start — nothing to falsely accuse
       const v = this.perVerse[this.cursor];
       if (v.lexAdvances > 0) return []; // real corroboration exists — trust it
       const retracted = this.cursor;
@@ -1098,31 +1133,36 @@
       const started = this.startedAt !== null;
       // Content-verification gate: tilawa's own tracking can complete a
       // verse purely on acoustic/char-position fallback (duration alone),
-      // with ZERO real lexical corroboration (see _onLexCheck). A genuine
-      // multi-verse recitation reliably produces SOME real lexical advances
-      // somewhere; a session with none at all, despite a real volume of
-      // tracked advances, was never actually verified as this passage —
-      // field case: reciting the English alphabet against a picked surah
-      // otherwise scored 100 (build 2026-07-21, Surah 106).
+      // with ZERO real lexical corroboration (see _onLexCheck). Computed
+      // and reported for visibility, but NOT used to force score to 0 —
+      // real data (6 clean multi-verse recitations replayed through the
+      // actual worker bundle once the event/data.type bug was fixed; see
+      // minFallbackForJudgment above) proved a genuinely correct, cleanly
+      // recited passage (Ya-Sin 36:1-5) can accumulate 13 fallback cycles
+      // with zero real lexical hits across the WHOLE session, because
+      // tilawa's own tracker relies entirely on fallback for that
+      // passage's vocabulary. No finite threshold makes this safe: a
+      // longer clean recitation of similarly sparse vocabulary can always
+      // exceed it. Forcing score to 0 here would zero a correct user's
+      // score outright. Left disabled until a real signal is found to
+      // distinguish "correct but lexically sparse" from "actually wrong".
       const contentUnverified =
         started &&
         this.fallbackAdvances >= this.cfg.minFallbackForJudgment &&
         this.lexAdvances === 0;
-      const score = contentUnverified
-        ? 0
-        : started
-          ? Math.max(
-              0,
-              Math.min(
-                100,
-                Math.round(
-                  w.verses * verseRatio +
-                    w.words * wordRatio +
-                    w.confidence * Math.min(1, avgConfidence)
-                )
+      const score = started
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              Math.round(
+                w.verses * verseRatio +
+                  w.words * wordRatio +
+                  w.confidence * Math.min(1, avgConfidence)
               )
             )
-          : 0;
+          )
+        : 0;
 
       return {
         surah: this.surah,

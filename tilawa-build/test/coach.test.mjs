@@ -1001,11 +1001,21 @@ test("wandering to another passage triggers one gentle off-track hint", () => {
 // fallback — see js/recitation-coach.js _onLexCheck)
 // ---------------------------------------------------------------------------
 
-test('field scenario: gibberish tracked to completion on fallback alone scores 0 and is flagged unverified', () => {
+test('field scenario: gibberish tracked to completion on fallback alone is flagged contentUnverified for visibility, but no longer forces score to 0', () => {
   // Reproduces build-2026-07-21 (Surah 106, Al-Quraysh): reciting the
   // English alphabet against a picked passage completed all 4 verses via
   // acoustic-position fallback alone (tracking_cycle showed word_matches:0
   // on every single cycle) and scored 100 before this gate existed.
+  //
+  // contentUnverified is still computed and reported here (real signal:
+  // session-wide fallbackAdvances>=6 with zero lexAdvances) but no longer
+  // forces score to 0 — real data (6 clean multi-verse recitations replayed
+  // through the actual worker bundle once the event/data.type bug was
+  // fixed) proved a genuinely correct, cleanly recited passage (Ya-Sin
+  // 36:1-5) can ALSO accumulate 13 session-wide fallback cycles with zero
+  // real lexical hits, because tilawa's own tracker relies entirely on
+  // fallback for that passage's vocabulary. No finite threshold on this
+  // signal alone safely separates the two cases — see minFallbackForJudgment.
   const coach = makeCoach({ ayahEnd: 4 });
   for (let a = 1; a <= 4; a++) {
     coach.handleEvent(lc(1, a, false));
@@ -1015,7 +1025,6 @@ test('field scenario: gibberish tracked to completion on fallback alone scores 0
   coach.requestStop();
   const s = coach.handleEvent(fin([1, 2, 3, 4]))[0].summary;
   assert.equal(s.contentUnverified, true);
-  assert.equal(s.score, 0);
 });
 
 test('a short verse clearing on fallback alone does not trigger the gate when the session has real lexical matches elsewhere', () => {
@@ -1052,20 +1061,27 @@ test('lex_check events for a different surah are ignored', () => {
   assert.equal(coach.lexAdvances, 0);
 });
 
-test('field scenario: a single verse fabricated on fallback alone is flagged unverified even inside an otherwise well-verified session', () => {
+test('field scenario: a verse fabricated on a SUSTAINED run of fallback alone is flagged unverified even inside an otherwise well-verified session', () => {
   // Reproduces build-2026-07-21 (Surah 20 / Ta-Ha, ayahs 87-95): ayah 91
   // was never actually recited — the tracker mislabeled ayah 90's own tail
-  // audio as ayah 91, then "completed" it via 3 fallback-only cycles with
+  // audio as ayah 91, then "completed" it via fallback-only cycles with
   // word_matches:0 throughout, sandwiched between two verses (90 and 92)
   // that both had real lexical matches. The session-wide gate correctly
   // stayed quiet (plenty of real matches elsewhere); this per-verse gate
   // must catch the specific fabricated verse.
+  //
+  // Uses 6 fallback cycles (minFallbackForVerseJudgment), not the original
+  // field case's 3 — real clean data (24 real per-verse data points across
+  // 6 clean recitations, see minFallbackForVerseJudgment above) showed up
+  // to 4 fallback-only cycles with zero lexical hits happening routinely in
+  // GENUINELY correct verses, so a bar of 3 produced unacceptable false
+  // positives. A milder fabrication (3-5 fallback cycles) is an accepted,
+  // documented gap: this signal alone cannot safely separate it from a
+  // genuinely correct but lexically sparse verse.
   const coach = makeCoach({ ayahEnd: 3 });
   coach.handleEvent(lc(1, 1, true)); // verse 1: genuinely verified
   coach.handleEvent(lc(1, 1, true));
-  coach.handleEvent(lc(1, 2, false)); // verse 2: fabricated, like ayah 91
-  coach.handleEvent(lc(1, 2, false));
-  coach.handleEvent(lc(1, 2, false));
+  for (let i = 0; i < 6; i++) coach.handleEvent(lc(1, 2, false)); // verse 2: fabricated
   coach.handleEvent(lc(1, 3, true)); // verse 3: genuinely verified
   coach.handleEvent(lc(1, 3, true));
   for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
@@ -1074,27 +1090,6 @@ test('field scenario: a single verse fabricated on fallback alone is flagged unv
   assert.deepEqual(s.versesUnverified, [2]);
   assert.ok(!s.versesDone.includes(2));
   assert.equal(s.contentUnverified, false); // session-wide gate stays quiet
-});
-
-test('field scenario: a verse skipped via a single fallback-only cycle right after a normal sequential advance is caught', () => {
-  // Reproduces build-2026-07-21 (Surah 21 / Al-Anbiya, ayahs 97-101): ayah
-  // 99 was never recited — the transcript shows ayah 98's full content
-  // flowing directly into ayah 100's, no trace of 99 — but the tracker
-  // committed a normal 98→99 sequential advance (no gap, so the
-  // spanEvidence/jump-hysteresis paths never even look twice) and ayah 99
-  // "completed" via exactly ONE fallback cycle before minFallbackForVerse-
-  // Judgment was lowered from 3 to 1 specifically because of this case.
-  const coach = makeCoach({ ayahEnd: 3 });
-  coach.handleEvent(lc(1, 1, true)); // verse 1: genuinely verified
-  coach.handleEvent(lc(1, 1, true));
-  coach.handleEvent(lc(1, 2, false)); // verse 2: fabricated on ONE cycle
-  coach.handleEvent(lc(1, 3, true)); // verse 3: genuinely verified
-  coach.handleEvent(lc(1, 3, true));
-  for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
-  coach.requestStop();
-  const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
-  assert.deepEqual(s.versesUnverified, [2]);
-  assert.ok(!s.versesDone.includes(2));
 });
 
 test('a verse with 2+ real lexical matches is never flagged, no matter how many fallback cycles it also had', () => {
@@ -1109,17 +1104,24 @@ test('a verse with 2+ real lexical matches is never flagged, no matter how many 
   assert.ok(s.versesDone.includes(2));
 });
 
-test('field scenario: a single COINCIDENTAL lexical match from a mislabeled neighboring verse is still caught', () => {
+test('field scenario: a single COINCIDENTAL lexical match from a mislabeled neighboring verse is an ACCEPTED, documented gap', () => {
   // Reproduces build-2026-07-21 (Surah 21 / Al-Anbiya, ayah 110): ayah 110
-  // was never recited — the transcript shows ayah 109's tail flowing
-  // directly into ayah 111's real content — but tilawa's own "live span
-  // collapsed to first ayah" commit mislabeled ayah 111's audio as ayah
-  // 110's tracking window, and ONE of ayah 111's words happened to
-  // resemble one of ayah 110's closely enough to register as a genuine
-  // (non-fallback) word_matches hit. Zero fallback cycles, exactly one
-  // real lexical cycle — below minLexAdvancesForVerse (2), so still
-  // flagged even though the session-wide gate and the (former) "any real
-  // match is enough" per-verse bar would both have missed it.
+  // was never recited — tilawa's own "live span collapsed to first ayah"
+  // commit mislabeled ayah 111's audio as ayah 110's tracking window, and
+  // ONE of ayah 111's words happened to resemble one of ayah 110's closely
+  // enough to register as a genuine (non-fallback) word_matches hit.
+  //
+  // This USED to be caught (minLexAdvancesForVerse required >=2 real
+  // matches). That approach no longer holds: real clean data (24 real
+  // per-verse points across 6 clean recitations) showed a SINGLE real
+  // lexical hit with zero fallback is common in genuinely correct verses
+  // (An-Naas, Al-Falaq, Al-Asr all have real verses at exactly this
+  // signature), so requiring >=2 produced unacceptable false positives —
+  // see minFallbackForVerseJudgment's history. This exact field case is
+  // therefore an accepted, documented gap: a single coincidental match
+  // cannot currently be told apart from a single genuine one using this
+  // signal alone. Structural defenses (spanEvidence stability, forward-jump
+  // hysteresis) remain the primary protection against this class of bug.
   const coach = makeCoach({ ayahEnd: 3 });
   coach.handleEvent(lc(1, 1, true));
   coach.handleEvent(lc(1, 1, true));
@@ -1129,8 +1131,8 @@ test('field scenario: a single COINCIDENTAL lexical match from a mislabeled neig
   for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
   coach.requestStop();
   const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
-  assert.deepEqual(s.versesUnverified, [2]);
-  assert.ok(!s.versesDone.includes(2));
+  assert.deepEqual(s.versesUnverified, [], 'accepted gap: not caught by this signal alone');
+  assert.ok(s.versesDone.includes(2));
 });
 
 test('a verse rescued via spanEvidence (no tracking_cycle data at all) is unaffected by the per-verse gate', () => {
@@ -1149,9 +1151,7 @@ test('an unverified verse effect flags the UI and reports no missed-word claim',
   const coach = makeCoach({ ayahEnd: 2 });
   coach.handleEvent(vm(1));
   coach.handleEvent(wp(1, allWords(1)));
-  coach.handleEvent(lc(1, 1, false));
-  coach.handleEvent(lc(1, 1, false));
-  coach.handleEvent(lc(1, 1, false));
+  for (let i = 0; i < 6; i++) coach.handleEvent(lc(1, 1, false));
   const fx = coach.handleEvent(vm(2));
   const committed = fx.find((e) => e.type === 'verse-committed');
   assert.equal(committed.unverified, true);
@@ -1211,4 +1211,26 @@ test('tracking_abandoned for a different ayah or surah is ignored', () => {
   assert.deepEqual(coach.handleEvent(ta(2, 4)), []);
   assert.equal(coach.state, 'tracking');
   assert.equal(coach.cursor, 4);
+});
+
+test('tracking_abandoned does NOT retract a CLEAN start at ayahStart, even with zero lexical corroboration', () => {
+  // Regression caught by the real-ONNX e2e suite once this mechanism
+  // actually started firing (see tilawa-build/README.md's "lex_check and
+  // tracking_abandoned never fired" section): stale_exit also fires on the
+  // tracker's normal final flush at session end, not just genuine
+  // mid-session give-up. A short, correct, single-verse recitation that
+  // simply ends (e.g. Fatiha 1:1 only, stops early) must not have its
+  // otherwise perfectly valid start wiped out just because the session
+  // happened to end before any real lexical hit landed. Retracting is only
+  // ever appropriate for a MID-PASSAGE start (startAyah > ayahStart),
+  // where earlier verses would otherwise be falsely accused of being
+  // skipped — a clean start at ayahStart has no such risk.
+  const coach = makeCoach();
+  coach.handleEvent(vm(1, 0.99));
+  coach.handleEvent(lc(1, 1, false)); // fallback-only, session ends right after
+  const fx = coach.handleEvent(ta(1, 1));
+  assert.deepEqual(fx, [], 'a clean start at ayahStart is never retracted');
+  assert.equal(coach.state, 'tracking');
+  assert.equal(coach.cursor, 1);
+  assert.equal(coach.perVerse[1].status, 'active');
 });
