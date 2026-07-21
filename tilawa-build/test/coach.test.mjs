@@ -542,6 +542,39 @@ test("transcript-aligned words start the session with no tracker involvement", (
   );
 });
 
+test("field scenario: words spoken during a pre-recitation false lock are not accused, but a later real gap still is", () => {
+  // Reproduces build-2026-07-21 (Surah 21 ayah 97): a pre-recitation false
+  // lock on an out-of-range verse consumed the real audio for this verse's
+  // first several words before the coach's own tracking (transcript-start,
+  // never touching v.progress) took over mid-verse — those early words were
+  // very likely said, just never observed, and must not be reported missed.
+  // A genuine gap AFTER observation began (word 6, never confirmed even
+  // though 3-5 and 7-8 were) is still real positive evidence and stays
+  // accused.
+  const coach = makeCoach();
+  const fx = coach.handleEvent(
+    wv([
+      { ayah: 7, index: 3, status: "matched", expected: "w" },
+      { ayah: 7, index: 4, status: "matched", expected: "w" },
+      { ayah: 7, index: 5, status: "matched", expected: "w" },
+    ])
+  );
+  assert.ok(types(fx).includes("started"), "transcript-start opens the session mid-verse");
+  assert.equal(coach.cursor, 7);
+  assert.equal(coach.perVerse[7].progress, 0, "tilawa's own tracker never touched this verse");
+  coach.handleEvent(
+    wv([
+      { ayah: 7, index: 7, status: "matched", expected: "w" },
+      { ayah: 7, index: 8, status: "matched", expected: "w" },
+    ])
+  );
+  assert.deepEqual(
+    coach.missedWordIndices(7),
+    [6],
+    "words 0-2 (before observation began) are not accused; word 6 (a real gap) still is"
+  );
+});
+
 test("transcript-aligned words in the next verse advance the cursor", () => {
   const coach = makeCoach();
   coach.handleEvent(vm(1));
@@ -870,18 +903,46 @@ test('field scenario: a single verse fabricated on fallback alone is flagged unv
   assert.equal(s.contentUnverified, false); // session-wide gate stays quiet
 });
 
-test('a short verse clearing on 2 fallback cycles alone is NOT flagged unverified (below the per-verse threshold)', () => {
-  // The real, genuinely correct Surah 87 ayah 13 case that sets the floor
-  // for minFallbackForVerseJudgment: exactly 2 fallback-only cycles, zero
-  // lexical matches, and it was still a real, correct recitation.
+test('field scenario: a verse skipped via a single fallback-only cycle right after a normal sequential advance is caught', () => {
+  // Reproduces build-2026-07-21 (Surah 21 / Al-Anbiya, ayahs 97-101): ayah
+  // 99 was never recited — the transcript shows ayah 98's full content
+  // flowing directly into ayah 100's, no trace of 99 — but the tracker
+  // committed a normal 98→99 sequential advance (no gap, so the
+  // spanEvidence/jump-hysteresis paths never even look twice) and ayah 99
+  // "completed" via exactly ONE fallback cycle before minFallbackForVerse-
+  // Judgment was lowered from 3 to 1 specifically because of this case.
   const coach = makeCoach({ ayahEnd: 3 });
-  coach.handleEvent(lc(1, 2, false));
-  coach.handleEvent(lc(1, 2, false));
+  coach.handleEvent(lc(1, 1, true)); // verse 1: genuinely verified
+  coach.handleEvent(lc(1, 2, false)); // verse 2: fabricated on ONE cycle
+  coach.handleEvent(lc(1, 3, true)); // verse 3: genuinely verified
+  for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
+  coach.requestStop();
+  const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
+  assert.deepEqual(s.versesUnverified, [2]);
+  assert.ok(!s.versesDone.includes(2));
+});
+
+test('a verse with at least one real lexical match is never flagged, no matter how many fallback cycles it also had', () => {
+  const coach = makeCoach({ ayahEnd: 3 });
+  coach.handleEvent(lc(1, 2, true)); // one real lexical hit is enough
+  for (let i = 0; i < 5; i++) coach.handleEvent(lc(1, 2, false));
   for (let a = 1; a <= 3; a++) reciteVerse(coach, a);
   coach.requestStop();
   const s = coach.handleEvent(fin([1, 2, 3]))[0].summary;
   assert.deepEqual(s.versesUnverified, []);
   assert.ok(s.versesDone.includes(2));
+});
+
+test('a verse rescued via spanEvidence (no tracking_cycle data at all) is unaffected by the per-verse gate', () => {
+  const coach = makeCoach();
+  coach.handleEvent(vm(1));
+  coach.handleEvent(wp(1, allWords(1)));
+  coach.handleEvent(vm(2));
+  coach.handleEvent(vc([{ surah: 1, ayah: 2, ayah_end: 4, confidence: 0.93 }])); // stable by default
+  coach.handleEvent(vm(5));
+  coach.handleEvent(wp(5, allWords(5)));
+  assert.equal(coach.perVerse[3].status, 'done');
+  assert.equal(coach.perVerse[4].status, 'done');
 });
 
 test('an unverified verse effect flags the UI and reports no missed-word claim', () => {

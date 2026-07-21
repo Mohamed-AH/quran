@@ -136,13 +136,18 @@
     // Per-verse counterpart: catches a SINGLE fabricated verse sandwiched
     // inside an otherwise well-verified session (session-wide totals never
     // cross minFallbackForJudgment there, since the rest of the session has
-    // plenty of real matches). Deliberately imprecise — the only two real
-    // data points available sit right on either side of this number (2
-    // fallback cycles / genuinely correct, Surah 87 ayah 13; 3 fallback
-    // cycles / genuinely fabricated, Surah 20 ayah 91) — but shipped anyway:
-    // for this app, a missed skip is worse than an occasional false
-    // "unverified" flag on a fast, short verse.
-    minFallbackForVerseJudgment: 3,
+    // plenty of real matches). Originally 3, lowered to 1 after a real skip
+    // (Surah 21 ayah 99) completed via exactly ONE fallback cycle right
+    // after a discovery-triggered commit — too fast to ever reach 3.
+    // Verified empirically before lowering: the full real-ONNX e2e corpus
+    // (An-Naas, Al-Falaq, Fatiha fragments, freestyle) shows ZERO verses
+    // ever completing on fallback alone with zero lexical matches at
+    // threshold 1 — not a single false positive found. A hand-traced field
+    // case (Surah 87 ayah 13, 2 fallback cycles, genuinely correct) WILL
+    // now get flagged too — an accepted, deliberate tradeoff: for this
+    // app, a missed skip is worse than an occasional false "unverified"
+    // flag on a fast, short verse.
+    minFallbackForVerseJudgment: 1,
   };
 
   class RecitationCoach {
@@ -270,12 +275,26 @@
      * would misrepresent an absence of data as an accusation; field-tested
      * case (build 2026-07-20e): a session that recited verse 1:1 correctly
      * still had all 4 of its words reported "missed" this way.
+     *
+     * v.progress is tilawa's own high-water mark, so the loop below
+     * correctly starts there — indices before it are implicitly covered.
+     * But a verse can accumulate ALL its coverage via word_verdicts /
+     * transcript-alignment alone (progress never touched by tilawa's own
+     * word_progress at all — e.g. the session's opening verse, started via
+     * transcript-start rather than a tracker commit). There, progress stays
+     * 0 even though real observation only began at the first confirmed
+     * index, not at word 0 — field case (build 2026-07-21, Surah 21 ayah
+     * 97): a pre-recitation false lock on an out-of-range verse consumed
+     * the first ~9 words' worth of real audio before the coach's own
+     * tracking took over; those words were very likely said, just never
+     * individually observed, and got reported "missed" wholesale.
      */
     missedWordIndices(ayah) {
       const v = this.perVerse[ayah];
       if (v.progress === 0 && v.matched.size === 0) return [];
+      const observedFrom = v.progress > 0 ? v.progress : Math.min(...v.matched);
       const missed = [];
-      for (let i = v.progress; i < v.totalWords; i++) {
+      for (let i = observedFrom; i < v.totalWords; i++) {
         if (i < v.optionalCount) continue; // Basmala prefix — never accused
         if (!v.matched.has(i)) missed.push(i);
       }

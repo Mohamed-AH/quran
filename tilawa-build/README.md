@@ -241,7 +241,7 @@ the session had real lexical matches, so the session total never crossed
 `minFallbackForJudgment`.
 
 `RecitationCoach._looksUnverified(ayah)` adds the same check per-verse:
-`fallbackAdvances[ayah] >= minFallbackForVerseJudgment (3)` and
+`fallbackAdvances[ayah] >= minFallbackForVerseJudgment` and
 `lexAdvances[ayah] === 0`. Checked at the moment a verse would otherwise be
 marked `done` (`_commitAndAdvance`, `_finalize`); if it fires, the verse is
 marked `unverified` instead — excluded from `versesDone`, counted against
@@ -249,14 +249,21 @@ marked `unverified` instead — excluded from `versesDone`, counted against
 from `versesSkipped` since the verse WAS tracked, just never lexically
 confirmed), and contributes to the verse-ratio denominator like a skip.
 
-**The threshold (3) is a deliberate, openly-acknowledged guess, not a
-calibration** — it sits directly between the only two real data points
-available: 2 fallback cycles / genuinely correct (Surah 87 ayah 13) vs 3
-fallback cycles / genuinely fabricated (Surah 20 ayah 91). Shipped anyway,
-on explicit product direction: this app's entire purpose is helping
-reciters catch a skipped verse before reciting to a real teacher, so a
-missed skip is a worse failure than an occasional false "unverified" flag on
-a fast, short verse. Revisit this threshold as more real field logs arrive.
+**The threshold started as a guess (3) and was lowered to 1** after a third
+field case (build 2026-07-21, Surah 21 / Al-Anbiya, ayah 99): ayah 98's
+content flowed directly into ayah 100's with zero trace of 99 anywhere, but
+99 completed via a normal 98→99 sequential advance (no gap, so
+spanEvidence/jump-hysteresis never even looked at it) on exactly ONE
+fallback cycle — below the original threshold of 3. Before lowering it, the
+full real-ONNX e2e corpus (An-Naas, Al-Falaq, Fatiha fragments, freestyle)
+was re-run at threshold 1: zero verses ever completed on fallback alone with
+no lexical match, on any clean recitation — a much stronger empirical result
+than the original guess had. A hand-traced field case (Surah 87 ayah 13, 2
+fallback cycles, genuinely correct) will now also get flagged — an accepted,
+deliberate tradeoff on explicit product direction: this app's entire purpose
+is helping reciters catch a skipped verse before reciting to a real teacher,
+so a missed skip is a worse failure than an occasional false "unverified"
+flag on a fast, short verse.
 
 ## spanEvidence requires a STABLE candidate
 
@@ -282,6 +289,28 @@ existing spanEvidence test already used by default (`vc()`'s `stable`
 parameter defaults to `true`). A single volatile sighting no longer counts;
 the span needs to persist across tilawa's own stability window before its
 confidence is trusted as evidence for every verse inside it.
+
+## missedWordIndices only accuses from where observation actually began
+
+Field case (build 2026-07-21, Surah 21 ayah 97): the opening 9 words got
+reported "missed" even though the reciter very likely said them. What
+actually happened: pre-recitation audio (isti'adhah) briefly locked the
+tracker onto an out-of-range verse; while it was locked, the coach's own
+tracking hadn't started yet, so those first ~9 words' worth of real audio
+passed by unobserved. The wrong-track watchdog correctly reset the lock and
+the session started via transcript-alignment (`word_verdicts`) at word index
+9 — but `missedWordIndices` looped from `v.progress` (0, since a
+transcript-started verse never gets touched by tilawa's own
+`word_progress`) all the way to the end, treating "never observed" the same
+as "observed and absent."
+
+Fix: the loop now starts from `v.progress` when tilawa's own tracker
+established it (unchanged — that's a real high-water mark), but from the
+EARLIEST confirmed `word_verdicts` index when `v.progress` is still 0 (a
+verse whose coverage came entirely from transcript-alignment). Indices
+before that point were never observed at all and are no longer accused; a
+genuine gap AFTER observation began is still real positive evidence and
+stays accused exactly as before.
 
 If production hosting ever enables a Content-Security-Policy for static pages,
 onnxruntime-web needs `'wasm-unsafe-eval'` in `script-src`.
