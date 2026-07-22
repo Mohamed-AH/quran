@@ -55,11 +55,11 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=2026-07-22a"></script>
-    <script src="js/recitation-surahs.js?v=2026-07-22a"></script>
-    <script src="js/recitation-coach.js?v=2026-07-22a"></script>
-    <script src="js/recitation-assets.js?v=2026-07-22a"></script>
-    <script src="js/recitation-audio.js?v=2026-07-22a"></script>
+    <script src="js/config.js?v=2026-07-22b"></script>
+    <script src="js/recitation-surahs.js?v=2026-07-22b"></script>
+    <script src="js/recitation-coach.js?v=2026-07-22b"></script>
+    <script src="js/recitation-assets.js?v=2026-07-22b"></script>
+    <script src="js/recitation-audio.js?v=2026-07-22b"></script>
     <script>
         const $ = (id) => document.getElementById(id);
         const status = (s) => { $('status').textContent = s; };
@@ -97,7 +97,6 @@
                         if (coach) {
                             for (const fx of coach.handleEvent(m.event)) {
                                 log('coachLog', 'fx', fx);
-                                if (fx.type === 'verse-active') worker.postMessage({ type: 'cursor', ayah: fx.ayah });
                             }
                         }
                     } else if (m.type === 'transcribed') {
@@ -147,8 +146,7 @@
                 .filter((v) => v.surah === surah && v.ayah >= from && v.ayah <= to)
                 .map((v) => ({ ayah: v.ayah, text: v.text_uthmani }));
             $('rawLog').innerHTML = $('coachLog').innerHTML = '';
-            // Harness always exercises the word-verdict layer (calibration bench).
-            coach = new RecitationCoach({ surah, ayahStart: from, ayahEnd: to, verses, config: { useWordVerdicts: true } });
+            coach = new RecitationCoach({ surah, ayahStart: from, ayahEnd: to, verses });
             worker.postMessage({ type: 'reset' });
             worker.postMessage({ type: 'setExpected', surah, ayahStart: from, ayahEnd: to });
         }

@@ -332,6 +332,90 @@ Build stamp bumped to `2026-07-22a` (config.js + all HTML `?v=` tags) —
 this is a real, user-visible fix, unlike Phase 1/2's initial landing
 which was deliberately left unstamped.
 
+## Phase 2.5 — pivot to "record, then evaluate once" (2026-07-22, Log17.txt)
+
+User tested again (`Log17.txt`, Surah 101/Al-Qari'ah 1-11): "problem
+persists, skipped verse not detected." Traced first: `Log17.txt`'s
+`build`/`workerBuild` both read `2026-07-21m` — the stuck-cursor hotfix
+above (`2026-07-22a`) had NOT reached this deploy yet (Render lag or a
+pre-refresh test). So this specific log is NOT proof the hotfix failed —
+same failure shape (cursor stuck at ayah 3 the whole session, milestones
+show "now on ayah 3" exactly once, ayahs 5-11 never reached) as the
+already-fixed bug.
+
+Independent of that, the user proposed a bigger simplification: stop
+judging ayah-by-ayah live at all. Wait for the whole recitation (manual
+start/stop, no auto-stop), then evaluate. Rationale, and it's a fair one:
+every bug this project has hit for several rounds running — stuck cursor,
+boundary leakage, stability-window tuning, auto-stop timing — traces to
+the same source, trying to decide verse status WHILE still streaming and
+noisy. Confirmed and agreed to implement.
+
+**New model** (supersedes "Ayah-by-ayah capture, then evaluate" and the
+"3-tier verdict" mechanics in the New architecture section above — the
+three-tier verdict ITSELF is unchanged, only WHEN it's computed):
+- No live cursor, no advance-candidate scan, no stability-cycle gate, no
+  passage-complete/auto-stop. The reciter drives start/stop manually.
+- tilawa's decode keeps flowing continuously the whole session exactly as
+  before (`decoded_text`/`word_verdicts` — unaffected, still fires every
+  cycle in both modes). What changed is scope and timing: `expectedWindow()`
+  in `worker-entry.js` is now STATIC — always the full picked passage,
+  from session start, not cursor-relative at all. The `{type:'cursor'}`
+  message and `cursorAyah` state are removed entirely from the worker —
+  nothing to widen or get stuck anymore, because there's no narrow window
+  to begin with.
+- `js/recitation-coach.js`: `_onWordVerdicts` now ONLY accumulates
+  evidence (matched/wordFlags/lastHeardText per ayah) and emits
+  `word-progress` — no side effects, no ordering assumptions, evidence for
+  any ayah can arrive in any order relative to any other. `state` is still
+  `awaiting_start` -> `tracking` (a `started` effect fires once total
+  accumulated matched words crosses `startMinWords`, for UI purposes only —
+  it's no longer a per-ayah anchor decision). `finalize()` — called ONLY
+  on a manual stop (`requestStop()` + the worker's stop-flush
+  `final_sequence`), or the UI's existing timeout fallback — walks the
+  WHOLE picked passage exactly once with `_evaluateVerse()` (the three-tier
+  logic is untouched) and reconciles skipped-vs-not-reached with the same
+  `lastRecited` logic as before. `final_sequence` without a requested stop
+  is just a `checkpoint` (mid-session pause ping) — never auto-completes.
+- Removed entirely (all were mechanisms to make live per-ayah judgment
+  safer, and are now moot): `cursor`, `advanceCandidate`,
+  `advanceMinWords`/`advanceStabilityCycles` config, `_closeAndAdvance`,
+  `_checkPassageComplete`, the `verse-active`/`verse-committed`/
+  `verses-skipped`(live)/`passage-complete`/`start-retracted`/`repetition`/
+  `off-track` effects (the last three were already dead since Phase 2 —
+  tied to tracker-identity events no longer trusted — and are now cleaned
+  up rather than left as unreachable code).
+- `js/recitation.js`: replaced the single "current verse" live pane
+  (`_renderCurrentVerse`, cursor-gated) with `_renderPassageText()` — the
+  WHOLE picked passage renders once at session start, and `word-progress`
+  highlights matched words on whatever ayah it touches, wherever that is
+  in the passage. `_session.cursor` (previously doubling as a "has the
+  session started" proxy, `=== null` meaning "not yet") replaced with an
+  explicit `_session.started` boolean, set by the `started` effect — fixes
+  what would otherwise have been a real regression (mic-health silence/low
+  warnings staying on forever, since nothing ever set the old `cursor`
+  field again). New CSS: `.recite-passage-verse` for per-verse spacing in
+  the full-passage view.
+- `test-recitation.html` (dev-only harness, not linked from the app):
+  dropped the dead `cursor` postMessage and the no-longer-existent
+  `useWordVerdicts` config key.
+
+**Validation**: `tilawa-build/test/coach.test.mjs` fully rewritten again
+for the new accumulate-then-evaluate-once model (30 tests — dropped every
+test that depended on cursor/advance timing, added
+"evidence accumulates regardless of the order ayahs are touched in" and
+kept the core skip/uncertain/Basmala/length-scaling coverage).
+Real-ONNX validation via `scratchpad/e2e/realcoach.mjs` (drives the real
+compiled worker bundle + real production coach) re-run against the full
+7-fixture corpus: IDENTICAL results to every prior run — 6/7 perfect
+(Al-Falaq, An-Nas, Ar-Rahman, Al-Mulk, Al-Asr all 100/100 zero skips; the
+Fatiha stop-early scenario still correctly reports not-reached, not
+skipped), Ya-Sin's pre-existing ayah-4 short-verse false skip unchanged
+(confirms, again, it's a distinct calibration gap, not touched by this
+change). Zero regressions, and the entire stuck-cursor failure CLASS is
+now structurally impossible — there is no cursor left to get stuck.
+Build stamp bumped to `2026-07-22b`.
+
 ## Known landmines (don't re-learn these the hard way)
 
 - **`event` vs `data.type`**: tilawa wraps ALL tracker diagnostics as

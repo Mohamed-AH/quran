@@ -575,9 +575,8 @@ const recitationUI = {
         freestyle: true,
         coach: null, // anchored on the first confident verse_match
         committed: false,
-        lastOutOfRange: null,
         startedAtMs: Date.now(),
-        cursor: null,
+        started: false, // real evidence recognized yet? (no live cursor anymore)
         ended: false,
       };
     } else {
@@ -587,7 +586,7 @@ const recitationUI = {
           ayahStart: spec.from,
           ayahEnd: spec.to,
         }),
-        { startedAtMs: Date.now(), cursor: null, ended: false }
+        { startedAtMs: Date.now(), started: false, ended: false }
       );
       this._sendExpected(this._session);
     }
@@ -678,7 +677,7 @@ const recitationUI = {
     // Silence/faint-voice feedback only BEFORE the recitation is recognized:
     // once the session is tracking, quiet stretches are legitimate pauses
     // for breath and contemplation and must never draw a warning.
-    const notStartedYet = this._session && this._session.cursor === null;
+    const notStartedYet = this._session && !this._session.started;
 
     // Dead silence: no signal at all (mic muted / wrong device).
     if (notStartedYet && level.rms < 0.0015) {
@@ -744,12 +743,12 @@ const recitationUI = {
   _anchorFreestyle(anchor) {
     const s = this._session;
     Object.assign(s, this._sessionFieldsFor(anchor));
-    s.cursor = null;
+    s.started = false;
     s.committed = false;
-    s.lastOutOfRange = null;
     this._sendExpected(s);
     document.getElementById('reciteSurahTitle').textContent = s.surahInfo.name;
     this._renderVersePosition();
+    this._renderPassageText();
     document.getElementById('reciteVerseList').innerHTML = '';
   },
 
@@ -895,18 +894,6 @@ const recitationUI = {
       this._anchorFreestyle(anchor);
       this._showHint(this._t().anchored(s.surahInfo.name), 3500);
       // fall through: the anchoring event also starts the coach
-    } else if (
-      s.freestyle &&
-      s.coach &&
-      !s.committed &&
-      event.type === 'verse_match' &&
-      (event.confidence || 0) >= 0.55 &&
-      !s.coach.inRange(event.surah, event.ayah)
-    ) {
-      // Remember confident out-of-range matches: if the initial anchor was
-      // wrong (e.g. an identical opening phrase), the off-track effect
-      // below re-anchors to where the reciter actually is.
-      s.lastOutOfRange = event;
     }
 
     const effects = s.coach.handleEvent(event);
@@ -927,11 +914,11 @@ const recitationUI = {
                     .join(',')}]`
                 : event.type;
       this._log(
-        `event: ${brief} → coach[cursor=${s.coach.cursor} state=${s.coach.state}]:`,
+        `event: ${brief} → coach[state=${s.coach.state}]:`,
         effects.length ? effects.map((e) => e.type).join(', ') : '(no effect)'
       );
       if (typeof recitationDebug !== 'undefined') {
-        recitationDebug.set('coach', `state=${s.coach.state} cursor=${s.coach.cursor}`);
+        recitationDebug.set('coach', `state=${s.coach.state}`);
       }
     }
     this._applyEffects(effects);
@@ -942,25 +929,11 @@ const recitationUI = {
   _describeEffect(fx) {
     switch (fx.type) {
       case 'started':
-        return `STARTED at ayah ${fx.ayah}`;
-      case 'verse-active':
-        return `now on ayah ${fx.ayah}`;
-      case 'verse-committed':
-        return fx.unverified
-          ? `UNVERIFIED ayah ${fx.ayah} (tracked, but no lexical evidence)`
-          : `committed ayah ${fx.ayah}${fx.missedWords && fx.missedWords.length ? ` (missed words: [${fx.missedWords}])` : ''}${fx.uncertainWords && fx.uncertainWords.length ? ` (uncertain tail words: [${fx.uncertainWords}])` : ''}`;
-      case 'verses-skipped':
-        return `SKIPPED ayahs [${fx.ayahs}]`;
-      case 'start-retracted':
-        return `START RETRACTED at ayah ${fx.ayah} — tilawa gave up without confirming real content, undoing the false "skipped" verdict`;
-      case 'repetition':
-        return `repetition of ayah ${fx.ayah} (x${fx.count})`;
-      case 'off-track':
-        return 'off-track hint shown';
+        return 'STARTED — real recitation recognized';
+      case 'word-progress':
+        return `word-progress ayah ${fx.ayah} [${fx.matched}]`;
       case 'checkpoint':
         return 'checkpoint (silence flush mid-session)';
-      case 'passage-complete':
-        return `PASSAGE COMPLETE at ayah ${fx.ayah} — auto-stopping shortly`;
       case 'completed':
         return `COMPLETED — score=${fx.summary.score} done=[${fx.summary.versesDone}] skipped=[${fx.summary.versesSkipped}] unverified=[${fx.summary.versesUnverified}] notReached=[${fx.summary.versesNotReached}]`;
       default:
@@ -975,80 +948,18 @@ const recitationUI = {
       }
       switch (fx.type) {
         case 'started': {
-          this._breadcrumb(`recitation recognized — started at ayah ${fx.ayah}`);
+          this._session.started = true;
+          this._breadcrumb('recitation recognized — recording');
           this._showHint(this._t().listening, 2500);
-          // If the tracker had locked onto an out-of-range verse before the
-          // session started (candidate-based start), break its anchor now
-          // so it re-discovers and locks onto the actual passage.
-          const s = this._session;
-          if (s && (s.offRangeCount || 0) > 0) {
-            s.offRangeCount = 0;
-            this._resetTracker('tracker was off-passage at session start', true);
-          }
+          this._renderVersePosition();
           break;
         }
-        case 'verse-active':
-          this._session.cursor = fx.ayah;
-          if (this._worker) this._worker.postMessage({ type: 'cursor', ayah: fx.ayah });
-          this._renderCurrentVerse();
-          this._renderVersePosition();
-          this._renderVerseList();
-          break;
         case 'word-progress':
-          if (fx.ayah === this._session.cursor) {
-            this._highlightWords(fx.matched);
-          }
-          break;
-        case 'verse-committed':
-          this._session.committed = true;
-          this._renderVerseList();
-          break;
-        case 'verses-skipped':
-          this._renderVerseList();
-          break;
-        case 'start-retracted':
-          this._session.committed = false;
-          this._showHint(this._t().relisten, 3000);
-          this._renderVerseList();
-          break;
-        case 'repetition':
-          this._showHint(this._t().repetition, 2500);
-          this._renderVerseList();
+          this._highlightWords(fx.ayah, fx.matched);
           break;
         case 'checkpoint':
           this._showHint(this._t().checkpoint, 4000);
           break;
-        case 'passage-complete': {
-          // The picked passage's last verse is done — stop listening here
-          // instead of leaving the mic open until tilawa's own silence
-          // timeout or a manual tap. Small debounce so trailing elongation
-          // on the very last word isn't cut off mid-sound.
-          this._breadcrumb('reached the end of the picked passage — auto-stopping');
-          this._showHint(this._t().passageComplete, 0);
-          if (this._passageCompleteTimer) clearTimeout(this._passageCompleteTimer);
-          this._passageCompleteTimer = setTimeout(() => {
-            this._passageCompleteTimer = null;
-            if (this.isSessionActive()) this.stopSession();
-          }, 2000);
-          break;
-        }
-        case 'off-track': {
-          const s = this._session;
-          if (s.freestyle && !s.committed && s.lastOutOfRange) {
-            // The first anchor never took hold and the reciter is
-            // consistently somewhere else — move the coach there.
-            const detected = s.lastOutOfRange; // _anchorFreestyle clears it
-            const anchor = RecitationCoach.anchorFromEvent(detected, this._quranData);
-            if (anchor) {
-              this._anchorFreestyle(anchor);
-              this._showHint(this._t().anchored(s.surahInfo.name), 3500);
-              this._applyEffects(s.coach.handleEvent(detected));
-              break;
-            }
-          }
-          this._showHint(this._t().offTrack, 4000);
-          break;
-        }
         case 'completed':
           this._breadcrumb(
             `session ended — score ${fx.summary.score}, done ${fx.summary.versesDone ? fx.summary.versesDone.length : 0}, ` +
@@ -1086,13 +997,13 @@ const recitationUI = {
     document.getElementById('reciteSurahTitle').textContent = s.freestyle && !s.coach
       ? this._t().freestyleTitle
       : s.surahInfo.name;
-    document.getElementById('reciteVerseText').innerHTML = '';
     document.getElementById('reciteVerseList').innerHTML = '';
+    this._renderPassageText();
     this._renderVersePosition();
     this._showHint(s.freestyle ? this._t().freestyleListening : this._t().awaitingStart, 0);
     // Gentle nudge if nothing is heard for a while (not an error).
     this._awaitTimer = setTimeout(() => {
-      if (this._session && !this._session.ended && this._session.cursor === null) {
+      if (this._session && !this._session.ended && !this._session.started) {
         this._showHint(this._t().stillListening, 0);
       }
     }, 60000);
@@ -1103,55 +1014,66 @@ const recitationUI = {
     if (!s) return;
     const el = document.getElementById('reciteVersePos');
     if (!el) return;
-    if (!s.coach) {
-      el.textContent = '';
-    } else if (s.cursor === null) {
-      el.textContent = `${this._t().range}: ${this._num(s.ayahStart)}–${this._num(s.ayahEnd)}`;
-    } else {
-      el.textContent = this._t().verseOf(this._num(s.cursor), this._num(s.ayahEnd));
-    }
+    el.textContent = s.coach ? `${this._t().range}: ${this._num(s.ayahStart)}–${this._num(s.ayahEnd)}` : '';
   },
 
-  _renderCurrentVerse() {
+  /**
+   * There is no live per-ayah cursor anymore (see CLAUDE.md, "record, then
+   * evaluate once") — verdicts arrive against the WHOLE picked passage
+   * continuously, in no particular order, and per-verse status is only
+   * decided at finalize(). So instead of one "current verse" pane that
+   * advances, the whole passage is rendered once at session start, and
+   * `_highlightWords` marks matched words on WHATEVER ayah word-progress
+   * touches, wherever it is in the passage.
+   */
+  _renderPassageText() {
     const s = this._session;
-    const verse = s.versesByAyah[s.cursor];
-    if (!verse) return;
-    const tokens = RecitationCoach.splitDisplayTokens(verse.text);
-    document.getElementById('reciteVerseText').innerHTML = tokens
-      .map((tok) =>
-        tok.isWord
-          ? `<span class="word" data-w="${tok.wordIndex}">${tok.text}</span>`
-          : `<span class="waqf-mark">${tok.text}</span>`
-      )
-      .join(' ');
-    // Re-apply any coverage the coach already has (e.g. after a jump-back).
-    const covered = s.coach.coveredIndices(s.cursor);
-    if (covered.length) this._highlightWords(covered);
+    const container = document.getElementById('reciteVerseText');
+    if (!container || !s || !s.coach) {
+      if (container) container.innerHTML = '';
+      return;
+    }
+    container.innerHTML = s.verses
+      .map((verse) => {
+        const tokens = RecitationCoach.splitDisplayTokens(verse.text);
+        const words = tokens
+          .map((tok) =>
+            tok.isWord
+              ? `<span class="word" data-ayah="${verse.ayah}" data-w="${tok.wordIndex}">${tok.text}</span>`
+              : `<span class="waqf-mark">${tok.text}</span>`
+          )
+          .join(' ');
+        return `<div class="recite-passage-verse"><span class="recite-verse-num">${this._num(verse.ayah)}</span> ${words}</div>`;
+      })
+      .join('');
   },
 
-  _highlightWords(indices) {
+  _highlightWords(ayah, indices) {
     const container = document.getElementById('reciteVerseText');
     if (!container) return;
     for (const i of indices) {
-      const el = container.querySelector(`.word[data-w="${i}"]`);
+      const el = container.querySelector(`.word[data-ayah="${ayah}"][data-w="${i}"]`);
       if (el) el.classList.add('word-matched');
     }
   },
 
+  // Per-verse status (done/unverified/skipped) is only decided once, at
+  // finalize() — see CLAUDE.md "record, then evaluate once". There is
+  // nothing to show here during a live session; this only ever renders
+  // something after the session has ended (e.g. a language switch while
+  // the summary is still the active phase re-triggers this harmlessly).
   _renderVerseList() {
     const s = this._session;
     if (!s || !s.coach) return;
     const t = this._t();
     const items = [];
     for (const v of s.verses) {
-      if (v.ayah === s.cursor) continue;
       const st = s.coach.perVerse[v.ayah];
       if (st.status === 'pending') continue;
       let chip = '';
       if (st.status === 'done') chip = `<span class="recite-chip chip-done">✓ ${t.chipDone}</span>`;
       else if (st.status === 'unverified') chip = `<span class="recite-chip chip-unverified">⚠ ${t.chipUnverified}</span>`;
       else if (st.status === 'skipped') chip = `<span class="recite-chip chip-skipped">↷ ${t.chipSkipped}</span>`;
-      if (st.repeats > 0) chip += ` <span class="recite-chip chip-repeat">↻ ${t.chipRepeated(this._num(st.repeats))}</span>`;
       if (!chip) continue;
       items.push(
         `<div class="recite-verse-item"><span class="recite-verse-num">${this._num(v.ayah)}</span> ${chip}</div>`

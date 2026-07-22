@@ -1,59 +1,46 @@
 /**
  * RecitationCoach — pure state machine for the Recitation (تلاوة) feature.
  *
- * Architecture (rewrite — see CLAUDE.md "Rebuild the coach on our own
- * alignment engine"): tilawa's own tracker (verse_match / word_progress /
- * verse_candidate / lex_check / tracking_abandoned) is used ONLY to drive
- * audio capture in the worker; none of its verse-identity or scoring
- * conclusions are trusted here anymore. Every prior bug in this feature —
- * false starts, verses credited "done" with zero content confirmation,
- * boundary mislabeling, missed skips — traced back to that tracker's own
- * heuristics, which were built to keep a cursor roughly in place, not to
- * verify correctness. Proof it's structural, not tunable: real field data
- * showed genuinely-skipped verses and genuinely-correct-but-sparse verses
- * emitting the EXACT SAME tracker signal — no threshold separates them.
+ * Architecture (see CLAUDE.md "record, then evaluate once" — this REPLACES
+ * an earlier live per-ayah "capture, then evaluate" design): every attempt
+ * at judging ayahs live, one at a time, while the reciter is still going —
+ * a moving cursor, an advance-candidate scan, a stability window — kept
+ * producing the same class of bug in different shapes: a cursor that gets
+ * stuck on a hard/noisy verse silently blinds the coach to everything
+ * recited afterward, no matter how correct, because the alignment window
+ * and the "have we moved on" decision were both tied to that live cursor.
  *
- * The coach now runs entirely on `word_verdicts` — continuous, alignment-
- * engine (tilawa-build/src/align.js) verdicts of the decoded transcript
- * against the expected passage text, forwarded by the worker on every
- * decode cycle (see `decoded_text` / `word_verdicts` in worker-entry.js).
- * This mimics a real ustad: listen to one ayah, then judge it once —
- * NOT a continuously-revised running guess reacting to the first word
- * heard.
+ * The fix is to stop deciding anything live. tilawa's `transcribe`
+ * diagnostic (forwarded continuously as `decoded_text`/`word_verdicts` —
+ * see worker-entry.js) keeps flowing throughout the session regardless;
+ * this coach just ACCUMULATES alignment evidence for every ayah in the
+ * picked passage as it arrives, with no cursor and no per-ayah timing
+ * decision. The reciter drives start/stop manually — there is no
+ * auto-detected "session complete" anymore. Only when the session actually
+ * ends (a manual stop, or the UI's fallback) does `finalize()` walk the
+ * whole picked passage ONCE and decide, per ayah, using whatever evidence
+ * ended up accumulated: done / skipped / uncertain. This is what the
+ * "wait for the whole recitation, then evaluate" ask amounts to in
+ * practice — decoding never pauses, only the JUDGMENT is deferred to the
+ * end, because tilawa's own decode is a sliding window and can't hold
+ * an entire multi-minute session's audio to transcribe in one shot.
  *
- * Model:
- *  - Each ayah is a "capture window": alignment evidence (matched/fuzzy/
- *    missing/substituted words) accumulates as it arrives.
- *  - The window CLOSES — the ayah is evaluated once, a verdict is fixed,
- *    and the cursor advances — only once alignment evidence has STABLY
- *    shifted onto a later ayah for several consecutive cycles (a single
- *    transient hit can be sliding-window boundary noise: tilawa re-decodes
- *    a sliding audio window every cycle, so the tail of one ayah and the
- *    head of the next can appear in the same fragment).
- *  - Verdict at close time is THREE-TIER, scaled by ayah length (a single
- *    misdecode swings a 2-word ayah's coverage ratio far more than a
- *    20-word ayah's):
- *      done       — high word coverage (missedWords/substitutedWords may
- *                   still be attached — specific, confident mistakes).
- *      skipped    — near-zero coverage before later content is confidently
- *                   present. This is the app's central purpose: catching a
- *                   verse the reciter never said.
- *      uncertain  — coverage lands in the murky middle. No verdict is
- *                   forced; the raw heard text is kept alongside the
- *                   expected text so the reciter can judge for themself.
- *  - Repetition is never an error: content that doesn't anchor inside the
- *    live expected window (an earlier verse recited again) simply
- *    contributes no alignment evidence and is silently ignored.
+ * Three-tier per-ayah verdict (unchanged from the live design, still the
+ * right idea — only the WHEN changed, not the WHAT):
+ *   done       — high word coverage (missedWords/substitutedWords may
+ *                still be attached — specific, confident mistakes).
+ *   skipped    — near-zero coverage, with a LATER ayah confidently
+ *                covered — the app's central purpose: catching a verse
+ *                the reciter never said.
+ *   uncertain  — coverage lands in the murky middle. No verdict is
+ *                forced; the raw heard text is kept alongside the
+ *                expected text so the reciter can judge for themself.
  *
  * handleEvent(event) returns a list of effect objects for the UI:
- *   {type:'started', ayah}
- *   {type:'verse-active', ayah}
- *   {type:'word-progress', ayah, matched:[i...], totalWords}
- *   {type:'verse-committed', ayah, missedWords:[i...], substitutedWords:[...]}
- *   {type:'verses-skipped', ayahs:[...]}   (provisional until finalize)
- *   {type:'passage-complete', ayah}
- *   {type:'checkpoint'}
- *   {type:'completed', summary}
+ *   {type:'started'}                                       first real evidence seen
+ *   {type:'word-progress', ayah, matched, totalWords}       live accumulation
+ *   {type:'checkpoint'}                                     tracker paused mid-session
+ *   {type:'completed', summary}                             finalize() result
  */
 
 (function (globalScope) {
@@ -115,21 +102,13 @@
   }
 
   const DEFAULTS = {
-    // Alignment-based session start: proof that this many expected words
-    // were actually recited is direct evidence — no tracker involved.
+    // Total real matched/fuzzy words accumulated ANYWHERE in the picked
+    // passage before the session counts as genuinely "started" (drives the
+    // one-time 'started' effect and summary.started — no longer a per-ayah
+    // decision, since there's no cursor to place).
     startMinWords: 3,
-    // How many matched/fuzzy words on an UPCOMING ayah count as "the
-    // reciter has moved on" evidence for that ayah.
-    advanceMinWords: 2,
-    // An upcoming ayah must show that evidence STABLY, across this many
-    // consecutive word_verdicts cycles, before the current ayah's capture
-    // window closes. tilawa re-decodes a SLIDING window of recent audio
-    // every cycle (not incremental deltas), so a fragment spanning a verse
-    // boundary can transiently show a sliver of the next ayah's content —
-    // one such cycle is not enough to safely conclude the reciter moved on.
-    advanceStabilityCycles: 2,
     // Three-tier verdict thresholds (fraction of the ayah's scored words
-    // that ended up matched/fuzzy). Scaled by ayah length: a single
+    // that ended up matched/fuzzy), scaled by ayah length: a single
     // misdecode swings a short ayah's ratio far more than a long one's, so
     // short ayahs need a near-exact match to count as "done" instead of
     // "uncertain".
@@ -158,15 +137,10 @@
       this.cfg = Object.assign({}, DEFAULTS, opts.config || {});
       this.now = opts.now || Date.now;
 
-      this.state = 'awaiting_start';
-      this.cursor = null; // ayah currently being captured (open window)
+      this.state = 'awaiting_start'; // awaiting_start -> tracking -> completed | stopped
       this.startedAt = null;
       this.endedAt = null;
       this.stopRequested = false;
-      // {ayah, streak} — the furthest upcoming ayah currently showing
-      // advance-worthy evidence, and how many consecutive cycles it's held.
-      this.advanceCandidate = null;
-      this.passageCompleteEmitted = false;
 
       this.perVerse = {};
       for (const v of opts.verses) {
@@ -190,11 +164,11 @@
           // fuzzy verdict for the same index REPAIRS (deletes) the flag —
           // re-recitation always clears an accusation.
           wordFlags: {},
-          // Raw decoded text last seen while this ayah was under evaluation
-          // — carried into the 'uncertain' tier so the reciter can compare
-          // what was heard against what was expected themselves.
+          // Raw decoded text last seen touching this ayah — carried into
+          // the 'unverified' tier so the reciter can compare what was
+          // heard against what was expected themselves.
           lastHeardText: '',
-          status: 'pending', // pending | done | skipped | uncertain
+          status: 'pending', // decided once, at finalize(): done | skipped | unverified | pending
         };
       }
     }
@@ -265,16 +239,9 @@
     }
 
     /**
-     * The three-tier verdict for one ayah's CLOSED capture window — see the
-     * class doc comment. Pure function of accumulated alignment evidence;
-     * called exactly once per ayah (at window-close, or at session end for
-     * whatever's still open) so a verdict is never revised after the fact.
-     *
-     * Returns the status string 'unverified' for the "uncertain / needs
-     * your review" tier — kept as the existing status name (rather than a
-     * new 'uncertain' string) so the live per-verse chip rendering in
-     * js/recitation.js, which already has an 'unverified' chip, keeps
-     * working unchanged; Phase 3 does the deliberate rename + detail view.
+     * The three-tier verdict for one ayah, using whatever alignment
+     * evidence ended up accumulated for it by the time finalize() runs.
+     * Pure function — no side effects, safe to call speculatively.
      */
     _evaluateVerse(ayah) {
       const v = this.perVerse[ayah];
@@ -320,13 +287,6 @@
       );
       if (verdicts.length === 0) return effects;
 
-      // Accumulate evidence FIRST, before deciding whether this message
-      // starts the session — a fragment can carry real matches for an
-      // earlier ayah alongside the ayah that actually crosses the start
-      // threshold (align.js emits verdicts in expected-word order, so an
-      // earlier ayah's evidence always precedes a later one's in the same
-      // fragment). Evaluating "what's already known" for earlier verses
-      // must see this message's own evidence too, not just prior messages'.
       const touched = new Set();
       for (const verdict of verdicts) {
         const v = this.perVerse[verdict.ayah];
@@ -350,14 +310,14 @@
         for (const ayah of touched) this.perVerse[ayah].lastHeardText = msg.text;
       }
 
-      // Alignment-based session start: real evidence that the expected
-      // passage is actually being recited, independent of any tracker.
       if (this.state === 'awaiting_start') {
-        const matchedVerdicts = verdicts.filter(
-          (vd) => vd.status === 'matched' || vd.status === 'fuzzy'
-        );
-        if (matchedVerdicts.length < this.cfg.startMinWords) return effects;
-        effects.push(...this._start(matchedVerdicts[0].ayah));
+        let totalMatched = 0;
+        for (const ayah in this.perVerse) totalMatched += this.perVerse[ayah].matched.size;
+        if (totalMatched >= this.cfg.startMinWords) {
+          this.state = 'tracking';
+          this.startedAt = this.now();
+          effects.push({ type: 'started' });
+        }
       }
 
       for (const ayah of touched) {
@@ -368,143 +328,19 @@
           totalWords: this.perVerse[ayah].totalWords,
         });
       }
-
-      if (this.state !== 'tracking') return effects;
-
-      // The current ayah is the LAST in the picked range — there is no
-      // "next ayah" to gather advance evidence from, so completion is
-      // judged directly against this ayah's own coverage.
-      if (this.cursor === this.ayahEnd) {
-        effects.push(...this._checkPassageComplete());
-        return effects;
-      }
-
-      // Advance-stability check: does an UPCOMING ayah now show enough
-      // evidence, and has it shown it consistently for enough consecutive
-      // cycles (see advanceStabilityCycles) to safely close the current
-      // ayah's window rather than react to one noisy fragment?
-      //
-      // Scans the FULL remaining range, not just cursor+1/+2 (field bug,
-      // Log16.txt/Surah 94: a messy decode of ayah 1 never produced 2
-      // stable matched words on ayah 2 or 3, so the cursor never moved —
-      // and with a narrow lookahead, later ayahs (4-8, clearly and
-      // correctly recited soon after) were never even considered as
-      // candidates, so the session silently missed most of a genuinely
-      // correct recitation. worker-entry.js's expectedWindow() widens to
-      // match — the alignment window and this scan must cover the same
-      // range or genuine far-ahead evidence exists but is invisible here.
-      let candidate = this.cursor;
-      for (let a = this.cursor + 1; a <= this.ayahEnd; a++) {
-        if (this.perVerse[a] && this.perVerse[a].matched.size >= this.cfg.advanceMinWords) {
-          candidate = a;
-        }
-      }
-      if (candidate === this.cursor) {
-        this.advanceCandidate = null;
-        return effects;
-      }
-      if (this.advanceCandidate && this.advanceCandidate.ayah === candidate) {
-        this.advanceCandidate.streak++;
-      } else {
-        this.advanceCandidate = { ayah: candidate, streak: 1 };
-      }
-      if (this.advanceCandidate.streak >= this.cfg.advanceStabilityCycles) {
-        this.advanceCandidate = null;
-        effects.push(...this._closeAndAdvance(candidate));
-      }
-      return effects;
-    }
-
-    /**
-     * Fires 'passage-complete' once the picked passage's LAST verse
-     * reaches a "done" verdict — every earlier verse gets a live signal
-     * when its window closes (verse-committed), but the last verse never
-     * advances anywhere, so nothing else tells the UI the recitation is
-     * actually finished before tilawa's own silence timeout or a manual
-     * stop.
-     */
-    _checkPassageComplete() {
-      if (this.passageCompleteEmitted) return [];
-      if (this._evaluateVerse(this.ayahEnd) !== 'done') return [];
-      this.passageCompleteEmitted = true;
-      const v = this.perVerse[this.ayahEnd];
-      v.status = 'done';
-      return [{ type: 'passage-complete', ayah: this.ayahEnd }];
-    }
-
-    _start(ayah) {
-      const effects = [];
-      this.state = 'tracking';
-      this.startedAt = this.now();
-      this.cursor = ayah;
-
-      if (ayah > this.ayahStart) {
-        // Provisional (reconciled at finalize): evaluate whatever real
-        // alignment evidence already accumulated for the verses before the
-        // detected start — a fragment spanning the eventual start ayah can
-        // carry genuine evidence for earlier verses too, in the same batch.
-        // Anything with no real evidence is a genuine skip, not a guess.
-        const skipped = [];
-        for (let a = this.ayahStart; a < ayah; a++) {
-          const verdict = this._evaluateVerse(a);
-          this.perVerse[a].status = verdict;
-          if (verdict === 'skipped') skipped.push(a);
-        }
-        if (skipped.length) effects.push({ type: 'verses-skipped', ayahs: skipped });
-      }
-      effects.push({ type: 'started', ayah: ayah });
-      effects.push({ type: 'verse-active', ayah: ayah });
-      return effects;
-    }
-
-    _closeAndAdvance(toAyah) {
-      const effects = [];
-      const cur = this.perVerse[this.cursor];
-      cur.status = this._evaluateVerse(this.cursor);
-      if (cur.status === 'skipped') {
-        effects.push({ type: 'verses-skipped', ayahs: [this.cursor] });
-      } else {
-        effects.push({
-          type: 'verse-committed',
-          ayah: cur.ayah,
-          unverified: cur.status === 'unverified',
-          missedWords: cur.status === 'done' ? this.missedWordIndices(cur.ayah) : [],
-          substitutedWords: cur.status === 'done' ? this.substitutedWords(cur.ayah) : [],
-        });
-      }
-
-      // toAyah can be cursor+2 (the advance window looks two ayahs ahead) —
-      // any ayah strictly between never gathered its own advance evidence
-      // and is a genuine skip: this is the direct mechanism that catches a
-      // fully-omitted verse between two correctly recited ones.
-      if (toAyah > this.cursor + 1) {
-        const skipped = [];
-        for (let a = this.cursor + 1; a < toAyah; a++) {
-          const verdict = this._evaluateVerse(a);
-          this.perVerse[a].status = verdict;
-          if (verdict === 'skipped') skipped.push(a);
-        }
-        if (skipped.length) effects.push({ type: 'verses-skipped', ayahs: skipped });
-      }
-
-      this.cursor = toAyah;
-      effects.push({ type: 'verse-active', ayah: toAyah });
       return effects;
     }
 
     _onFinalSequence() {
       // tilawa's tracker flushed (silence-triggered) — no longer trusted
       // for verse identity, but still the signal that audio capture just
-      // paused or the session is ending; kept as a coarse secondary cue
-      // and the stop-flush completion signal.
-      const finishedLastVerse =
-        this.cursor === this.ayahEnd && this._evaluateVerse(this.ayahEnd) === 'done';
-
-      if (this.stopRequested || finishedLastVerse) {
+      // paused or the session is ending. There is no auto-stop anymore:
+      // the reciter drives start/stop manually, so a flush only finalizes
+      // when the UI has already requested a stop; otherwise it's just a
+      // mid-session pause.
+      if (this.stopRequested) {
         return [this._finalize()];
       }
-      // A long contemplation pause flushed the tracker mid-session. Keep the
-      // session open — the reciter resumes and alignment picks up again.
       return [{ type: 'checkpoint' }];
     }
 
@@ -514,9 +350,10 @@
     }
 
     /**
-     * Idempotent session end: reconcile every verse's final status and
-     * build the summary. Called via final_sequence (stop-flush or last
-     * verse finished) or directly by the UI as a fallback.
+     * Idempotent session end: evaluate every ayah in the picked passage
+     * ONCE, using whatever evidence accumulated over the whole session,
+     * and build the summary. Called via final_sequence (stop-flush) or
+     * directly by the UI as a fallback.
      */
     finalize() {
       if (this.state === 'completed' || this.state === 'stopped') {
@@ -530,23 +367,15 @@
       const started = this.state === 'tracking';
       this.state = this.stopRequested && !started ? 'stopped' : 'completed';
 
-      // Evaluate every verse whose window never explicitly closed (the
-      // open cursor verse, and anything beyond it) exactly like a normal
-      // close would have. A verse reached only stays 'skipped' if a LATER
-      // verse was genuinely recited too — one simply not reached because
-      // the reciter stopped there on purpose is reported separately
-      // ('not reached'), not as a mistake.
+      // A verse counts as genuinely reached if it's done or ambiguous
+      // (some real evidence exists); it's a real skip only if a LATER
+      // verse was also reached — otherwise the reciter simply never got
+      // that far, which isn't a mistake and is reported separately.
       let lastRecited = null;
       for (let a = this.ayahStart; a <= this.ayahEnd; a++) {
-        const v = this.perVerse[a];
-        if (v.status === 'done' || v.status === 'unverified') {
-          lastRecited = a;
-          continue;
-        }
-        if (v.status === 'skipped') continue; // already closed as a skip
         const verdict = this._evaluateVerse(a);
         if (verdict !== 'skipped') {
-          v.status = verdict;
+          this.perVerse[a].status = verdict;
           lastRecited = a;
         }
       }
@@ -624,7 +453,7 @@
         missedWords: missedWords,
         substitutedWords: substitutedWords,
         uncertainDetail: uncertainDetail, // {ayah: {heard, expected}}
-        repeats: {}, // repetition tracking retired — see CLAUDE.md Phase 2
+        repeats: {}, // repetition tracking retired — see CLAUDE.md
         wordCoverage: Math.round(wordRatio * 100) / 100,
         score: score,
         durationSec:

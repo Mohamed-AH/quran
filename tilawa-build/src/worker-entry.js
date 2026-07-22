@@ -13,9 +13,17 @@
  *   { type: "reset" }
  *   { type: "setConfig", config: Partial<StreamingConfig> }
  *   { type: "setExpected", surah, ayahStart, ayahEnd }  word-accuracy window
+ *                                                       (the FULL range —
+ *                                                       there is no live
+ *                                                       cursor; the coach
+ *                                                       accumulates evidence
+ *                                                       for the whole
+ *                                                       passage and only
+ *                                                       decides per-verse
+ *                                                       status once, at
+ *                                                       manual stop)
  *                                                       + rescopes the tracker
  *                                                       to just that surah
- *   { type: "cursor", ayah }                       coach cursor updates
  *   { type: "transcribe", samples: Float32Array }  one-shot (harness/debug)
  *
  * Outbound messages:
@@ -74,41 +82,21 @@ let currentConfig = {};
 let scopedSurah = null; // null = full corpus (freestyle, pre-anchor)
 
 // Word-accuracy layer: expected passage (from QuranDB.phoneme_words — same
-// decode space as raw_transcript text) and the coach's cursor. Each
-// raw_transcript fragment is aligned against a window around the cursor and
-// per-word verdicts are emitted as a synthetic `word_verdicts` event.
+// decode space as raw_transcript text). Every decoded_text cycle is aligned
+// against the FULL expected range and per-word verdicts are emitted as a
+// synthetic `word_verdicts` event; the main-thread coach accumulates them
+// across the whole session and only decides done/skipped/uncertain once,
+// at manual stop — see js/recitation-coach.js and CLAUDE.md ("record, then
+// evaluate once" — replaces an earlier live per-ayah cursor design that hit
+// a real stuck-cursor blind spot: build 2026-07-21m/Phase 2, Log16.txt).
 let expectedRange = null; // { surah, ayahStart, ayahEnd }
-let cursorAyah = null;
 
 const MAX_WINDOW_WORDS = 96;
 
-/**
- * Field bug (Log16.txt, Surah 94, build 2026-07-21m/Phase 2): the window
- * used to cap at cursorAyah+2 after start. When the cursor stalls — e.g. a
- * messy decode of a short/hard opening ayah never accumulates 2 stable
- * matched words on any nearby ayah — the window never widens past that
- * point for the REST OF THE SESSION, no matter how much later content gets
- * decoded. Traced directly from the raw `transcribe` log: ayahs 4-8 of
- * Surah 94 were decoded almost perfectly by ~36s in, but the cursor never
- * left ayah 1, so none of it was ever compared against the right expected
- * words — total blind spot, not a scoring error. The coach's advance
- * candidate scan (js/recitation-coach.js) needs the same range to be able
- * to detect and act on it. This is the direct cause of a fully-correct
- * session scoring 90 with only 1/8 verses credited and never auto-stopping
- * (passage-complete requires cursor === ayahEnd, which was unreachable).
- */
 function expectedWindow() {
   if (!session || !expectedRange) return null;
   const words = [];
-  // Always align against the FULL remaining expected range (bounded only
-  // by MAX_WINDOW_WORDS) — before start AND after. A narrow post-start
-  // lookahead sounds more precise but creates exactly the stuck-cursor
-  // blind spot above; align.js's own MIN_ANCHORS gate and the coach's
-  // advance-stability requirement (>=2 consecutive cycles) are the real
-  // guards against a coincidental far-away match, not a tight window.
-  const from = cursorAyah === null ? expectedRange.ayahStart : cursorAyah;
-  const to = expectedRange.ayahEnd;
-  for (let a = from; a <= to && words.length < MAX_WINDOW_WORDS; a++) {
+  for (let a = expectedRange.ayahStart; a <= expectedRange.ayahEnd && words.length < MAX_WINDOW_WORDS; a++) {
     const verse = session.db.getVerse(expectedRange.surah, a);
     if (!verse) continue;
     verse.phoneme_words.forEach((w, i) => {
@@ -359,7 +347,6 @@ function rescopeToSurah(surah) {
   // safety net as a manual reset.
   pendingChunks = [];
   queueDepth = 0;
-  cursorAyah = null;
   resetEpoch++;
 }
 
@@ -384,7 +371,6 @@ function resetStreaming() {
   if (session) session.reset();
   pendingChunks = [];
   queueDepth = 0;
-  cursorAyah = null;
   resetEpoch++;
 }
 
@@ -506,10 +492,6 @@ self.onmessage = (e) => {
           ayahStart: msg.ayahStart,
           ayahEnd: msg.ayahEnd,
         };
-        cursorAyah = null;
-        break;
-      case "cursor":
-        cursorAyah = typeof msg.ayah === "number" ? msg.ayah : null;
         break;
       case "setConfig":
         if (session) session.setConfig(msg.config || {});

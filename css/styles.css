@@ -658,6 +658,21 @@
         }
         .waqf-mark { color: var(--sage); font-size: 0.8em; }
 
+        /* Full-passage live view (see CLAUDE.md "record, then evaluate
+           once" — there's no live per-ayah cursor anymore, so the whole
+           picked passage is rendered at once and words light up wherever
+           they're recognized, instead of one verse advancing at a time). */
+        .recite-passage-verse {
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+        }
+        .recite-passage-verse:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
         .recite-verse-list { display: flex; flex-direction: column; gap: 8px; }
         .recite-verse-item {
             display: flex;
