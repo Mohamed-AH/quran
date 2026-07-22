@@ -106,14 +106,24 @@ function expectedWindow() {
 }
 
 function maybeEmitWordVerdicts(event) {
-  if (event.type !== "raw_transcript" || !event.text) return;
+  // decoded_text (from tilawa's `transcribe` diagnostic) fires every decode
+  // cycle in BOTH discovery and tracking mode — unlike raw_transcript,
+  // which tracking mode suppresses entirely. This is what makes the
+  // alignment-driven coach's continuous capture-and-evaluate model
+  // possible: see CLAUDE.md and js/recitation-coach.js.
+  if (event.type !== "decoded_text" || !event.text) return;
   const window = expectedWindow();
   if (!window) return;
   const decoded = event.text.trim().split(/\s+/).filter(Boolean);
   if (decoded.length === 0) return;
   const verdicts = alignTranscript(decoded, window);
   if (verdicts.length) {
-    postEvent({ type: "word_verdicts", surah: expectedRange.surah, verdicts });
+    postEvent({
+      type: "word_verdicts",
+      surah: expectedRange.surah,
+      verdicts,
+      text: event.text,
+    });
   }
 }
 

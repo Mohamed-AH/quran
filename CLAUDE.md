@@ -213,17 +213,69 @@ only sliding-window re-decodes.
     per the phased-delivery plan (this change is inert until Phase 2 wires
     `decoded_text` into actual coach behavior; bumping now would be pure
     version churn with no user-visible effect).
-- [ ] **Phase 2 — core engine**: ayah-capture-and-evaluate state machine,
+- [x] **Phase 2 — core engine**: ayah-capture-and-evaluate state machine,
   three-tier verdict, direct skip detection, boundary-stability refinement,
-  short-ayah threshold scaling. Validate against field-log replay fixtures +
-  clean e2e corpus together. NOT STARTED.
-  - Scope note: `expectedWindow()`'s generalization (running continuously off
-    `decoded_text` instead of discovery-only `raw_transcript`) belongs HERE,
-    not Phase 1 — emitting word-level verdicts continuously without the
-    boundary-close gate would just re-surface the stream-jitter problem
-    (refinement #3 above) with no evaluation discipline. Build the
-    capture/close/evaluate-once logic and the continuous window read
-    together, not the window read alone first.
+  short-ayah threshold scaling.
+  - `worker-entry.js`: `maybeEmitWordVerdicts` now triggers off
+    `decoded_text` (continuous, both modes) instead of discovery-only
+    `raw_transcript`; `word_verdicts` now also carries the raw `text` so the
+    'unverified' tier can show heard-vs-expected detail. `expectedWindow()`
+    itself was already cursor-driven and needed no change.
+  - `js/recitation-coach.js`: rewritten. `handleEvent` now only meaningfully
+    processes `word_verdicts` and `final_sequence` — `verse_match`,
+    `word_progress`, `verse_candidate`, `lex_check`, `tracking_abandoned`
+    are documented no-ops (tilawa's tracker keeps running for audio capture
+    only; `verse_candidate`/`verse_match` are still used ONLY by
+    `anchorFromEvent` to pick where an un-anchored freestyle session
+    starts — never to judge correctness). Retired entirely: spanEvidence,
+    forward-jump hysteresis, the lex_check/fallback-counting gate,
+    tracking_abandoned retraction, the old progress-high-water-mark model,
+    per-word repetition tracking. Coverage is now purely
+    `matched.size` from real alignment evidence; `missedWordIndices`/
+    `substitutedWords` read straight off `wordFlags`.
+  - Status string: kept as `'unverified'` (not `'uncertain'`) internally so
+    the existing live per-verse chip in `js/recitation.js` (which already
+    has an 'unverified' chip) keeps working unchanged. `summary.repeats` is
+    always `{}` now (repetition tracking retired) — kept only so
+    `js/recitation.js`'s `Object.values(sum.repeats)` doesn't crash on the
+    old field name. `CONFIG.FEATURES.WORD_VERDICTS` removed (word_verdicts
+    is now foundational, not an opt-in accusation layer).
+  - Tests: `tilawa-build/test/coach.test.mjs` fully rewritten (34 tests,
+    all against the new `word_verdicts`-driven engine); `align.test.mjs`
+    (8 tests, alignment engine itself) untouched and still passing.
+  - **Real bug found and fixed during this rewrite**: `_start()` used to
+    evaluate earlier-verse evidence and decide whether to fire before that
+    same message's own verdicts were applied to `perVerse` — meaning a
+    fragment carrying real evidence for an earlier ayah in the SAME message
+    that finally crosses the start threshold couldn't get credit yet. Fixed
+    by accumulating all verdicts into `perVerse` first, then deciding
+    start/advance off the now-current state.
+  - **Real-ONNX integration validation** (new harness,
+    `scratchpad/e2e/realcoach.mjs` — drives the actual compiled worker
+    bundle AND the actual production `js/recitation-coach.js` together,
+    no hand-mirrored logic): clean fixtures mostly score well (Al-Falaq
+    113:1-5 → 100, all done, zero skips), but **Ya-Sin 36:1-5 produced a
+    real false skip on ayah 4** ("عَلَىٰ صِرَٰطٍ مُّسْتَقِيمٍ", 3 words) —
+    zero alignment coverage ever landed on it before evidence for ayah 5
+    stabilized. Ayah 1 (embeds the Basmala + the standalone letter "يٓسٓ")
+    correctly landed in the 'unverified' tier rather than being force-called
+    either way — heard "ل والقر الرحمن الرحيم" vs expected "بِسْمِ ٱللَّهِ
+    ٱلرَّحْمَٰنِ ٱلرَّحِيمِ يسٓ", which is an honest call given "يس" (a
+    2-letter mystical/muqatta'at word) is a genuinely hard ASR target — this
+    is the NEW tier working as designed, not a bug.
+    The ayah-4 false skip, however, is a real, open calibration gap: a
+    short (<=3-word) ayah sandwiched between two others can end up with
+    zero anchors if the alignment window's anchor-trimming happens to land
+    on its neighbors. Per the user's explicitly stated priority, a false
+    skip on genuinely correct audio is an ACCEPTED tradeoff (worse than
+    missing a real skip, better than crediting one) — so this does not
+    block calling Phase 2 functionally complete, but it is a concrete,
+    real (not hypothetical) follow-up: consider whether short ayahs need a
+    wider/dedicated capture window, or whether zero-coverage-at-close should
+    get one extra decode cycle of grace before finalizing 'skipped' when the
+    ayah is short. NOT yet tuned — do not blind-guess a threshold fix here;
+    the same "premature calibration without a real corpus" mistake from the
+    old tracker-fallback gate applies equally to a new signal.
 - [ ] **Phase 3 — UI**: uncertain/review chip + heard-vs-expected detail in
   `js/recitation.js`. NOT STARTED.
 - [ ] **Phase 4 — cutover**: remove retired tracker-dependent logic once new
