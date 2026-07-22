@@ -725,7 +725,6 @@ const recitationUI = {
         ayahStart: anchor.ayahStart,
         ayahEnd: anchor.ayahEnd,
         verses,
-        config: { useWordVerdicts: CONFIG.FEATURES.WORD_VERDICTS },
       }),
     };
   },

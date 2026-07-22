@@ -1,35 +1,57 @@
 /**
  * RecitationCoach — pure state machine for the Recitation (تلاوة) feature.
  *
- * Consumes raw tilawa streaming events (verse_match / word_progress /
- * final_sequence) and produces coaching verdicts: session start & end,
- * missed words, skipped verses, and repetition tolerance. No DOM, no
- * timers, no globals — fully unit-testable (tilawa-build/test/).
+ * Architecture (rewrite — see CLAUDE.md "Rebuild the coach on our own
+ * alignment engine"): tilawa's own tracker (verse_match / word_progress /
+ * verse_candidate / lex_check / tracking_abandoned) is used ONLY to drive
+ * audio capture in the worker; none of its verse-identity or scoring
+ * conclusions are trusted here anymore. Every prior bug in this feature —
+ * false starts, verses credited "done" with zero content confirmation,
+ * boundary mislabeling, missed skips — traced back to that tracker's own
+ * heuristics, which were built to keep a cursor roughly in place, not to
+ * verify correctness. Proof it's structural, not tunable: real field data
+ * showed genuinely-skipped verses and genuinely-correct-but-sparse verses
+ * emitting the EXACT SAME tracker signal — no threshold separates them.
  *
- * Design rules (see tilawa-build/README.md for the word-index contract):
- *  - The user picks the passage first, so the expected verse sequence is
- *    known. That range is the strongest disambiguator for identical
- *    phrases (e.g. الرَّحْمَٰنِ الرَّحِيمِ in Al-Fatiha 1:1 vs 1:3): events
- *    are interpreted relative to the expected cursor, and a forward jump
- *    needs a second consistent event (hysteresis) before it counts as a
- *    skip.
- *  - Repetition is NEVER an error: re-matching the current verse, going
- *    back to an earlier verse, or re-reciting words only ever adds
- *    coverage (matched-index sets are unioned over time).
- *  - Pauses are invisible here. Tilawa absorbs short silences; if a long
- *    contemplation pause makes the tracker emit final_sequence, the coach
- *    treats it as a CHECKPOINT and keeps the session open — only a manual
- *    stop, finalize(), or completing the last verse ends a session.
+ * The coach now runs entirely on `word_verdicts` — continuous, alignment-
+ * engine (tilawa-build/src/align.js) verdicts of the decoded transcript
+ * against the expected passage text, forwarded by the worker on every
+ * decode cycle (see `decoded_text` / `word_verdicts` in worker-entry.js).
+ * This mimics a real ustad: listen to one ayah, then judge it once —
+ * NOT a continuously-revised running guess reacting to the first word
+ * heard.
+ *
+ * Model:
+ *  - Each ayah is a "capture window": alignment evidence (matched/fuzzy/
+ *    missing/substituted words) accumulates as it arrives.
+ *  - The window CLOSES — the ayah is evaluated once, a verdict is fixed,
+ *    and the cursor advances — only once alignment evidence has STABLY
+ *    shifted onto a later ayah for several consecutive cycles (a single
+ *    transient hit can be sliding-window boundary noise: tilawa re-decodes
+ *    a sliding audio window every cycle, so the tail of one ayah and the
+ *    head of the next can appear in the same fragment).
+ *  - Verdict at close time is THREE-TIER, scaled by ayah length (a single
+ *    misdecode swings a 2-word ayah's coverage ratio far more than a
+ *    20-word ayah's):
+ *      done       — high word coverage (missedWords/substitutedWords may
+ *                   still be attached — specific, confident mistakes).
+ *      skipped    — near-zero coverage before later content is confidently
+ *                   present. This is the app's central purpose: catching a
+ *                   verse the reciter never said.
+ *      uncertain  — coverage lands in the murky middle. No verdict is
+ *                   forced; the raw heard text is kept alongside the
+ *                   expected text so the reciter can judge for themself.
+ *  - Repetition is never an error: content that doesn't anchor inside the
+ *    live expected window (an earlier verse recited again) simply
+ *    contributes no alignment evidence and is silently ignored.
  *
  * handleEvent(event) returns a list of effect objects for the UI:
  *   {type:'started', ayah}
  *   {type:'verse-active', ayah}
  *   {type:'word-progress', ayah, matched:[i...], totalWords}
- *   {type:'verse-committed', ayah, missedWords:[i...], uncertainWords:[i...]}
+ *   {type:'verse-committed', ayah, missedWords:[i...], substitutedWords:[...]}
  *   {type:'verses-skipped', ayahs:[...]}   (provisional until finalize)
- *   {type:'start-retracted', ayah}   an uncorroborated opening commit was undone
- *   {type:'repetition', ayah, count}
- *   {type:'off-track'}
+ *   {type:'passage-complete', ayah}
  *   {type:'checkpoint'}
  *   {type:'completed', summary}
  */
@@ -72,18 +94,14 @@
   // has none) embeds the Basmala as the verse's own first 4 words in this
   // text source. Reciters accept several equally valid openings — isti'adhah
   // + Basmala, Basmala only, isti'adhah only, or straight into the surah —
-  // so these 4 words must never be treated as required. (Isti'adhah itself,
-  // "أعوذ بالله من الشيطان الرجيم", isn't Quran text at all — it never
-  // appears in any verse's word list, so it was never scored to begin with;
-  // once the tracker is scoped to the picked surah, that audio simply
-  // matches nothing and is silently ignored until real recitation starts.)
+  // so these 4 words must never be treated as required.
   const BSM_WORDS = ['بسم', 'الله', 'الرحمن', 'الرحيم'];
 
   // text_uthmani carries full diacritics and the alef-wasla variant (ٱ,
   // U+0671) — strip both so the comparison matches BSM_WORDS' bare forms.
   function normalizeArabicWord(text) {
     return String(text || '')
-      .replace(/[ً-ٰٟـ]/g, '') // harakat/tanwin/shadda/sukun + tatweel
+      .replace(/[ً-ٰٟـ]/g, '') // harakat/tanwin/shadda/sukun + tatweel
       .replace(/[آأإٱ]/g, 'ا'); // آأإٱ → ا
   }
 
@@ -97,96 +115,29 @@
   }
 
   const DEFAULTS = {
-    startConfidence: 0.55, // min verse_match confidence to open the session
-    doneCoverage: 0.6, // word coverage for the active verse to count as done at finalize
-    reconcileCoverage: 0.8, // coverage that counts a verse done even without a commit
-    offTrackLimit: 3, // consecutive out-of-range events before the off-track hint
-    // verse_candidate-based start: discovery's ranked candidates identify
-    // the passage even when the tracker's advance gate is stuck on a
-    // noise-acquired verse (field bug: perfect Fatiha decode, tracker
-    // blocked on 104:9). Stable in-range candidates open the session.
-    candidateStartConfidence: 0.85,
-    // Corroborating span evidence recorded from ANY in-range verse_candidate
-    // (not just at session start) — see spanEvidence below. Lower bar than
-    // candidateStartConfidence because this only ever RESCUES a verse from
-    // a false skip accusation, never accuses; the risk of being generous
-    // here is a verse marked done that maybe wasn't fully recited, not a
-    // false mistake claim.
-    spanEvidenceConfidence: 0.75,
-    // Transcript-alignment session start/advance: independent of tilawa's
-    // tracker entirely — if the aligner proves >=N expected words were
-    // recited, that IS the recitation. The strongest defense against a
-    // tracker stuck on a noise commit.
-    transcriptStart: true,
-    transcriptStartWords: 3,
-    scoreWeights: { verses: 60, words: 30, confidence: 10 },
-    // Transcript-alignment word verdicts (worker `word_verdicts` events).
-    // Off until calibrated against real wrong-recitation clips — see
-    // CONFIG.FEATURES.WORD_VERDICTS.
-    useWordVerdicts: false,
-    // Content-verification gate (worker `lex_check` events, from tilawa's
-    // own tracking_cycle.word_matches diagnostic — see _onLexCheck).
-    //
-    // IMPORTANT HISTORY (build 2026-07-21l and earlier): every threshold
-    // below this comment, and the whole "verified empirically against the
-    // e2e corpus" claim in the history that used to be here, was WRONG —
-    // not miscalibrated, but never actually exercised at all. The worker's
-    // onDiagnostic callback receives the tracker's diagnostics wrapped as
-    // `("tracker", {...theRealDiagnostic})` — the first argument is ALWAYS
-    // the literal string "tracker", never the diagnostic's own type
-    // ("tracking_cycle", "stale_exit", etc). The code checked `event ===
-    // "tracking_cycle"`, a comparison that can never be true. lex_check
-    // NEVER fired, in any build, in production OR in the e2e harness
-    // (whose hand-written mirror of this logic had the exact same bug).
-    // Every "zero false positives" claim below was measured against a
-    // pipeline emitting no signal at all — confirmed by running the real
-    // compiled worker bundle directly (not the e2e mirror) and by replaying
-    // real field logs against the current coach. Fixed in worker-entry.js
-    // (check data.type, not event). Once the real signal started flowing,
-    // it forced a full recalibration from scratch against 6 real clean
-    // multi-verse recitations (An-Naas, Al-Falaq, Ya-Sin, Ar-Rahman,
-    // Al-Mulk, Al-Asr — 24 verses total) via a new test harness
-    // (scratchpad e2e/realworker_multi.mjs) that runs the actual compiled
-    // bundle end-to-end, unlike the old e2e.mjs mirror.
-    //
-    // That real data forced a second, more fundamental finding: tilawa's
-    // own `word_matches` (real lexical alignment) is NOT a reliable
-    // indicator of correctness at the SESSION level either — Ya-Sin's
-    // first 5 verses, entirely correctly recited, produced ZERO real
-    // lexical hits across the whole session (13 fallback-only cycles, 0
-    // lexical), because tilawa's own tracker relied entirely on
-    // acoustic/position fallback for that passage's short, repetitive
-    // vocabulary. The session-wide gate below (`minFallbackForJudgment`)
-    // would have zeroed a completely correct recitation's score. No finite
-    // threshold fixes this: a longer clean recitation of similarly sparse
-    // vocabulary can always exceed it. The score-zeroing effect of this
-    // gate is therefore DISABLED below (see _buildSummary) until a
-    // genuinely reliable signal is found — real wrong-recitation audio to
-    // calibrate against, which doesn't exist in this repo yet. The field
-    // is still computed and reported for visibility/future calibration.
-    minFallbackForJudgment: 6,
-    // Per-verse counterpart. Recalibrated from scratch (see history above)
-    // against the same 24 real per-verse data points: flags a verse
-    // unverified only when it had ZERO real lexical hits AND at least this
-    // many fallback-only cycles — every one of the 24 real clean verses
-    // stays safely under this bar (max real fallback-with-zero-lexical
-    // observed: 4). Unlike the session-wide gate, per-verse totals this
-    // small are far less likely to accumulate purely from a passage's
-    // vocabulary being hard to lexically track, so this bar is kept active
-    // (unlike the session-wide one) — but it should be re-validated against
-    // more real fixtures before being trusted at production scale.
-    minFallbackForVerseJudgment: 6,
-    // A verse's own trailing words can be genuinely spoken but never
-    // confirmed by tilawa's own word_progress if the tracker advances to
-    // the next verse's discovery window before one more tracking_cycle
-    // would have caught them (field cases, build 2026-07-21f, Surah 21:
-    // ayah 82's last word, ayah 90's last two words — both clearly present
-    // in the raw decoded transcript, both dropped from missedWordIndices
-    // purely because of this timing gap). Genuinely indistinguishable from
-    // an actual omission using tilawa's data alone — see
-    // splitMissedWordIndices. Capped small (2): a LARGER trailing gap is
-    // real evidence of incompleteness, not just a confirmation lag.
-    trailingUncertainTolerance: 2,
+    // Alignment-based session start: proof that this many expected words
+    // were actually recited is direct evidence — no tracker involved.
+    startMinWords: 3,
+    // How many matched/fuzzy words on an UPCOMING ayah count as "the
+    // reciter has moved on" evidence for that ayah.
+    advanceMinWords: 2,
+    // An upcoming ayah must show that evidence STABLY, across this many
+    // consecutive word_verdicts cycles, before the current ayah's capture
+    // window closes. tilawa re-decodes a SLIDING window of recent audio
+    // every cycle (not incremental deltas), so a fragment spanning a verse
+    // boundary can transiently show a sliver of the next ayah's content —
+    // one such cycle is not enough to safely conclude the reciter moved on.
+    advanceStabilityCycles: 2,
+    // Three-tier verdict thresholds (fraction of the ayah's scored words
+    // that ended up matched/fuzzy). Scaled by ayah length: a single
+    // misdecode swings a short ayah's ratio far more than a long one's, so
+    // short ayahs need a near-exact match to count as "done" instead of
+    // "uncertain".
+    shortAyahMaxWords: 3,
+    shortAyahDoneRatio: 0.9,
+    doneRatio: 0.75,
+    skipRatio: 0.15,
+    scoreWeights: { verses: 60, words: 40 },
   };
 
   class RecitationCoach {
@@ -208,36 +159,14 @@
       this.now = opts.now || Date.now;
 
       this.state = 'awaiting_start';
-      this.cursor = null; // ayah currently being recited
-      this.startAyah = null; // the ayah the session actually opened on — see _onTrackingAbandoned
+      this.cursor = null; // ayah currently being captured (open window)
       this.startedAt = null;
       this.endedAt = null;
       this.stopRequested = false;
-      this.offTrackStrikes = 0;
-      this.pendingJump = null; // {ayah} — forward-jump hysteresis
-      this.pendingBack = null; // {ayah} — backward-repetition hysteresis
-      this.confidences = [];
-      // Fires 'passage-complete' once, the first time the LAST verse in the
-      // picked range meets the same done-criteria _finalize() uses
-      // (sawCommit or coverage>=doneCoverage) — see _checkPassageComplete.
-      // Only the last verse needs this: every earlier verse already gets a
-      // live 'verse-committed' effect when the cursor advances past it, but
-      // the last verse never advances anywhere, so nothing else ever
-      // signals "the recitation the user asked for is actually finished"
-      // before the tracker's own silence-timeout (several seconds) or a
-      // manual stop — field complaint: picking an end verse and reciting
-      // it doesn't stop the mic there, recording "just continues".
+      // {ayah, streak} — the furthest upcoming ayah currently showing
+      // advance-worthy evidence, and how many consecutive cycles it's held.
+      this.advanceCandidate = null;
       this.passageCompleteEmitted = false;
-      // Session-wide content-verification counters — see _onLexCheck.
-      this.lexAdvances = 0;
-      this.fallbackAdvances = 0;
-      // ayah -> confidence, from ANY in-range verse_candidate seen so far
-      // (tracking or awaiting_start). tilawa's discovery often identifies a
-      // multi-verse span (e.g. "1:2-4") and then — by design — commits only
-      // its first ayah ("live span collapsed to first ayah"); without this,
-      // the coach would later see a jump past 3-4 and wrongly call them
-      // skipped even though the recognizer's own evidence covered them.
-      this.spanEvidence = {};
 
       this.perVerse = {};
       for (const v of opts.verses) {
@@ -255,25 +184,17 @@
           // Leading word indices [0, optionalCount) that are never accused
           // of being missed — see basmalaPrefixLength above.
           optionalCount: basmalaPrefixLength(this.surah, v.ayah, wordList),
-          // Tilawa's word_progress carries `word_index` (the alignment
-          // position — first unmatched word, a high-water mark) and
-          // `matched_indices` (INCREMENTAL matches for the cycle, often a
-          // single index). Coverage is therefore progress-based; the
-          // matched set only adds stragglers beyond the high-water mark.
-          progress: 0,
           matched: new Set(),
-          // Word-level flags from transcript alignment: index →
-          // {status: 'missing'|'substituted', heard?, expected}. A later
-          // matched/fuzzy verdict for the same index REPAIRS (deletes) the
-          // flag — re-recitation can always clear an accusation.
+          // Word-level flags from alignment: index -> {status:
+          // 'missing'|'substituted', heard?, expected}. A later matched/
+          // fuzzy verdict for the same index REPAIRS (deletes) the flag —
+          // re-recitation always clears an accusation.
           wordFlags: {},
-          repeats: 0,
-          sawCommit: false,
-          status: 'pending', // pending | active | done | skipped | unverified
-          // Per-verse content-verification counters — see _onLexCheck /
-          // _looksUnverified.
-          lexAdvances: 0,
-          fallbackAdvances: 0,
+          // Raw decoded text last seen while this ayah was under evaluation
+          // — carried into the 'uncertain' tier so the reciter can compare
+          // what was heard against what was expected themselves.
+          lastHeardText: '',
+          status: 'pending', // pending | done | skipped | uncertain
         };
       }
     }
@@ -284,107 +205,23 @@
       );
     }
 
-    /** Words considered recited: everything below the alignment high-water
-     *  mark, plus explicit matches beyond it. */
     coveredCount(ayah) {
       const v = this.perVerse[ayah];
-      if (!v) return 0;
-      let covered = Math.min(v.progress, v.totalWords);
-      for (const i of v.matched) {
-        if (i >= v.progress && i < v.totalWords) covered++;
-      }
-      return covered;
+      return v ? v.matched.size : 0;
     }
 
-    /** Indices treated as recited (for live highlighting). */
     coveredIndices(ayah) {
       const v = this.perVerse[ayah];
-      const out = [];
-      for (let i = 0; i < v.totalWords; i++) {
-        if (i < v.progress || v.matched.has(i)) out.push(i);
-      }
-      return out;
+      if (!v) return [];
+      return Array.from(v.matched).sort(function (a, b) {
+        return a - b;
+      });
     }
 
     coverage(ayah) {
       const v = this.perVerse[ayah];
       if (!v || v.totalWords === 0) return 0;
       return this.coveredCount(ayah) / v.totalWords;
-    }
-
-    /**
-     * Only positive evidence counts as a miss: words beyond the alignment
-     * high-water mark were provably never reached. Gaps below it are NOT
-     * reported — tilawa's incremental match reports are too sparse to
-     * accuse the reciter of skipping individual mid-verse words.
-     *
-     * A verse with ZERO coverage at all (progress=0, nothing matched) is a
-     * different situation entirely: it means the tracker advanced past this
-     * verse before any word-level alignment ever ran on it (e.g. a fast
-     * commit+advance on a short opening verse) — we have no data, not
-     * evidence of specific missing words. Reporting all N words as "missed"
-     * would misrepresent an absence of data as an accusation; field-tested
-     * case (build 2026-07-20e): a session that recited verse 1:1 correctly
-     * still had all 4 of its words reported "missed" this way.
-     *
-     * v.progress is tilawa's own high-water mark, so the loop below
-     * correctly starts there — indices before it are implicitly covered.
-     * But a verse can accumulate ALL its coverage via word_verdicts /
-     * transcript-alignment alone (progress never touched by tilawa's own
-     * word_progress at all — e.g. the session's opening verse, started via
-     * transcript-start rather than a tracker commit). There, progress stays
-     * 0 even though real observation only began at the first confirmed
-     * index, not at word 0 — field case (build 2026-07-21, Surah 21 ayah
-     * 97): a pre-recitation false lock on an out-of-range verse consumed
-     * the first ~9 words' worth of real audio before the coach's own
-     * tracking took over; those words were very likely said, just never
-     * individually observed, and got reported "missed" wholesale.
-     *
-     * Returns only the CONFIRMED half of the gap — see uncertainWordIndices
-     * below for the verse's own trailing words, which get a softer verdict.
-     */
-    missedWordIndices(ayah) {
-      return this.splitMissedWordIndices(ayah).missed;
-    }
-
-    /**
-     * A verse's own LAST word(s) can be genuinely spoken but never
-     * confirmed by tilawa's own word_progress, if the tracker advances to
-     * the next verse's discovery window before one more tracking_cycle
-     * would have caught them — see trailingUncertainTolerance above. This
-     * is only ever a TAIL phenomenon (the transition consuming the
-     * confirmation opportunity for whatever was still unconfirmed at that
-     * exact moment) — an earlier, non-trailing gap is unaffected and stays
-     * a confirmed miss exactly as before.
-     */
-    uncertainWordIndices(ayah) {
-      return this.splitMissedWordIndices(ayah).uncertain;
-    }
-
-    /** Shared computation behind missedWordIndices/uncertainWordIndices —
-     *  see their docs above for what each half means. */
-    splitMissedWordIndices(ayah) {
-      const v = this.perVerse[ayah];
-      if (v.progress === 0 && v.matched.size === 0) return { missed: [], uncertain: [] };
-      const observedFrom = v.progress > 0 ? v.progress : Math.min(...v.matched);
-      const gaps = [];
-      for (let i = observedFrom; i < v.totalWords; i++) {
-        if (i < v.optionalCount) continue; // Basmala prefix — never accused
-        if (!v.matched.has(i)) gaps.push(i);
-      }
-      // The trailing contiguous run of gaps that reaches the verse's very
-      // last word (totalWords-1) is the ambiguous zone. A gap set that
-      // doesn't reach the true last word (the tail WAS confirmed) has no
-      // ambiguity at all — whatever's missing is a real internal gap.
-      const lastIdx = v.totalWords - 1;
-      let tailLen = 0;
-      for (let i = gaps.length - 1; i >= 0; i--) {
-        if (gaps[i] === lastIdx - tailLen) tailLen++;
-        else break;
-      }
-      if (tailLen > this.cfg.trailingUncertainTolerance) tailLen = 0; // too big to be just a lag
-      const splitAt = gaps.length - tailLen;
-      return { missed: gaps.slice(0, splitAt), uncertain: gaps.slice(splitAt) };
     }
 
     /**
@@ -395,174 +232,85 @@
      */
     _scoredWordTotal(ayah) {
       const v = this.perVerse[ayah];
-      // Same "covered" notion as coveredCount(): an index counts as covered
-      // if it's below the progress high-water mark OR explicitly matched.
       let unmatchedOptional = 0;
       for (let i = 0; i < v.optionalCount; i++) {
-        const covered = i < v.progress || v.matched.has(i);
-        if (!covered) unmatchedOptional++;
+        if (!v.matched.has(i)) unmatchedOptional++;
       }
       return v.totalWords - unmatchedOptional;
     }
 
-    /** Main entry point: one tilawa event in, a list of UI effects out. */
+    missedWordIndices(ayah) {
+      const v = this.perVerse[ayah];
+      const out = [];
+      for (const idx of Object.keys(v.wordFlags)) {
+        if (v.wordFlags[idx].status === 'missing') out.push(Number(idx));
+      }
+      return out.sort(function (a, b) {
+        return a - b;
+      });
+    }
+
+    substitutedWords(ayah) {
+      const v = this.perVerse[ayah];
+      const out = [];
+      for (const idx of Object.keys(v.wordFlags)) {
+        const flag = v.wordFlags[idx];
+        if (flag.status === 'substituted') {
+          out.push({ index: Number(idx), heard: flag.heard, expected: flag.expected });
+        }
+      }
+      return out.sort(function (a, b) {
+        return a.index - b.index;
+      });
+    }
+
+    /**
+     * The three-tier verdict for one ayah's CLOSED capture window — see the
+     * class doc comment. Pure function of accumulated alignment evidence;
+     * called exactly once per ayah (at window-close, or at session end for
+     * whatever's still open) so a verdict is never revised after the fact.
+     *
+     * Returns the status string 'unverified' for the "uncertain / needs
+     * your review" tier — kept as the existing status name (rather than a
+     * new 'uncertain' string) so the live per-verse chip rendering in
+     * js/recitation.js, which already has an 'unverified' chip, keeps
+     * working unchanged; Phase 3 does the deliberate rename + detail view.
+     */
+    _evaluateVerse(ayah) {
+      const v = this.perVerse[ayah];
+      const scoredTotal = this._scoredWordTotal(ayah);
+      const ratio = scoredTotal > 0 ? this.coveredCount(ayah) / scoredTotal : 0;
+      if (this.coveredCount(ayah) === 0) return 'skipped';
+      const isShort = v.totalWords <= this.cfg.shortAyahMaxWords;
+      const doneBar = isShort ? this.cfg.shortAyahDoneRatio : this.cfg.doneRatio;
+      if (ratio >= doneBar) return 'done';
+      if (ratio <= this.cfg.skipRatio) return 'skipped';
+      return 'unverified';
+    }
+
+    /** Main entry point: one worker event in, a list of UI effects out. */
     handleEvent(event) {
       if (!event || this.state === 'completed' || this.state === 'stopped') {
         return [];
       }
       switch (event.type) {
-        case 'verse_match':
-          return this._onVerseMatch(event);
-        case 'word_progress':
-          return this._onWordProgress(event);
         case 'word_verdicts':
           return this._onWordVerdicts(event);
-        case 'lex_check':
-          return this._onLexCheck(event);
-        case 'tracking_abandoned':
-          return this._onTrackingAbandoned(event);
-        case 'verse_candidate':
-          return this._onVerseCandidate(event);
         case 'final_sequence':
           return this._onFinalSequence(event);
         default:
+          // verse_match / word_progress / verse_candidate / lex_check /
+          // tracking_abandoned: tilawa's own tracker diagnostics, kept
+          // flowing from the worker for its audio-capture engineering, but
+          // no longer trusted for verse identity or scoring here — see the
+          // class doc comment.
           return [];
       }
     }
 
-    /**
-     * Start the session from discovery candidates when the verse_match path
-     * is unavailable (tracker stuck on a pre-recitation noise commit).
-     * Requires a stable top candidate inside the expected range — or the
-     * same unstable top candidate twice in a row (hysteresis).
-     */
-    /** Record every in-range candidate as corroborating span evidence,
-     *  regardless of session state — this is pure bookkeeping, never an
-     *  action by itself.
-     *
-     *  A multi-verse SPAN candidate requires msg.stable: a single volatile
-     *  sighting is not reliable per-verse evidence for it — tilawa's own
-     *  joint-match score for a span is ONE number covering the whole span,
-     *  and a strong match on one verse can drag a weak/absent second verse's
-     *  confidence over spanEvidenceConfidence too. Field case (build
-     *  2026-07-21, Surah 21 ayahs 25-30): ayah 27 was never recited — the
-     *  transcript shows ayah 26's tail flowing directly into ayah 28's
-     *  opening — but a single, never-stable "21:26-27" candidate (confidence
-     *  up to 0.99, driven entirely by ayah 26's strong match) got recorded
-     *  as evidence for 27 too, rescuing it from a real skip.
-     *
-     *  A SINGLE-verse candidate (ayah_end absent or === ayah) does NOT need
-     *  msg.stable: its confidence is specific to that one verse, so even one
-     *  sighting is real per-verse evidence — the span conflation risk above
-     *  doesn't apply. Requiring stability here was too strict: field case
-     *  (build 2026-07-21f, Surah 21 ayahs 88-91) — ayahs 88 and 89 were both
-     *  recited in full, 89 word-perfectly, but the coach sat in
-     *  awaiting_start through both (chasing unrelated out-of-range acoustic
-     *  locks) and only settled on ayah 91 late, at which point EVERYTHING
-     *  before it — including the two genuinely-correct verses — got
-     *  blanket-marked skipped in one shot (see _start), because the single
-     *  0.92-confidence single-verse candidate that appeared for 89 during
-     *  the gap never got a second sighting to count as "stable". */
-    _recordSpanEvidence(msg) {
-      for (const c of msg.candidates || []) {
-        if (c.surah !== this.surah) continue;
-        if ((c.confidence || 0) < this.cfg.spanEvidenceConfidence) continue;
-        const isSpan = (c.ayah_end || c.ayah) > c.ayah;
-        if (isSpan && !msg.stable) continue;
-        const start = Math.max(c.ayah, this.ayahStart);
-        const end = Math.min(c.ayah_end || c.ayah, this.ayahEnd);
-        for (let a = start; a <= end; a++) {
-          if (!this.spanEvidence[a] || c.confidence > this.spanEvidence[a]) {
-            this.spanEvidence[a] = c.confidence;
-          }
-        }
-      }
-    }
-
-    _onVerseCandidate(msg) {
-      this._recordSpanEvidence(msg);
-      const effects = [];
-      if (this.state !== 'awaiting_start') return effects;
-      // Scan ALL candidates for the best IN-RANGE one — the first entry is
-      // tilawa's fusion/champion pick, which can be an out-of-range verse
-      // (field case: 87:1 ranked above the correct 1:1-2 span). The user
-      // told us the passage; an out-of-range leader is irrelevant to us.
-      let top = null;
-      for (const c of msg.candidates || []) {
-        if ((c.confidence || 0) < this.cfg.candidateStartConfidence) continue;
-        const cEnd = c.ayah_end || c.ayah;
-        if (c.surah !== this.surah || cEnd < this.ayahStart || c.ayah > this.ayahEnd) continue;
-        if (!top || (c.confidence || 0) > (top.confidence || 0)) top = c;
-      }
-      if (!top) {
-        this.pendingCandidate = null;
-        return effects;
-      }
-      const spanStart = top.ayah;
-      const spanEnd = top.ayah_end || top.ayah;
-
-      const key = `${top.surah}:${spanStart}-${spanEnd}`;
-      if (!msg.stable) {
-        if (this.pendingCandidate !== key) {
-          this.pendingCandidate = key; // wait for a second consistent sighting
-          return effects;
-        }
-      }
-      this.pendingCandidate = null;
-
-      // The candidate span is what has ALREADY been recited: start at the
-      // span's first in-range ayah, then advance through the span so the
-      // cursor lands on its last verse. Word coverage arrives afterwards
-      // via word_verdicts/word_progress; reconciliation counts committed
-      // verses as done.
-      const from = Math.max(spanStart, this.ayahStart);
-      const to = Math.min(spanEnd, this.ayahEnd);
-      effects.push(...this._start(from));
-      for (let a = from + 1; a <= to; a++) {
-        effects.push(...this._commitAndAdvance(a));
-      }
-      return effects;
-    }
-
-    /**
-     * Session-wide content-verification bookkeeping — see `lex_check` in
-     * tilawa-build/src/worker-entry.js and minFallbackForJudgment above.
-     * Pure counting; the actual gate is applied once, at finalize (see
-     * _buildSummary), against the whole session's totals.
-     */
-    _onLexCheck(msg) {
-      if (!this.inRange(msg.surah, msg.ayah)) return [];
-      const v = this.perVerse[msg.ayah];
-      if (msg.lexical) {
-        this.lexAdvances++;
-        v.lexAdvances++;
-      } else {
-        this.fallbackAdvances++;
-        v.fallbackAdvances++;
-      }
-      return [];
-    }
-
-    /**
-     * Per-verse counterpart to the session-wide content-verification gate
-     * — see minFallbackForVerseJudgment above for the field motivation and
-     * recalibration history. Checked at the moment a verse would otherwise
-     * be marked 'done' (_commitAndAdvance, _finalize) so it can be marked
-     * 'unverified' instead: zero real lexical hits AND a sustained run of
-     * fallback-only cycles. A verse with only 1-4 fallback cycles and no
-     * lexical hit is NOT flagged — real clean data shows that's routine for
-     * genuinely correct recitation, not evidence of a problem.
-     */
-    _looksUnverified(ayah) {
-      const v = this.perVerse[ayah];
-      return v.lexAdvances === 0 && v.fallbackAdvances >= this.cfg.minFallbackForVerseJudgment;
-    }
-
     _onWordVerdicts(msg) {
       const effects = [];
-      if (!this.cfg.useWordVerdicts && !this.cfg.transcriptStart) return effects;
       if (msg.surah !== this.surah) return effects;
-      if (this.state !== 'tracking' && this.state !== 'awaiting_start') return effects;
 
       const verdicts = (msg.verdicts || []).filter(
         (vd) =>
@@ -570,18 +318,15 @@
           vd.index >= 0 &&
           vd.index < this.perVerse[vd.ayah].totalWords
       );
+      if (verdicts.length === 0) return effects;
 
-      // Transcript-based session start: alignment proving that expected
-      // words were recited is direct evidence, no tracker involved.
-      if (this.state === 'awaiting_start') {
-        if (!this.cfg.transcriptStart) return effects;
-        const matchedVerdicts = verdicts.filter(
-          (vd) => vd.status === 'matched' || vd.status === 'fuzzy'
-        );
-        if (matchedVerdicts.length < this.cfg.transcriptStartWords) return effects;
-        effects.push(...this._start(matchedVerdicts[0].ayah));
-      }
-
+      // Accumulate evidence FIRST, before deciding whether this message
+      // starts the session — a fragment can carry real matches for an
+      // earlier ayah alongside the ayah that actually crosses the start
+      // threshold (align.js emits verdicts in expected-word order, so an
+      // earlier ayah's evidence always precedes a later one's in the same
+      // fragment). Evaluating "what's already known" for earlier verses
+      // must see this message's own evidence too, not just prior messages'.
       const touched = new Set();
       for (const verdict of verdicts) {
         const v = this.perVerse[verdict.ayah];
@@ -590,12 +335,7 @@
           v.matched.add(verdict.index);
           if (v.wordFlags[verdict.index]) delete v.wordFlags[verdict.index]; // repair
           if (grew) touched.add(verdict.ayah);
-        } else if (
-          this.cfg.useWordVerdicts &&
-          (verdict.status === 'missing' || verdict.status === 'substituted')
-        ) {
-          // Accusations stay behind the calibration flag, and never
-          // contradict an explicit earlier match for the same word.
+        } else if (verdict.status === 'missing' || verdict.status === 'substituted') {
           if (!v.matched.has(verdict.index)) {
             v.wordFlags[verdict.index] = {
               status: verdict.status,
@@ -605,6 +345,19 @@
             touched.add(verdict.ayah);
           }
         }
+      }
+      if (msg.text) {
+        for (const ayah of touched) this.perVerse[ayah].lastHeardText = msg.text;
+      }
+
+      // Alignment-based session start: real evidence that the expected
+      // passage is actually being recited, independent of any tracker.
+      if (this.state === 'awaiting_start') {
+        const matchedVerdicts = verdicts.filter(
+          (vd) => vd.status === 'matched' || vd.status === 'fuzzy'
+        );
+        if (matchedVerdicts.length < this.cfg.startMinWords) return effects;
+        effects.push(...this._start(matchedVerdicts[0].ayah));
       }
 
       for (const ayah of touched) {
@@ -616,232 +369,57 @@
         });
       }
 
-      // Transcript-driven advance: enough aligned words in an UPCOMING verse
-      // (not just the immediate next one — a fast reciter's fragment can
-      // cover two verses at once) means the reciter moved on, even if the
-      // tracker's own advance gate never says so. Scans forward through the
-      // alignment window and jumps to the furthest well-evidenced verse;
-      // _commitAndAdvance's span-evidence rescue (fed by the same
-      // verse_candidate stream) keeps any verse in between from being
-      // wrongly called skipped.
-      let target = this.cursor;
+      if (this.state !== 'tracking') return effects;
+
+      // The current ayah is the LAST in the picked range — there is no
+      // "next ayah" to gather advance evidence from, so completion is
+      // judged directly against this ayah's own coverage.
+      if (this.cursor === this.ayahEnd) {
+        effects.push(...this._checkPassageComplete());
+        return effects;
+      }
+
+      // Advance-stability check: does an UPCOMING ayah now show enough
+      // evidence, and has it shown it consistently for enough consecutive
+      // cycles (see advanceStabilityCycles) to safely close the current
+      // ayah's window rather than react to one noisy fragment?
+      let candidate = this.cursor;
       for (let a = this.cursor + 1; a <= Math.min(this.cursor + 2, this.ayahEnd); a++) {
-        if (this.perVerse[a] && this.perVerse[a].matched.size >= 2) target = a;
-      }
-      if (
-        target > this.cursor &&
-        (this.coverage(this.cursor) >= 0.5 || this.perVerse[this.cursor].sawCommit)
-      ) {
-        this.pendingJump = null;
-        this.pendingBack = null;
-        effects.push(...this._commitAndAdvance(target));
-      }
-      return effects;
-    }
-
-    _onVerseMatch(msg) {
-      const effects = [];
-      const A = msg.ayah;
-
-      if (typeof msg.confidence === 'number') {
-        this.confidences.push(msg.confidence);
-      }
-
-      if (!this.inRange(msg.surah, A)) {
-        if (this.state !== 'awaiting_start') {
-          this.offTrackStrikes++;
-          if (this.offTrackStrikes === this.cfg.offTrackLimit) {
-            effects.push({ type: 'off-track' });
-          }
+        if (this.perVerse[a] && this.perVerse[a].matched.size >= this.cfg.advanceMinWords) {
+          candidate = a;
         }
-        return effects; // pre-roll noise / different passage — never an error
       }
-      this.offTrackStrikes = 0;
-
-      if (this.state === 'awaiting_start') {
-        if ((msg.confidence || 0) < this.cfg.startConfidence) return effects;
-        if (A > this.ayahStart && (msg.confidence || 0) < this.cfg.candidateStartConfidence) {
-          // Starting mid-passage immediately accuses the skipped-over verses —
-          // demand the same bar as a discovery-candidate start (0.85), not the
-          // low bar (0.55) meant for starting cleanly at ayahStart. Field bug
-          // (build 2026-07-20j, Surah 87): isti'adhah + Basmala pre-recitation
-          // audio spuriously committed to ayah 11 at confidence 0.83 via
-          // tilawa's "live_span_collapsed" fallback, and the coach accepted it
-          // as the real start — falsely accusing 1,2,5-10 of being skipped
-          // while the reciter was still on the isti'adhah/Basmala.
-          return effects;
-        }
-        return this._start(A);
-      }
-
-      const cur = this.perVerse[this.cursor];
-      const target = this.perVerse[A];
-
-      if (A === this.cursor) {
-        // First verse_match for the cursor verse is its commit signal.
-        // The tracker re-emits verse_match for the same verse during
-        // confirm/flush cycles, so duplicates are silently absorbed
-        // (repeating the current verse aloud is a no-op anyway — the
-        // alignment high-water mark never decreases).
-        cur.sawCommit = true;
-        this.pendingJump = null;
-        this.pendingBack = null;
-        effects.push(...this._checkPassageComplete());
+      if (candidate === this.cursor) {
+        this.advanceCandidate = null;
         return effects;
       }
-
-      if (A < this.cursor) {
-        // Going back to an earlier verse = contemplation/re-recitation —
-        // never an error. The final flush can re-emit a stale verse_match
-        // for an earlier verse, so require a second consistent event
-        // (hysteresis, like forward jumps) before counting a repetition.
-        this.pendingJump = null;
-        if (this.stopRequested) return effects; // flush artifacts
-        if (this.pendingBack && this.pendingBack.ayah === A) {
-          this.pendingBack = null;
-          target.repeats++;
-          target.sawCommit = true;
-          effects.push({ type: 'repetition', ayah: A, count: target.repeats });
-        } else {
-          this.pendingBack = { ayah: A };
-        }
-        return effects;
-      }
-
-      if (A === this.cursor + 1) {
-        this.pendingJump = null;
-        this.pendingBack = null;
-        effects.push(...this._commitAndAdvance(A));
-        return effects;
-      }
-
-      // Forward jump beyond the next verse: require a second consistent
-      // event before treating it as a skip, so an identical phrase shared
-      // with a later verse can't cause a phantom jump on one noisy match.
-      if (this.pendingJump && this.pendingJump.ayah === A) {
-        this.pendingJump = null;
-        effects.push(...this._commitAndAdvance(A));
+      if (this.advanceCandidate && this.advanceCandidate.ayah === candidate) {
+        this.advanceCandidate.streak++;
       } else {
-        this.pendingJump = { ayah: A };
+        this.advanceCandidate = { ayah: candidate, streak: 1 };
       }
-      return effects;
-    }
-
-    _onWordProgress(msg) {
-      const effects = [];
-      if (!this.inRange(msg.surah, msg.ayah)) return effects;
-
-      if (this.state === 'awaiting_start') {
-        // Defensive: solid word progress counts as a start even if the
-        // verse_match commit was missed or under-confident.
-        if ((msg.matched_indices || []).length >= 2) {
-          effects.push(...this._start(msg.ayah));
-        } else {
-          return effects;
-        }
-      }
-
-      const A = msg.ayah;
-      const v = this.perVerse[A];
-
-      // Hysteresis confirmations: word progress on a pending jump/backward
-      // target is the "second consistent event" that makes it real.
-      if (this.pendingJump && this.pendingJump.ayah === A) {
-        this.pendingJump = null;
-        effects.push(...this._commitAndAdvance(A));
-      } else if (this.pendingBack && this.pendingBack.ayah === A && !this.stopRequested) {
-        this.pendingBack = null;
-        v.repeats++;
-        v.sawCommit = true;
-        effects.push({ type: 'repetition', ayah: A, count: v.repeats });
-      }
-
-      if (A === this.cursor || v.status === 'done' || v.repeats > 0) {
-        // Progress only ever grows (word-level repetition tolerance), and
-        // re-reciting an earlier verse may even clear previously-missed
-        // tail words — generous by design.
-        const beforeCovered = this.coveredCount(A);
-        if (typeof msg.word_index === 'number' && msg.word_index > v.progress) {
-          v.progress = Math.min(msg.word_index, v.totalWords);
-        }
-        for (const i of msg.matched_indices || []) {
-          if (i >= 0 && i < v.totalWords) v.matched.add(i);
-        }
-        if (this.coveredCount(A) !== beforeCovered || A === this.cursor) {
-          effects.push({
-            type: 'word-progress',
-            ayah: A,
-            matched: this.coveredIndices(A),
-            totalWords: v.totalWords,
-          });
-        }
-        this.offTrackStrikes = 0;
-        effects.push(...this._checkPassageComplete());
+      if (this.advanceCandidate.streak >= this.cfg.advanceStabilityCycles) {
+        this.advanceCandidate = null;
+        effects.push(...this._closeAndAdvance(candidate));
       }
       return effects;
     }
 
     /**
-     * Fires 'passage-complete' once, as soon as the LAST verse in the
-     * picked range has REAL word coverage close to done. Every earlier
-     * verse gets a live signal when the cursor advances past it
-     * (verse-committed); the last verse never advances anywhere, so without
-     * this nothing tells the UI the recitation is actually finished until
-     * tilawa's own silence timeout (several seconds) or a manual stop.
-     *
-     * Deliberately does NOT accept a bare `sawCommit` on its own (unlike
-     * _finalize()'s general done-criteria). Field case (build 2026-07-21f,
-     * Surah 21 ayah 105): a content-blind "live span collapsed" commit
-     * landed on the passage's last verse with essentially zero word
-     * progress, and firing here on sawCommit alone triggered
-     * js/recitation.js's ~2s auto-stop timer before the verse's own final
-     * words were ever captured — this effect stops the microphone, so
-     * unlike a normal "done" verdict (which can still be corrected later
-     * from more audio) getting it wrong here is unrecoverable. Lean toward
-     * listening a little longer over cutting off too early.
-     *
-     * Uses an ABSOLUTE word-count bar (at most 1 word may remain
-     * unconfirmed), not a coverage FRACTION — a fraction like
-     * reconcileCoverage (0.8) still leaves ~4 words uncaptured on a long
-     * verse. Field case (build 2026-07-21i, Surah 98 ayah 8, 21 words): the
-     * reciter was still audibly continuing (raw transcribe activity for 4+
-     * more seconds) when coverage merely crossed 18/21 (85.7% > 0.8), and
-     * the mic cut before word 21. "final word reached" (tilawa's own
-     * completion concept) is the right bar here: it scales with the
-     * verse's actual length instead of a blanket percentage.
+     * Fires 'passage-complete' once the picked passage's LAST verse
+     * reaches a "done" verdict — every earlier verse gets a live signal
+     * when its window closes (verse-committed), but the last verse never
+     * advances anywhere, so nothing else tells the UI the recitation is
+     * actually finished before tilawa's own silence timeout or a manual
+     * stop.
      */
     _checkPassageComplete() {
-      if (this.passageCompleteEmitted || this.cursor !== this.ayahEnd) return [];
-      const v = this.perVerse[this.ayahEnd];
-      if (v.totalWords - v.progress > 1) return [];
+      if (this.passageCompleteEmitted) return [];
+      if (this._evaluateVerse(this.ayahEnd) !== 'done') return [];
       this.passageCompleteEmitted = true;
+      const v = this.perVerse[this.ayahEnd];
+      v.status = 'done';
       return [{ type: 'passage-complete', ayah: this.ayahEnd }];
-    }
-
-    _onFinalSequence(msg) {
-      // Mark everything tilawa committed in its final path.
-      for (const fv of msg.verses || []) {
-        if (this.inRange(fv.surah, fv.ayah)) {
-          const v = this.perVerse[fv.ayah];
-          v.sawCommit = true;
-          if (typeof fv.confidence === 'number') {
-            this.confidences.push(fv.confidence);
-          }
-        }
-      }
-
-      const finishedLastVerse =
-        this.cursor === this.ayahEnd &&
-        (this.perVerse[this.ayahEnd].sawCommit ||
-          this.coverage(this.ayahEnd) >= this.cfg.doneCoverage);
-
-      if (this.stopRequested || finishedLastVerse) {
-        return [this._finalize()];
-      }
-
-      // A long contemplation pause flushed the tracker mid-session. Keep the
-      // session open — tilawa re-discovers when the user resumes reciting.
-      return [{ type: 'checkpoint' }];
     }
 
     _start(ayah) {
@@ -849,23 +427,18 @@
       this.state = 'tracking';
       this.startedAt = this.now();
       this.cursor = ayah;
-      this.startAyah = ayah; // remembered for _onTrackingAbandoned
-      const v = this.perVerse[ayah];
-      v.status = 'active';
-      v.sawCommit = true;
+
       if (ayah > this.ayahStart) {
-        // Provisional: reconciled at finalize (the reciter may genuinely
-        // have meant to start mid-range) — and rescued immediately if
-        // discovery evidence already covers a verse (see spanEvidence).
+        // Provisional (reconciled at finalize): evaluate whatever real
+        // alignment evidence already accumulated for the verses before the
+        // detected start — a fragment spanning the eventual start ayah can
+        // carry genuine evidence for earlier verses too, in the same batch.
+        // Anything with no real evidence is a genuine skip, not a guess.
         const skipped = [];
         for (let a = this.ayahStart; a < ayah; a++) {
-          if (this.spanEvidence[a] >= this.cfg.spanEvidenceConfidence) {
-            this.perVerse[a].status = 'done';
-            this.perVerse[a].sawCommit = true;
-          } else {
-            this.perVerse[a].status = 'skipped';
-            skipped.push(a);
-          }
+          const verdict = this._evaluateVerse(a);
+          this.perVerse[a].status = verdict;
+          if (verdict === 'skipped') skipped.push(a);
         }
         if (skipped.length) effects.push({ type: 'verses-skipped', ayahs: skipped });
       }
@@ -874,122 +447,55 @@
       return effects;
     }
 
-    /**
-     * tilawa's own tracker gave up on the CURRENT verse (stale_exit —
-     * several cycles with no real advance) without ever confirming genuine
-     * content — see `tracking_abandoned` in tilawa-build/src/worker-entry.js.
-     *
-     * Only acts when this is the verse the session OPENED on, the cursor
-     * has never advanced past it since (this.cursor === this.startAyah),
-     * AND that opening was mid-passage (this.startAyah > this.ayahStart) —
-     * a later verse abandoning tracking mid-session already has its own
-     * safety net (the per-verse content-verification gate marks it
-     * 'unverified', not 'done'; see _looksUnverified). This is specifically
-     * about undoing the OPENING commit itself, which is uniquely risky ONLY
-     * when it's mid-passage: it retroactively accuses every earlier verse
-     * of being skipped on the strength of ONE acoustic match. A clean start
-     * AT ayahStart carries no such risk (there's nothing before it to
-     * falsely accuse), so it's left alone even if later abandoned — the
-     * per-verse gate is enough there, and retracting it is actively
-     * harmful for a short, complete, correct recitation that simply ends
-     * right after (see the regression note below).
-     *
-     * Field case (build 2026-07-21j, Surah 87): "اعوذ" — 4 tokens of the
-     * isti'adhah, not surah content at all — short_rescue-committed to
-     * ayah 14 at confidence 0.85 (tilawa's own fallback for sparse audio,
-     * disconnected from real lexical content). The coach immediately
-     * flagged ayahs 1-13 as skipped. Four tracking cycles later, tilawa
-     * itself gave up (stale_exit) having never confirmed a single real
-     * word of ayah 14 — but by then the false "verses skipped" verdict was
-     * already locked in. A real listener wouldn't conclude anything from
-     * a few acoustic tokens before the actual recitation even began; ONE
-     * unstable, uncorroborated commit shouldn't either. Undo the false
-     * start entirely — revert to awaiting_start — rather than let a single
-     * acoustic guess stand as an accusation.
-     *
-     * Regression caught by the real-ONNX e2e suite once this mechanism
-     * actually started firing (see tilawa-build/README.md's "lex_check and
-     * tracking_abandoned never fired" section): stale_exit ALSO fires on
-     * the tracker's normal final flush at session end, not just genuine
-     * mid-session give-up. Without the ayahStart guard, a short, correct,
-     * single-verse recitation that simply ends (e.g. "Fatiha 1:1 only,
-     * stops early") could have its entire — otherwise perfectly valid —
-     * start wiped right as the session closes, for no better reason than
-     * running out of audio before a real lexical hit happened to land.
-     */
-    _onTrackingAbandoned(msg) {
-      if (!this.inRange(msg.surah, msg.ayah)) return [];
-      if (this.state !== 'tracking' || msg.ayah !== this.cursor) return [];
-      if (this.cursor !== this.startAyah) return []; // already advanced past the opening verse
-      if (this.startAyah <= this.ayahStart) return []; // clean start — nothing to falsely accuse
-      const v = this.perVerse[this.cursor];
-      if (v.lexAdvances > 0) return []; // real corroboration exists — trust it
-      const retracted = this.cursor;
-      for (let a = this.ayahStart; a <= retracted; a++) {
-        const pv = this.perVerse[a];
-        pv.status = 'pending';
-        pv.sawCommit = false;
-        pv.progress = 0;
-        pv.matched = new Set();
-        pv.lexAdvances = 0;
-        pv.fallbackAdvances = 0;
-      }
-      this.state = 'awaiting_start';
-      this.cursor = null;
-      this.startAyah = null;
-      this.startedAt = null;
-      this.confidences = []; // the retracted commit's confidence shouldn't count
-      this.offTrackStrikes = 0;
-      this.pendingJump = null;
-      this.pendingBack = null;
-      this.pendingCandidate = null;
-      return [{ type: 'start-retracted', ayah: retracted }];
-    }
-
-    _commitAndAdvance(toAyah) {
+    _closeAndAdvance(toAyah) {
       const effects = [];
       const cur = this.perVerse[this.cursor];
-      cur.status = this._looksUnverified(this.cursor) ? 'unverified' : 'done';
-      effects.push({
-        type: 'verse-committed',
-        ayah: cur.ayah,
-        unverified: cur.status === 'unverified',
-        missedWords: cur.status === 'done' ? this.missedWordIndices(cur.ayah) : [],
-        uncertainWords: cur.status === 'done' ? this.uncertainWordIndices(cur.ayah) : [],
-      });
+      cur.status = this._evaluateVerse(this.cursor);
+      if (cur.status === 'skipped') {
+        effects.push({ type: 'verses-skipped', ayahs: [this.cursor] });
+      } else {
+        effects.push({
+          type: 'verse-committed',
+          ayah: cur.ayah,
+          unverified: cur.status === 'unverified',
+          missedWords: cur.status === 'done' ? this.missedWordIndices(cur.ayah) : [],
+          substitutedWords: cur.status === 'done' ? this.substitutedWords(cur.ayah) : [],
+        });
+      }
 
+      // toAyah can be cursor+2 (the advance window looks two ayahs ahead) —
+      // any ayah strictly between never gathered its own advance evidence
+      // and is a genuine skip: this is the direct mechanism that catches a
+      // fully-omitted verse between two correctly recited ones.
       if (toAyah > this.cursor + 1) {
         const skipped = [];
         for (let a = this.cursor + 1; a < toAyah; a++) {
-          if (this.perVerse[a].status !== 'pending') continue;
-          // Rescue: the recognizer's own discovery evidence covered this
-          // verse (typically a multi-verse span tilawa committed only the
-          // head of — "live span collapsed to first ayah"), OR it already
-          // has direct word-level matches (e.g. a multi-step transcript
-          // advance just aligned it in the same batch as the target verse).
-          // Either is positive evidence of recitation, not a mistake.
-          if (
-            this.spanEvidence[a] >= this.cfg.spanEvidenceConfidence ||
-            this.perVerse[a].matched.size >= 2
-          ) {
-            this.perVerse[a].status = 'done';
-            this.perVerse[a].sawCommit = true;
-          } else {
-            this.perVerse[a].status = 'skipped';
-            skipped.push(a);
-          }
+          const verdict = this._evaluateVerse(a);
+          this.perVerse[a].status = verdict;
+          if (verdict === 'skipped') skipped.push(a);
         }
-        if (skipped.length) {
-          effects.push({ type: 'verses-skipped', ayahs: skipped });
-        }
+        if (skipped.length) effects.push({ type: 'verses-skipped', ayahs: skipped });
       }
 
       this.cursor = toAyah;
-      const next = this.perVerse[toAyah];
-      next.status = 'active';
-      next.sawCommit = true;
       effects.push({ type: 'verse-active', ayah: toAyah });
       return effects;
+    }
+
+    _onFinalSequence() {
+      // tilawa's tracker flushed (silence-triggered) — no longer trusted
+      // for verse identity, but still the signal that audio capture just
+      // paused or the session is ending; kept as a coarse secondary cue
+      // and the stop-flush completion signal.
+      const finishedLastVerse =
+        this.cursor === this.ayahEnd && this._evaluateVerse(this.ayahEnd) === 'done';
+
+      if (this.stopRequested || finishedLastVerse) {
+        return [this._finalize()];
+      }
+      // A long contemplation pause flushed the tracker mid-session. Keep the
+      // session open — the reciter resumes and alignment picks up again.
+      return [{ type: 'checkpoint' }];
     }
 
     /** UI calls this when the user taps Stop (before the worker flush). */
@@ -998,9 +504,9 @@
     }
 
     /**
-     * Idempotent session end: reconcile statuses and build the summary.
-     * Called via final_sequence (stop-flush or last verse finished) or
-     * directly by the UI as a fallback.
+     * Idempotent session end: reconcile every verse's final status and
+     * build the summary. Called via final_sequence (stop-flush or last
+     * verse finished) or directly by the UI as a fallback.
      */
     finalize() {
       if (this.state === 'completed' || this.state === 'stopped') {
@@ -1014,33 +520,24 @@
       const started = this.state === 'tracking';
       this.state = this.stopRequested && !started ? 'stopped' : 'completed';
 
-      // Reconciliation: a verse is done if it was committed or has enough
-      // coverage; skipped only if a LATER verse was recited; otherwise it
-      // was simply never reached (not the reciter's mistake if they stopped
-      // early on purpose — reported separately).
+      // Evaluate every verse whose window never explicitly closed (the
+      // open cursor verse, and anything beyond it) exactly like a normal
+      // close would have. A verse reached only stays 'skipped' if a LATER
+      // verse was genuinely recited too — one simply not reached because
+      // the reciter stopped there on purpose is reported separately
+      // ('not reached'), not as a mistake.
       let lastRecited = null;
       for (let a = this.ayahStart; a <= this.ayahEnd; a++) {
         const v = this.perVerse[a];
-        const recited =
-          (v.sawCommit && v.status !== 'pending') ||
-          this.coverage(a) >= this.cfg.reconcileCoverage;
-        if (recited) {
-          v.status = this._looksUnverified(a) ? 'unverified' : 'done';
+        if (v.status === 'done' || v.status === 'unverified') {
           lastRecited = a;
+          continue;
         }
-      }
-      // Active verse with partial coverage still counts when good enough.
-      if (
-        this.cursor !== null &&
-        this.perVerse[this.cursor].status !== 'done' &&
-        this.perVerse[this.cursor].status !== 'unverified' &&
-        this.coverage(this.cursor) >= this.cfg.doneCoverage
-      ) {
-        this.perVerse[this.cursor].status = this._looksUnverified(this.cursor)
-          ? 'unverified'
-          : 'done';
-        if (lastRecited === null || this.cursor > lastRecited) {
-          lastRecited = this.cursor;
+        if (v.status === 'skipped') continue; // already closed as a skip
+        const verdict = this._evaluateVerse(a);
+        if (verdict !== 'skipped') {
+          v.status = verdict;
+          lastRecited = a;
         }
       }
       for (let a = this.ayahStart; a <= this.ayahEnd; a++) {
@@ -1060,11 +557,10 @@
       const done = [];
       const skipped = [];
       const notReached = [];
-      const unverified = [];
+      const uncertain = [];
       const missedWords = {};
-      const uncertainWords = {};
       const substitutedWords = {};
-      const repeats = {};
+      const uncertainDetail = {};
       let matchedTotal = 0;
       let wordTotal = 0;
 
@@ -1072,95 +568,37 @@
         const v = this.perVerse[a];
         if (v.status === 'done') {
           done.push(a);
-          // Misses = unreached tail ∪ alignment-confirmed missing words.
-          // Uncertain (the verse's own trailing words, ambiguous rather
-          // than confirmed-missing — see splitMissedWordIndices) is kept
-          // separate: never merged into missedWords, never scored against
-          // the reciter, surfaced softly to the user instead.
-          const missedSet = new Set(this.missedWordIndices(a));
-          const uncertainSet = new Set(this.uncertainWordIndices(a));
-          const subs = [];
-          for (const idx of Object.keys(v.wordFlags)) {
-            const flag = v.wordFlags[idx];
-            if (flag.status === 'missing') {
-              missedSet.add(Number(idx));
-            } else if (flag.status === 'substituted') {
-              subs.push({ index: Number(idx), heard: flag.heard, expected: flag.expected });
-            }
-          }
-          if (missedSet.size) {
-            missedWords[a] = Array.from(missedSet).sort(function (x, y) {
-              return x - y;
-            });
-          }
-          if (uncertainSet.size) {
-            uncertainWords[a] = Array.from(uncertainSet).sort(function (x, y) {
-              return x - y;
-            });
-          }
-          if (subs.length) {
-            substitutedWords[a] = subs.sort(function (x, y) {
-              return x.index - y.index;
-            });
-          }
+          const missed = this.missedWordIndices(a);
+          const subs = this.substitutedWords(a);
+          if (missed.length) missedWords[a] = missed;
+          if (subs.length) substitutedWords[a] = subs;
           matchedTotal += this.coveredCount(a);
           wordTotal += this._scoredWordTotal(a);
         } else if (v.status === 'unverified') {
-          // Tracked to apparent completion, but with no real lexical
-          // corroboration anywhere — counts against the reciter like a
-          // skip (a "go check this verse again" flag), never as done.
-          unverified.push(a);
-          wordTotal += v.totalWords;
+          // Ambiguous evidence — never silently called done or wrong.
+          // Surface exactly what was heard next to what was expected and
+          // let the reciter judge; counted against neither the verse ratio
+          // nor the word ratio.
+          uncertain.push(a);
+          uncertainDetail[a] = { heard: v.lastHeardText || '', expected: v.text };
         } else if (v.status === 'skipped') {
           skipped.push(a);
           wordTotal += v.totalWords;
         } else {
           notReached.push(a);
         }
-        if (v.repeats > 0) repeats[a] = v.repeats;
       }
 
-      const expectedCount = done.length + skipped.length + unverified.length;
+      const expectedCount = done.length + skipped.length;
       const verseRatio = expectedCount ? done.length / expectedCount : 0;
       const wordRatio = wordTotal ? matchedTotal / wordTotal : 0;
-      const avgConfidence = this.confidences.length
-        ? this.confidences.reduce(function (s, c) {
-            return s + c;
-          }, 0) / this.confidences.length
-        : 0;
 
       const w = this.cfg.scoreWeights;
       const started = this.startedAt !== null;
-      // Content-verification gate: tilawa's own tracking can complete a
-      // verse purely on acoustic/char-position fallback (duration alone),
-      // with ZERO real lexical corroboration (see _onLexCheck). Computed
-      // and reported for visibility, but NOT used to force score to 0 —
-      // real data (6 clean multi-verse recitations replayed through the
-      // actual worker bundle once the event/data.type bug was fixed; see
-      // minFallbackForJudgment above) proved a genuinely correct, cleanly
-      // recited passage (Ya-Sin 36:1-5) can accumulate 13 fallback cycles
-      // with zero real lexical hits across the WHOLE session, because
-      // tilawa's own tracker relies entirely on fallback for that
-      // passage's vocabulary. No finite threshold makes this safe: a
-      // longer clean recitation of similarly sparse vocabulary can always
-      // exceed it. Forcing score to 0 here would zero a correct user's
-      // score outright. Left disabled until a real signal is found to
-      // distinguish "correct but lexically sparse" from "actually wrong".
-      const contentUnverified =
-        started &&
-        this.fallbackAdvances >= this.cfg.minFallbackForJudgment &&
-        this.lexAdvances === 0;
       const score = started
         ? Math.max(
             0,
-            Math.min(
-              100,
-              Math.round(
-                w.verses * verseRatio +
-                  w.words * wordRatio +
-                  w.confidence * Math.min(1, avgConfidence)
-              )
-            )
+            Math.min(100, Math.round(w.verses * verseRatio + w.words * wordRatio))
           )
         : 0;
 
@@ -1171,15 +609,13 @@
         started: started,
         versesDone: done,
         versesSkipped: skipped,
-        versesUnverified: unverified,
+        versesUnverified: uncertain, // "uncertain / needs your review" tier
         versesNotReached: notReached,
         missedWords: missedWords,
-        uncertainWords: uncertainWords,
         substitutedWords: substitutedWords,
-        repeats: repeats,
-        contentUnverified: contentUnverified,
+        uncertainDetail: uncertainDetail, // {ayah: {heard, expected}}
+        repeats: {}, // repetition tracking retired — see CLAUDE.md Phase 2
         wordCoverage: Math.round(wordRatio * 100) / 100,
-        avgConfidence: Math.round(avgConfidence * 100) / 100,
         score: score,
         durationSec:
           started && this.endedAt
@@ -1195,6 +631,11 @@
    * identifies the verse across all 6,236; the expected range then becomes
    * that verse through the end of its surah. Returns constructor options for
    * RecitationCoach, or null if the event is not a confident verse match.
+   *
+   * This is the one place verse_match/verse_candidate is still used: only
+   * to pick WHERE an un-anchored session starts, never to judge whether a
+   * verse was correctly recited. Once anchored, the coach behaves exactly
+   * like a normal picked-passage session.
    */
   RecitationCoach.anchorFromEvent = function (event, quranData, opts) {
     const minConfidence = (opts && opts.minConfidence) || 0.55;
@@ -1206,8 +647,6 @@
       surah = event.surah;
       ayah = event.ayah;
     } else if (event.type === 'verse_candidate' && event.stable) {
-      // Discovery candidates can anchor a freestyle session even when the
-      // tracker's advance gate is stuck — stable top candidate only.
       const top =
         (event.candidates || []).find(function (c) {
           return c.rank === 0;

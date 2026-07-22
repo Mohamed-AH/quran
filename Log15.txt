@@ -1,0 +1,2616 @@
+{
+  "build": "2026-07-21m",
+  "workerBuild": "2026-07-21m",
+  "appVersion": "2.0.0",
+  "when": "2026-07-22T07:46:40.885Z",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15",
+  "hardwareConcurrency": 8,
+  "origin": "https://hafiz-frontend.onrender.com",
+  "audio": {
+    "active": false,
+    "contextSampleRate": null,
+    "capturePath": "AudioWorklet",
+    "chunks": 394
+  },
+  "coach": {
+    "phase": "summary",
+    "freestyle": false,
+    "surah": 78,
+    "range": [
+      1,
+      17
+    ],
+    "cursor": 17,
+    "state": "completed"
+  },
+  "summary": {
+    "surah": 78,
+    "ayahStart": 1,
+    "ayahEnd": 17,
+    "started": true,
+    "versesDone": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "versesSkipped": [],
+    "versesUnverified": [],
+    "versesNotReached": [],
+    "missedWords": {},
+    "uncertainWords": {},
+    "substitutedWords": {},
+    "repeats": {},
+    "contentUnverified": false,
+    "wordCoverage": 1,
+    "avgConfidence": 0.96,
+    "score": 100,
+    "durationSec": 82
+  },
+  "live": {
+    "build": "2026-07-21m",
+    "note": "no server logs during recitation — pipeline is 100% on-device",
+    "workerBuild": "2026-07-21m",
+    "session": "surah 78 (1–17)",
+    "mic": "16000Hz via AudioWorklet",
+    "level": "rms=0.0007 peak=0.00 (4%)",
+    "chunks": 391,
+    "scope": "surah 78 (40 verses)",
+    "inference": "228.8ms avg, queue 0, rtFactor 0.52",
+    "coach": "state=tracking cursor=17",
+    "result": "score=100 done=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17] skipped=[] unverified=[] notReached=[]"
+  },
+  "milestones": [
+    {
+      "t": "07:45:02.488",
+      "text": "tracker scoped to surah 78 (40 verses)"
+    },
+    {
+      "t": "07:45:07.122",
+      "text": "STARTED at ayah 1"
+    },
+    {
+      "t": "07:45:07.122",
+      "text": "now on ayah 1"
+    },
+    {
+      "t": "07:45:07.122",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:10.246",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:13.559",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:15.619",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:15.619",
+      "text": "committed ayah 1"
+    },
+    {
+      "t": "07:45:15.619",
+      "text": "now on ayah 2"
+    },
+    {
+      "t": "07:45:17.923",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:20.677",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:21.016",
+      "text": "committed ayah 2"
+    },
+    {
+      "t": "07:45:21.016",
+      "text": "now on ayah 3"
+    },
+    {
+      "t": "07:45:21.016",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:22.574",
+      "text": "committed ayah 3"
+    },
+    {
+      "t": "07:45:22.574",
+      "text": "now on ayah 4"
+    },
+    {
+      "t": "07:45:22.864",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:23.663",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:25.270",
+      "text": "committed ayah 4"
+    },
+    {
+      "t": "07:45:25.270",
+      "text": "now on ayah 5"
+    },
+    {
+      "t": "07:45:25.270",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:26.434",
+      "text": "committed ayah 5"
+    },
+    {
+      "t": "07:45:26.434",
+      "text": "now on ayah 6"
+    },
+    {
+      "t": "07:45:26.434",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:28.078",
+      "text": "committed ayah 6"
+    },
+    {
+      "t": "07:45:28.078",
+      "text": "now on ayah 7"
+    },
+    {
+      "t": "07:45:28.078",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:29.235",
+      "text": "committed ayah 7"
+    },
+    {
+      "t": "07:45:29.235",
+      "text": "now on ayah 8"
+    },
+    {
+      "t": "07:45:29.235",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:31.389",
+      "text": "committed ayah 8"
+    },
+    {
+      "t": "07:45:31.389",
+      "text": "now on ayah 9"
+    },
+    {
+      "t": "07:45:31.895",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:33.491",
+      "text": "committed ayah 9"
+    },
+    {
+      "t": "07:45:33.491",
+      "text": "now on ayah 10"
+    },
+    {
+      "t": "07:45:33.492",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:35.075",
+      "text": "committed ayah 10"
+    },
+    {
+      "t": "07:45:35.075",
+      "text": "now on ayah 11"
+    },
+    {
+      "t": "07:45:35.076",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:45.407",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:47.706",
+      "text": "committed ayah 11"
+    },
+    {
+      "t": "07:45:47.706",
+      "text": "now on ayah 12"
+    },
+    {
+      "t": "07:45:48.059",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:49.010",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:50.183",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:56.431",
+      "text": "committed ayah 12"
+    },
+    {
+      "t": "07:45:56.431",
+      "text": "now on ayah 13"
+    },
+    {
+      "t": "07:45:56.763",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:45:57.143",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:01.401",
+      "text": "committed ayah 13"
+    },
+    {
+      "t": "07:46:01.401",
+      "text": "now on ayah 14"
+    },
+    {
+      "t": "07:46:02.143",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:03.895",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:06.107",
+      "text": "committed ayah 14"
+    },
+    {
+      "t": "07:46:06.107",
+      "text": "now on ayah 15"
+    },
+    {
+      "t": "07:46:07.362",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:11.705",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:13.211",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:14.710",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:16.532",
+      "text": "committed ayah 15"
+    },
+    {
+      "t": "07:46:16.533",
+      "text": "now on ayah 16"
+    },
+    {
+      "t": "07:46:16.877",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:18.616",
+      "text": "committed ayah 16"
+    },
+    {
+      "t": "07:46:18.616",
+      "text": "now on ayah 17"
+    },
+    {
+      "t": "07:46:19.362",
+      "text": "word-progress"
+    },
+    {
+      "t": "07:46:19.362",
+      "text": "PASSAGE COMPLETE at ayah 17 — auto-stopping shortly"
+    },
+    {
+      "t": "07:46:21.363",
+      "text": "stopSession() called"
+    },
+    {
+      "t": "07:46:26.118",
+      "text": "off-track hint shown"
+    },
+    {
+      "t": "07:46:29.512",
+      "text": "COMPLETED — score=100 done=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17] skipped=[] unverified=[] notReached=[]"
+    }
+  ],
+  "log": [
+    {
+      "t": "07:44:58.325",
+      "kind": "ui",
+      "text": "assets ready in 335ms (model 88307366 bytes)"
+    },
+    {
+      "t": "07:45:04.929",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2,\"text\":\"م\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:1\",\"score\":0.6667}}"
+    },
+    {
+      "t": "07:45:04.929",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"silence_skip\",\"mode\":\"discovery\",\"reason\":\"transcript too short\"}"
+    },
+    {
+      "t": "07:45:07.101",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4,\"text\":\"بسم الله الرحمنيه\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:1\",\"score\":0.8271}}"
+    },
+    {
+      "t": "07:45:07.121",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"بسم الله الرحمنيه\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:1\",\"kind\":\"single\",\"stageA\":0.938,\"acoustic\":8.526,\"acousticMa"
+    },
+    {
+      "t": "07:45:07.122",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:1@0.94, 78:19-19@0.71, 78:25-25@0.69] → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "07:45:07.122",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=null state=awaiting_start]: (no effect)"
+    },
+    {
+      "t": "07:45:07.122",
+      "kind": "ui",
+      "text": "event: word_verdicts [1.0:m,1.1:m,1.2:m] → coach[cursor=1 state=tracking]: started, verse-active, word-progress"
+    },
+    {
+      "t": "07:45:09.310",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":6,\"text\":\"بسم الله الرحمن الرحيم\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:1\",\"score\":0.9614}}"
+    },
+    {
+      "t": "07:45:09.342",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"بسم الله الرحمن الرحيم\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:1\",\"kind\":\"single\",\"stageA\":1,\"acoustic\":11.022,\"acoustic"
+    },
+    {
+      "t": "07:45:09.342",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:1\",\"reason\":\"repeat_leader\",\"confidence\":1,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusion\":0.87,\"to"
+    },
+    {
+      "t": "07:45:09.342",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:1@1, 78:19-19@0.72, 78:1-2@0.7] → coach[cursor=1 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:09.342",
+      "kind": "ui",
+      "text": "event: verse_match 78:1 conf=1 → coach[cursor=1 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:10.246",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":6.8,\"text\":\"بسم الله الرحمن الرحيميهيه\",\"tokenCount\":7,\"champion\":{\"ref\":\"78:1\",\"score\":0.86}}"
+    },
+    {
+      "t": "07:45:10.246",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:1\",\"text_length\":26,\"word_matches\":4,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position"
+    },
+    {
+      "t": "07:45:10.246",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=1 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:10.246",
+      "kind": "ui",
+      "text": "event: word_progress 78:1 idx=4/6 matched=[0,1,2,3] → coach[cursor=1 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:11.246",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":7.6,\"text\":\"بسم الله الرحمن الرحيم ع يتصر\",\"tokenCount\":8,\"champion\":{\"ref\":\"78:1\",\"score\":0.8889}}"
+    },
+    {
+      "t": "07:45:11.246",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:1\",\"text_length\":29,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:45:12.342",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":8.6,\"text\":\"بسم الله الرحمن الرحيم ع يتس\",\"tokenCount\":8,\"champion\":{\"ref\":\"78:1\",\"score\":0.9469}}"
+    },
+    {
+      "t": "07:45:12.343",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:1\",\"text_length\":28,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:45:13.558",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":9.6,\"text\":\"بسم الله الرحمن الرحيم عم يتساءلون\",\"tokenCount\":12,\"champion\":{\"ref\":\"78:1\",\"score\":1}}"
+    },
+    {
+      "t": "07:45:13.558",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:1\",\"text_length\":34,\"word_matches\":3,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position"
+    },
+    {
+      "t": "07:45:13.558",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=1 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:13.559",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:1\",\"to_ref\":\"78:2\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":6,\"total_words\":6,\"coverage\":1,"
+    },
+    {
+      "t": "07:45:13.559",
+      "kind": "ui",
+      "text": "event: word_progress 78:1 idx=6/6 matched=[3,4,5] → coach[cursor=1 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:15.544",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":11.6,\"text\":\"بسم الله الرحمن الرحيم ع يتساءلون عن النبر\",\"tokenCount\":14,\"champion\":{\"ref\":\"78:1\",\"score\":0.8684}}"
+    },
+    {
+      "t": "07:45:15.619",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"بسم الله الرحمن الرحيم ع يتساءلون عن النبر\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:1\",\"kind\":\"single\",\"stageA\":0.985,\"ac"
+    },
+    {
+      "t": "07:45:15.619",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:1\",\"to_ref\":\"78:1\",\"action\":\"blocked\",\"reason\":\"live non-continuation discovery blocked\",\"word_position\":0,\"total_word"
+    },
+    {
+      "t": "07:45:15.619",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:1@0.99, 78:2-4@0.8, 78:2-3@0.78] → coach[cursor=1 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:15.619",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=1 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:15.619",
+      "kind": "ui",
+      "text": "event: word_verdicts [1.0:m,1.1:m,1.2:m,1.3:m,1.4:f,1.5:m,2.0:m,2.1:m] → coach[cursor=2 state=tracking]: word-progress, verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:17.798",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":13.6,\"text\":\"بسم الله الرحمن الرحيم ع يتساءلون عن النبع العظيم\",\"tokenCount\":15,\"champion\":{\"ref\":\"78:1\",\"score\":0.7952}}"
+    },
+    {
+      "t": "07:45:17.923",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"بسم الله الرحمن الرحيم ع يتساءلون عن النبع العظيم\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:1\",\"kind\":\"single\",\"stageA\":0."
+    },
+    {
+      "t": "07:45:17.923",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:1\",\"to_ref\":\"78:1\",\"action\":\"blocked\",\"reason\":\"live non-continuation discovery blocked\",\"word_position\":0,\"total_word"
+    },
+    {
+      "t": "07:45:17.923",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:1-1@0.99, 78:2-4@0.81, 78:2-5@0.79] → coach[cursor=2 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:17.923",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=2 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:17.923",
+      "kind": "ui",
+      "text": "event: word_verdicts [2.0:m,2.1:m,2.2:m] → coach[cursor=2 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:20.147",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":15.6,\"text\":\"بسم الله الرحمن الرحيم ع يتساءلون عن النبع العظيم الذي هوه\",\"tokenCount\":18,\"champion\":{\"ref\":\"78:1\",\"score\":0.7174}}"
+    },
+    {
+      "t": "07:45:20.317",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"بسم الله الرحمن الرحيم ع يتساءلون عن النبع العظيم الذي هوه\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:2-4\",\"kind\":\"span\",\"s"
+    },
+    {
+      "t": "07:45:20.317",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:2-4\",\"to_ref\":\"78:2\",\"action\":\"blocked\",\"reason\":\"live span collapsed to first ayah\",\"word_position\":0,\"total_words\":0"
+    },
+    {
+      "t": "07:45:20.317",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:2\",\"reason\":\"live_span_collapsed\",\"confidence\":0.985,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusion"
+    },
+    {
+      "t": "07:45:20.317",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:2-4@0.99, 78:2-5@0.82, 78:1-1@0.81] → coach[cursor=2 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:20.317",
+      "kind": "ui",
+      "text": "event: verse_match 78:2 conf=0.99 → coach[cursor=2 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:20.676",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.75,\"text\":\"حل فيهما\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:22\",\"score\":0.6471}}"
+    },
+    {
+      "t": "07:45:20.676",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:2\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":2,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":3,"
+    },
+    {
+      "t": "07:45:20.676",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=2 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:20.676",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:2\",\"to_ref\":\"78:3\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":3,\"total_words\":3,\"coverage\":1,\"comp"
+    },
+    {
+      "t": "07:45:20.676",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:3\",\"margin\":-4.952,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:45:20.676",
+      "kind": "ui",
+      "text": "event: word_progress 78:2 idx=3/3 matched=[2] → coach[cursor=2 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:20.677",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:3@0.99] → coach[cursor=2 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:21.016",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.5,\"text\":\"في مختلفون\",\"tokenCount\":4,\"champion\":{\"ref\":\"78:3\",\"score\":0.853}}"
+    },
+    {
+      "t": "07:45:21.016",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:3\",\"text_length\":10,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position"
+    },
+    {
+      "t": "07:45:21.016",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=2 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:21.016",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:3\",\"margin\":-4.952,\"fresh_samples\":16000,\"matched_indices\":[3]}"
+    },
+    {
+      "t": "07:45:21.016",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:3\",\"to_ref\":\"78:4\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":4,\"total_words\":4,\"coverage\":1,"
+    },
+    {
+      "t": "07:45:21.016",
+      "kind": "ui",
+      "text": "event: verse_match 78:3 conf=0.99 → coach[cursor=3 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:21.016",
+      "kind": "ui",
+      "text": "event: word_progress 78:3 idx=4/4 matched=[3] → coach[cursor=3 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:22.560",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.75,\"text\":\"تالون كلا\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:7\",\"score\":0.6667}}"
+    },
+    {
+      "t": "07:45:22.574",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"تالون كلا\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:4\",\"kind\":\"single\",\"stageA\":1,\"acoustic\":7.324,\"acousticMargin\":0.104,"
+    },
+    {
+      "t": "07:45:22.574",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:4\",\"reason\":\"acoustic_margin\",\"confidence\":1,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusion\":0.914,"
+    },
+    {
+      "t": "07:45:22.574",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:4-4@1, 78:5-5@0.82, 78:4-5@0.79] → coach[cursor=3 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:22.574",
+      "kind": "ui",
+      "text": "event: verse_match 78:4 conf=1 → coach[cursor=4 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:22.863",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.15,\"text\":\"كلا\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":1}}"
+    },
+    {
+      "t": "07:45:22.863",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:4\",\"text_length\":3,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\""
+    },
+    {
+      "t": "07:45:22.863",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=4 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:22.864",
+      "kind": "ui",
+      "text": "event: word_progress 78:4 idx=1/2 matched=[0] → coach[cursor=4 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:23.217",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.55,\"text\":\"كلا سيعد\",\"tokenCount\":4,\"champion\":{\"ref\":\"78:4\",\"score\":0.7895}}"
+    },
+    {
+      "t": "07:45:23.217",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:4\",\"text_length\":8,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_position"
+    },
+    {
+      "t": "07:45:23.663",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.95,\"text\":\"كلا سيعلمون\",\"tokenCount\":11,\"champion\":{\"ref\":\"78:4\",\"score\":1}}"
+    },
+    {
+      "t": "07:45:23.663",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:4\",\"text_length\":11,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position"
+    },
+    {
+      "t": "07:45:23.663",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=4 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:23.663",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:4\",\"to_ref\":\"78:5\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":2,\"total_words\":2,\"coverage\":1,\"comp"
+    },
+    {
+      "t": "07:45:23.663",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:5\",\"margin\":0.092,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:45:23.663",
+      "kind": "ui",
+      "text": "event: word_progress 78:4 idx=2/2 matched=[0,1] → coach[cursor=4 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:23.663",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:5@0.99] → coach[cursor=4 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:23.948",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.9,\"text\":\"تعلم.\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:9\",\"score\":0.6364}}"
+    },
+    {
+      "t": "07:45:23.948",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:5\",\"text_length\":5,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2,"
+    },
+    {
+      "t": "07:45:23.948",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=4 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:23.948",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:5\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":3,\"coverage\""
+    },
+    {
+      "t": "07:45:24.397",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.3,\"text\":\"وثمود\",\"tokenCount\":6,\"champion\":{\"ref\":\"78:28\",\"score\":0.6364}}"
+    },
+    {
+      "t": "07:45:24.397",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:5\",\"text_length\":5,\"word_matches\":0,\"acoustic_word\":2,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":3,"
+    },
+    {
+      "t": "07:45:24.397",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=4 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:24.397",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:5\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":3,\"total_words\":3,\"coverage\""
+    },
+    {
+      "t": "07:45:24.828",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"\",\"tokenCount\":0,\"champion\":null}"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.1,\"text\":\"م\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:1\",\"score\":0.6667}}"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:5\",\"text_length\":1,\"word_matches\":0,\"acoustic_word\":2,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":3,"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=4 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:5\",\"margin\":0.092,\"fresh_samples\":25600,\"matched_indices\":[2]}"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:5\",\"to_ref\":\"78:6\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":3,\"total_words\":3,\"coverage\":1,\"comp"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:6\",\"margin\":1.393,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "ui",
+      "text": "event: verse_match 78:5 conf=0.99 → coach[cursor=5 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "ui",
+      "text": "event: word_progress 78:5 idx=3/3 matched=[2] → coach[cursor=5 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:25.270",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:6@0.99] → coach[cursor=5 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:25.541",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.9,\"text\":\"\",\"tokenCount\":0,\"champion\":null}"
+    },
+    {
+      "t": "07:45:25.999",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.3,\"text\":\"ثم كلا\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:4\",\"score\":0.75}}"
+    },
+    {
+      "t": "07:45:25.999",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:6\",\"text_length\":6,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2,"
+    },
+    {
+      "t": "07:45:25.999",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=5 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:25.999",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:6\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":4,\"coverage\""
+    },
+    {
+      "t": "07:45:26.433",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"ثم كلا\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:4\",\"score\":0.75}}"
+    },
+    {
+      "t": "07:45:26.434",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:6\",\"text_length\":6,\"word_matches\":0,\"acoustic_word\":3,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":4,"
+    },
+    {
+      "t": "07:45:26.434",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=5 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:26.434",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:6\",\"margin\":1.393,\"fresh_samples\":19200,\"matched_indices\":[3]}"
+    },
+    {
+      "t": "07:45:26.434",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:6\",\"to_ref\":\"78:7\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":4,\"total_words\":4,\"coverage\":1,\"comp"
+    },
+    {
+      "t": "07:45:26.434",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:7\",\"margin\":-0.329,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:45:26.434",
+      "kind": "ui",
+      "text": "event: verse_match 78:6 conf=0.99 → coach[cursor=6 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:26.434",
+      "kind": "ui",
+      "text": "event: word_progress 78:6 idx=4/4 matched=[3] → coach[cursor=6 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:26.434",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:7@0.99] → coach[cursor=6 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:26.742",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.9,\"text\":\"\",\"tokenCount\":0,\"champion\":null}"
+    },
+    {
+      "t": "07:45:27.199",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.3,\"text\":\"يا يعلم\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:4\",\"score\":0.7222}}"
+    },
+    {
+      "t": "07:45:27.199",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:7\",\"text_length\":7,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1,"
+    },
+    {
+      "t": "07:45:27.199",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=6 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:27.199",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:7\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":2,\"coverage\""
+    },
+    {
+      "t": "07:45:27.635",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"لا يعلم\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:4\",\"score\":0.7778}}"
+    },
+    {
+      "t": "07:45:27.635",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:7\",\"text_length\":7,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1,"
+    },
+    {
+      "t": "07:45:27.635",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=6 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.1,\"text\":\"ماذا يعلمون\",\"tokenCount\":4,\"champion\":{\"ref\":\"78:4\",\"score\":0.8182}}"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:7\",\"text_length\":11,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=6 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:7\",\"margin\":-0.329,\"fresh_samples\":25600,\"matched_indices\":[1]}"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:7\",\"to_ref\":\"78:8\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":2,\"total_words\":2,\"coverage\":1,\"comp"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:8\",\"margin\":-0.484,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "ui",
+      "text": "event: verse_match 78:7 conf=0.99 → coach[cursor=7 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "ui",
+      "text": "event: word_progress 78:7 idx=2/2 matched=[1] → coach[cursor=7 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:28.078",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:8@0.99] → coach[cursor=7 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:28.342",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.9,\"text\":\"ا\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:17\",\"score\":0.6667}}"
+    },
+    {
+      "t": "07:45:28.343",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:8\",\"text_length\":1,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1,"
+    },
+    {
+      "t": "07:45:28.343",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=7 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:28.343",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:8\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":2,\"coverage\""
+    },
+    {
+      "t": "07:45:28.795",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.3,\"text\":\"الم\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:6\",\"score\":1}}"
+    },
+    {
+      "t": "07:45:28.795",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:8\",\"text_length\":3,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1,"
+    },
+    {
+      "t": "07:45:28.795",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=7 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:28.795",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:8\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":2,\"coverage\""
+    },
+    {
+      "t": "07:45:29.235",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"الم نجعل\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:6\",\"score\":0.7}}"
+    },
+    {
+      "t": "07:45:29.235",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:8\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2,"
+    },
+    {
+      "t": "07:45:29.235",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=7 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:29.235",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:8\",\"margin\":-0.484,\"fresh_samples\":19200,\"matched_indices\":[1]}"
+    },
+    {
+      "t": "07:45:29.235",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:8\",\"to_ref\":\"78:9\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":2,\"total_words\":2,\"coverage\":1,"
+    },
+    {
+      "t": "07:45:29.235",
+      "kind": "ui",
+      "text": "event: verse_match 78:8 conf=0.99 → coach[cursor=8 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:29.235",
+      "kind": "ui",
+      "text": "event: word_progress 78:8 idx=2/2 matched=[1] → coach[cursor=8 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:31.370",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.75,\"text\":\"لن نجع العود بهذا\",\"tokenCount\":7,\"champion\":{\"ref\":\"78:6\",\"score\":0.7778}}"
+    },
+    {
+      "t": "07:45:31.389",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"لن نجع العود بهذا\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:6\",\"kind\":\"single\",\"stageA\":0.778,\"acoustic\":5.144,\"acousticMa"
+    },
+    {
+      "t": "07:45:31.389",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:9\",\"reason\":\"acoustic_margin\",\"confidence\":0.876,\"origin\":\"discovery\",\"selected_rank\":2,\"selected_feasible\":true,\"selected_fusion\":0."
+    },
+    {
+      "t": "07:45:31.389",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:9-9@0.88, 78:6-6@0.87, 78:10-10@0.73] → coach[cursor=8 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:31.389",
+      "kind": "ui",
+      "text": "event: verse_match 78:9 conf=0.88 → coach[cursor=9 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:31.894",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":3.15,\"text\":\"لم نجع العود بهذا\",\"tokenCount\":7,\"champion\":{\"ref\":\"78:6\",\"score\":0.8056}}"
+    },
+    {
+      "t": "07:45:31.895",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:9\",\"text_length\":17,\"word_matches\":0,\"acoustic_word\":2,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":3"
+    },
+    {
+      "t": "07:45:31.895",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=9 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:31.895",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:9\",\"to_ref\":\"78:10\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":3,\"total_words\":3,\"coverage\":1,\"com"
+    },
+    {
+      "t": "07:45:31.895",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:10\",\"margin\":-0.58,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:45:31.895",
+      "kind": "ui",
+      "text": "event: word_progress 78:9 idx=3/3 matched=[2] → coach[cursor=9 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:31.895",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:10@0.99] → coach[cursor=9 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:32.179",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.1,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:45:32.179",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:10\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:45:32.179",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=9 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:32.179",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:10\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":3,\"coverage"
+    },
+    {
+      "t": "07:45:32.605",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.5,\"text\":\"\",\"tokenCount\":0,\"champion\":null}"
+    },
+    {
+      "t": "07:45:33.050",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.9,\"text\":\"والجبال\",\"tokenCount\":4,\"champion\":{\"ref\":\"78:7\",\"score\":1}}"
+    },
+    {
+      "t": "07:45:33.050",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:10\",\"text_length\":7,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:45:33.051",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=9 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:33.491",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.3,\"text\":\"والجبال\",\"tokenCount\":4,\"champion\":{\"ref\":\"78:7\",\"score\":1}}"
+    },
+    {
+      "t": "07:45:33.491",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:10\",\"text_length\":7,\"word_matches\":0,\"acoustic_word\":2,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":3"
+    },
+    {
+      "t": "07:45:33.491",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=9 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:33.491",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:10\",\"margin\":-0.58,\"fresh_samples\":28800,\"matched_indices\":[2]}"
+    },
+    {
+      "t": "07:45:33.491",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:10\",\"to_ref\":\"78:11\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":3,\"total_words\":3,\"coverage\":1,\"co"
+    },
+    {
+      "t": "07:45:33.491",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:11\",\"margin\":2.03,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:45:33.491",
+      "kind": "ui",
+      "text": "event: verse_match 78:10 conf=0.99 → coach[cursor=10 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:33.492",
+      "kind": "ui",
+      "text": "event: word_progress 78:10 idx=3/3 matched=[2] → coach[cursor=10 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:33.492",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:11@0.99] → coach[cursor=10 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:33.750",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.9,\"text\":\"\",\"tokenCount\":0,\"champion\":null}"
+    },
+    {
+      "t": "07:45:34.191",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.3,\"text\":\"\",\"tokenCount\":0,\"champion\":null}"
+    },
+    {
+      "t": "07:45:34.633",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"او ت\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:6\",\"score\":0.6667}}"
+    },
+    {
+      "t": "07:45:34.633",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:11\",\"text_length\":4,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1"
+    },
+    {
+      "t": "07:45:34.633",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=10 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:35.075",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.1,\"text\":\"س او تادا\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:26\",\"score\":0.6875}}"
+    },
+    {
+      "t": "07:45:35.075",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:11\",\"text_length\":9,\"word_matches\":0,\"acoustic_word\":2,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":3"
+    },
+    {
+      "t": "07:45:35.075",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=10 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:35.075",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:11\",\"margin\":2.03,\"fresh_samples\":25600,\"matched_indices\":[2]}"
+    },
+    {
+      "t": "07:45:35.075",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:11\",\"to_ref\":\"78:12\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":3,\"total_words\":3,\"coverage\":1,\"co"
+    },
+    {
+      "t": "07:45:35.075",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:12\",\"margin\":2.52,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:45:35.075",
+      "kind": "ui",
+      "text": "event: verse_match 78:11 conf=0.99 → coach[cursor=11 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:35.076",
+      "kind": "ui",
+      "text": "event: word_progress 78:11 idx=3/3 matched=[2] → coach[cursor=11 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:35.076",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:12@0.99] → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:35.344",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.9,\"text\":\"اج\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:17\",\"score\":0.75}}"
+    },
+    {
+      "t": "07:45:35.344",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":2,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1"
+    },
+    {
+      "t": "07:45:35.344",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:35.344",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:12\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:45:35.795",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.3,\"text\":\"فجعلنا\",\"tokenCount\":4,\"champion\":{\"ref\":\"78:9\",\"score\":0.9167}}"
+    },
+    {
+      "t": "07:45:35.795",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":6,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1"
+    },
+    {
+      "t": "07:45:35.795",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:35.795",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:12\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:45:36.237",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"وجعلنا لو\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:9\",\"score\":0.8718}}"
+    },
+    {
+      "t": "07:45:36.237",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":9,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position"
+    },
+    {
+      "t": "07:45:36.237",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:36.677",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.1,\"text\":\"فجعلنا لكم\",\"tokenCount\":8,\"champion\":{\"ref\":\"78:9\",\"score\":0.7333}}"
+    },
+    {
+      "t": "07:45:36.677",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":10,\"word_matches\":0,\"acoustic_word\":2,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":"
+    },
+    {
+      "t": "07:45:36.677",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:37.112",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.5,\"text\":\"فجعلنا لكم\",\"tokenCount\":8,\"champion\":{\"ref\":\"78:9\",\"score\":0.7333}}"
+    },
+    {
+      "t": "07:45:37.112",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":10,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "07:45:37.587",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.9,\"text\":\"فجعلنا لكم\",\"tokenCount\":8,\"champion\":{\"ref\":\"78:9\",\"score\":0.7333}}"
+    },
+    {
+      "t": "07:45:37.587",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":10,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "07:45:38.104",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":3.3,\"text\":\"فجعلنا لكم\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:9\",\"score\":0.7333}}"
+    },
+    {
+      "t": "07:45:38.104",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":10,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "07:45:38.684",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":3.9,\"text\":\"فجعنا ل\",\"tokenCount\":6,\"champion\":{\"ref\":\"78:9\",\"score\":0.75}}"
+    },
+    {
+      "t": "07:45:38.684",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":7,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:45:38.684",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"stale_exit\",\"ref\":\"78:12\",\"stale_cycles\":4}"
+    },
+    {
+      "t": "07:45:38.684",
+      "kind": "ui",
+      "text": "event: tracking_abandoned → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:40.897",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":5.9,\"text\":\"فجعلنا لكم نومكم سبا\",\"tokenCount\":11,\"champion\":{\"ref\":\"78:9\",\"score\":0.8158}}"
+    },
+    {
+      "t": "07:45:40.922",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"فجعلنا لكم نومكم سبا\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:9\",\"kind\":\"single\",\"stageA\":0.816,\"acoustic\":0.786,\"acousti"
+    },
+    {
+      "t": "07:45:40.922",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:11\",\"to_ref\":\"78:9\",\"action\":\"blocked\",\"reason\":\"live non-continuation discovery blocked\",\"word_position\":0,\"total_wor"
+    },
+    {
+      "t": "07:45:40.922",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:9@0.92, 78:13-13@0.78, 78:10-10@0.75] → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:40.922",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:43.112",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":7.9,\"text\":\"فجعلنا لكم نومكم سباتا\",\"tokenCount\":12,\"champion\":{\"ref\":\"78:9\",\"score\":0.875}}"
+    },
+    {
+      "t": "07:45:43.150",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"فجعلنا لكم نومكم سباتا\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:9\",\"kind\":\"single\",\"stageA\":0.875,\"acoustic\":0.476,\"acous"
+    },
+    {
+      "t": "07:45:43.150",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:11\",\"to_ref\":\"78:9\",\"action\":\"blocked\",\"reason\":\"live non-continuation discovery blocked\",\"word_position\":0,\"total_wor"
+    },
+    {
+      "t": "07:45:43.151",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:9@0.93, 78:12-12@0.82, 78:13-13@0.79] → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:43.151",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:45.346",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":9.9,\"text\":\"جعلنا نومكم سباتا فجعلنا النهار معانا\",\"tokenCount\":19,\"champion\":{\"ref\":\"78:9-10\",\"score\":0.8767}}"
+    },
+    {
+      "t": "07:45:45.407",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"جعلنا نومكم سباتا فجعلنا النهار معانا\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:9-10\",\"kind\":\"span\",\"stageA\":0.877,\"acoust"
+    },
+    {
+      "t": "07:45:45.407",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:11\",\"to_ref\":\"78:9-10\",\"action\":\"blocked\",\"reason\":\"live non-continuation discovery blocked\",\"word_position\":0,\"total_"
+    },
+    {
+      "t": "07:45:45.407",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:9-10@0.91, 78:9-9@0.91, 78:10-11@0.9] → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:45.407",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:45.407",
+      "kind": "ui",
+      "text": "event: word_verdicts [11.0:m,11.1:m,11.2:m] → coach[cursor=11 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:47.585",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":11.9,\"text\":\"جعلنا لكم نومكم سباتا وجعلنا النهار معاشا و بنين\",\"tokenCount\":24,\"champion\":{\"ref\":\"78:10-11\",\"score\":0.7765}}"
+    },
+    {
+      "t": "07:45:47.706",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"جعلنا لكم نومكم سباتا وجعلنا النهار معاشا و بنين\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:12-13\",\"kind\":\"span\",\"stageA\":0"
+    },
+    {
+      "t": "07:45:47.706",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:12-13\",\"to_ref\":\"78:12\",\"action\":\"blocked\",\"reason\":\"live span collapsed to first ayah\",\"word_position\":0,\"total_words"
+    },
+    {
+      "t": "07:45:47.706",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:12\",\"reason\":\"live_span_collapsed\",\"confidence\":0.99,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusion"
+    },
+    {
+      "t": "07:45:47.706",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:12-13@0.94, 78:9-10@0.88, 78:12-14@0.85] → coach[cursor=11 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:47.706",
+      "kind": "ui",
+      "text": "event: verse_match 78:12 conf=0.99 → coach[cursor=12 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:48.059",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.75,\"text\":\"وبنينا فوقك\",\"tokenCount\":6,\"champion\":{\"ref\":\"78:12\",\"score\":0.9585}}"
+    },
+    {
+      "t": "07:45:48.059",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":11,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:45:48.059",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=12 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:48.059",
+      "kind": "ui",
+      "text": "event: word_progress 78:12 idx=2/4 matched=[0,1] → coach[cursor=12 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:48.499",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.55,\"text\":\"وببنينا فوقكم\",\"tokenCount\":7,\"champion\":{\"ref\":\"78:12\",\"score\":0.8717}}"
+    },
+    {
+      "t": "07:45:48.499",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":13,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "07:45:49.010",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":3.15,\"text\":\"وبنينا فوقكم سبع\",\"tokenCount\":8,\"champion\":{\"ref\":\"78:12\",\"score\":0.9677}}"
+    },
+    {
+      "t": "07:45:49.010",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":16,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:45:49.010",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=12 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:49.010",
+      "kind": "ui",
+      "text": "event: word_progress 78:12 idx=3/4 matched=[1,2] → coach[cursor=12 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:49.565",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":3.55,\"text\":\"وبنينا فوقكم سبعا\",\"tokenCount\":9,\"champion\":{\"ref\":\"78:12\",\"score\":0.973}}"
+    },
+    {
+      "t": "07:45:49.565",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":17,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "07:45:50.182",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4.15,\"text\":\"وبنينا فوقكم سبعا شدادا\",\"tokenCount\":16,\"champion\":{\"ref\":\"78:12\",\"score\":1}}"
+    },
+    {
+      "t": "07:45:50.182",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:12\",\"text_length\":23,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:45:50.182",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=12 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:50.183",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:12\",\"to_ref\":\"78:13\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":4,\"total_words\":4,\"coverage\":"
+    },
+    {
+      "t": "07:45:50.183",
+      "kind": "ui",
+      "text": "event: word_progress 78:12 idx=4/4 matched=[2,3] → coach[cursor=12 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:51.976",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.75,\"text\":\"سدادا\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:32\",\"score\":0.7}}"
+    },
+    {
+      "t": "07:45:51.976",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"silence_skip\",\"mode\":\"discovery\",\"reason\":\"residual=0.900\"}"
+    },
+    {
+      "t": "07:45:54.164",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4.75,\"text\":\"سدادا\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:32\",\"score\":0.7}}"
+    },
+    {
+      "t": "07:45:54.165",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"silence_skip\",\"mode\":\"discovery\",\"reason\":\"residual=0.900\"}"
+    },
+    {
+      "t": "07:45:56.390",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":6.75,\"text\":\"سدادا فجعلنا سراج\",\"tokenCount\":10,\"champion\":{\"ref\":\"78:28\",\"score\":0.6389}}"
+    },
+    {
+      "t": "07:45:56.430",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"سدادا فجعلنا سراج\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:13\",\"kind\":\"single\",\"stageA\":1,\"acoustic\":4.334,\"acousticMargi"
+    },
+    {
+      "t": "07:45:56.431",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:13\",\"reason\":\"acoustic_margin\",\"confidence\":1,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusion\":0.986"
+    },
+    {
+      "t": "07:45:56.431",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:13-13@1, 78:11-11@0.75, 78:10-10@0.74] → coach[cursor=12 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:56.431",
+      "kind": "ui",
+      "text": "event: verse_match 78:13 conf=1 → coach[cursor=13 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:45:56.763",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.55,\"text\":\"سماع ج\",\"tokenCount\":4,\"champion\":{\"ref\":\"78:33\",\"score\":0.6364}}"
+    },
+    {
+      "t": "07:45:56.763",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:13\",\"text_length\":6,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:45:56.763",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=13 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:56.763",
+      "kind": "ui",
+      "text": "event: word_progress 78:13 idx=2/3 matched=[1] → coach[cursor=13 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:57.142",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.95,\"text\":\"سراج وهاجه\",\"tokenCount\":6,\"champion\":{\"ref\":\"78:13\",\"score\":0.7599}}"
+    },
+    {
+      "t": "07:45:57.142",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:13\",\"text_length\":10,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:45:57.143",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=13 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:57.143",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:13\",\"to_ref\":\"78:14\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":3,\"total_words\":3,\"coverage\":"
+    },
+    {
+      "t": "07:45:57.143",
+      "kind": "ui",
+      "text": "event: word_progress 78:13 idx=3/3 matched=[1,2] → coach[cursor=13 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:45:59.164",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.75,\"text\":\"جاء فانزل\",\"tokenCount\":4,\"champion\":{\"ref\":\"78:26\",\"score\":0.7368}}"
+    },
+    {
+      "t": "07:45:59.179",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"جاء فانزل\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:16\",\"kind\":\"single\",\"stageA\":0.671,\"acoustic\":5.775,\"acousticMargin\":0"
+    },
+    {
+      "t": "07:45:59.179",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:14-14@0.97, 78:16-16@0.79, 78:10-10@0.73] → coach[cursor=13 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:45:59.179",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=13 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:01.372",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4.75,\"text\":\"فانزلنا من المعسعود\",\"tokenCount\":8,\"champion\":{\"ref\":\"78:14\",\"score\":0.7052}}"
+    },
+    {
+      "t": "07:46:01.401",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"فانزلنا من المعسعود\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:14\",\"kind\":\"single\",\"stageA\":1,\"acoustic\":6.006,\"acousticMar"
+    },
+    {
+      "t": "07:46:01.401",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:14\",\"reason\":\"repeat_leader\",\"confidence\":1,\"origin\":\"discovery\",\"selected_rank\":1,\"selected_feasible\":true,\"selected_fusion\":0.935,\""
+    },
+    {
+      "t": "07:46:01.401",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:14-14@1, 78:14-15@0.74, 78:9-9@0.74] → coach[cursor=13 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:01.401",
+      "kind": "ui",
+      "text": "event: verse_match 78:14 conf=1 → coach[cursor=14 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:46:02.143",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":5.35,\"text\":\"فانزلنا من المعزم دماء\",\"tokenCount\":11,\"champion\":{\"ref\":\"78:14\",\"score\":0.7878}}"
+    },
+    {
+      "t": "07:46:02.143",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:14\",\"text_length\":22,\"word_matches\":4,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:02.143",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=14 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:02.143",
+      "kind": "ui",
+      "text": "event: word_progress 78:14 idx=4/5 matched=[0,1,2,3] → coach[cursor=14 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:46:02.976",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":6.15,\"text\":\"فانزلنا من المعزم دماء سج\",\"tokenCount\":13,\"champion\":{\"ref\":\"78:14\",\"score\":0.8302}}"
+    },
+    {
+      "t": "07:46:02.976",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:14\",\"text_length\":25,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "07:46:03.894",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":6.95,\"text\":\"س فانزلنا من المعصم ماء ثجاجا\",\"tokenCount\":15,\"champion\":{\"ref\":\"78:14\",\"score\":0.9123}}"
+    },
+    {
+      "t": "07:46:03.894",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:14\",\"text_length\":29,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:03.894",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=14 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:03.895",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:14\",\"to_ref\":\"78:15\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":5,\"total_words\":5,\"coverage\":"
+    },
+    {
+      "t": "07:46:03.895",
+      "kind": "ui",
+      "text": "event: word_progress 78:14 idx=5/5 matched=[3,4] → coach[cursor=14 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:46:06.035",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":8.95,\"text\":\"س فانزلنا من المعصم ماء ثجاج لنخرج من\",\"tokenCount\":17,\"champion\":{\"ref\":\"78:14-15\",\"score\":0.7882}}"
+    },
+    {
+      "t": "07:46:06.106",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"س فانزلنا من المعصم ماء ثجاج لنخرج من\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:14\",\"kind\":\"single\",\"stageA\":0.785,\"acoust"
+    },
+    {
+      "t": "07:46:06.106",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:14-15\",\"to_ref\":\"78:15\",\"action\":\"blocked\",\"reason\":\"live span rebased to next ayah\",\"word_position\":0,\"total_words\":0"
+    },
+    {
+      "t": "07:46:06.107",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:15\",\"reason\":\"acoustic_margin\",\"confidence\":0.846,\"origin\":\"discovery\",\"selected_rank\":12,\"selected_feasible\":true,\"selected_fusion\":"
+    },
+    {
+      "t": "07:46:06.107",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:15@0.85, 78:14-14@0.84, 78:14-15@0.84] → coach[cursor=14 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:06.107",
+      "kind": "ui",
+      "text": "event: verse_match 78:15 conf=0.85 → coach[cursor=15 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:46:07.362",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":9.95,\"text\":\"س فانزلنا من المعسمات ماء ثجاجا لنخرج لنخرج\",\"tokenCount\":20,\"champion\":{\"ref\":\"78:14-15\",\"score\":0.8022}}"
+    },
+    {
+      "t": "07:46:07.362",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:15\",\"text_length\":43,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:07.362",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=15 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:07.362",
+      "kind": "ui",
+      "text": "event: word_progress 78:15 idx=1/4 matched=[0] → coach[cursor=15 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:46:08.727",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":10.95,\"text\":\"س فاننزللنا من المعصمات ماء ثجاجا لنخرج\",\"tokenCount\":21,\"champion\":{\"ref\":\"78:14\",\"score\":0.806}}"
+    },
+    {
+      "t": "07:46:08.727",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:15\",\"text_length\":39,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "07:46:10.211",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":11.95,\"text\":\"س فانزلنا من المعسمات ماء ثجاجا لنخرج\",\"tokenCount\":19,\"champion\":{\"ref\":\"78:14\",\"score\":0.8154}}"
+    },
+    {
+      "t": "07:46:10.211",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:15\",\"text_length\":37,\"word_matches\":1,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positi"
+    },
+    {
+      "t": "07:46:11.704",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":12,\"text\":\"انزلنا من المعصمات ماء ثجاجا لنخرج به حب\",\"tokenCount\":19,\"champion\":{\"ref\":\"78:14-15\",\"score\":0.875}}"
+    },
+    {
+      "t": "07:46:11.704",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:15\",\"text_length\":40,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:11.705",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=15 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:11.705",
+      "kind": "ui",
+      "text": "event: word_progress 78:15 idx=2/4 matched=[0,1] → coach[cursor=15 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:46:13.211",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":12,\"text\":\"انزلنا من المعصم داء ثجاجا لنخرج به حبا ون نها\",\"tokenCount\":23,\"champion\":{\"ref\":\"78:14-15\",\"score\":0.9255}}"
+    },
+    {
+      "t": "07:46:13.211",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:15\",\"text_length\":46,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:13.211",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=15 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:13.211",
+      "kind": "ui",
+      "text": "event: word_progress 78:15 idx=3/4 matched=[1,2] → coach[cursor=15 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:46:14.710",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":12,\"text\":\"ومن المعصم دماء ثجاجا لنخرج به حبا و نباتا\",\"tokenCount\":22,\"champion\":{\"ref\":\"78:14-15\",\"score\":0.8778}}"
+    },
+    {
+      "t": "07:46:14.710",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:15\",\"text_length\":42,\"word_matches\":2,\"acoustic_word\":null,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:14.710",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=15 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:14.710",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:15\",\"to_ref\":\"78:16\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":4,\"total_words\":4,\"coverage\":"
+    },
+    {
+      "t": "07:46:14.710",
+      "kind": "ui",
+      "text": "event: word_progress 78:15 idx=4/4 matched=[2,3] → coach[cursor=15 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:46:16.443",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":14,\"text\":\"من المعصم دماء ثجاجا لنخرج به حبا و نباتا عنب و قدبا\",\"tokenCount\":28,\"champion\":{\"ref\":\"78:14-16\",\"score\":0.8214}}"
+    },
+    {
+      "t": "07:46:16.532",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"من المعصم دماء ثجاجا لنخرج به حبا و نباتا عنب و قدبا\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:14-15\",\"kind\":\"span\",\"stage"
+    },
+    {
+      "t": "07:46:16.532",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:14-16\",\"to_ref\":\"78:16\",\"action\":\"blocked\",\"reason\":\"live span rebased to next ayah\",\"word_position\":0,\"total_words\":0"
+    },
+    {
+      "t": "07:46:16.532",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:16\",\"reason\":\"acoustic_margin\",\"confidence\":0.821,\"origin\":\"discovery\",\"selected_rank\":51,\"selected_feasible\":true,\"selected_fusion\":"
+    },
+    {
+      "t": "07:46:16.532",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:16@0.82, 78:14-15@0.9, 78:14-16@0.88] → coach[cursor=15 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:16.532",
+      "kind": "ui",
+      "text": "event: verse_match 78:16 conf=0.82 → coach[cursor=16 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:46:16.877",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.75,\"text\":\"وقضب\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:16\",\"score\":0.625}}"
+    },
+    {
+      "t": "07:46:16.877",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:16\",\"text_length\":4,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:16.877",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=16 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:16.877",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:16\",\"to_ref\":\"78:17\",\"action\":\"blocked\",\"reason\":\"advance margin failed\",\"word_position\":2,\"total_words\":2,\"coverage\":"
+    },
+    {
+      "t": "07:46:16.877",
+      "kind": "ui",
+      "text": "event: word_progress 78:16 idx=2/2 matched=[1] → coach[cursor=16 state=tracking]: word-progress"
+    },
+    {
+      "t": "07:46:17.345",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.75,\"text\":\"فزتون و\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:30\",\"score\":0.6667}}"
+    },
+    {
+      "t": "07:46:17.356",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"فزتون و\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:16\",\"kind\":\"single\",\"stageA\":0.5,\"acoustic\":5.831,\"acousticMargin\":0.016"
+    },
+    {
+      "t": "07:46:17.356",
+      "kind": "ui",
+      "text": "event: verse_candidate [78:17-17@0.76, 78:16-16@0.73, 78:9-9@0.72] → coach[cursor=16 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:17.356",
+      "kind": "ui",
+      "text": "event: raw_transcript → coach[cursor=16 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:18.581",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":4.75,\"text\":\"وزيتونا ونخله وحياناه\",\"tokenCount\":13,\"champion\":{\"ref\":\"78:13\",\"score\":0.6667}}"
+    },
+    {
+      "t": "07:46:18.616",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"discovery_cycle\",\"text\":\"وزيتونا ونخله وحياناه\",\"final_flush\":false,\"candidates\":[{\"ref\":\"78:13\",\"kind\":\"single\",\"stageA\":0.667,\"acoustic\":9.678,\"acous"
+    },
+    {
+      "t": "07:46:18.616",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"commit\",\"ref\":\"78:17\",\"reason\":\"acoustic_margin\",\"confidence\":0.778,\"origin\":\"discovery\",\"selected_rank\":21,\"selected_feasible\":true,\"selected_fusion\":"
+    },
+    {
+      "t": "07:46:18.616",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:17-17@0.78, 78:13-13@0.81, 78:19-19@0.81] → coach[cursor=16 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:18.616",
+      "kind": "ui",
+      "text": "event: verse_match 78:17 conf=0.78 → coach[cursor=17 state=tracking]: verse-committed, verse-active"
+    },
+    {
+      "t": "07:46:19.362",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":5.35,\"text\":\"وزيتونا ونخله. وحنائق\",\"tokenCount\":14,\"champion\":{\"ref\":\"78:9\",\"score\":0.641}}"
+    },
+    {
+      "t": "07:46:19.362",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:17\",\"text_length\":21,\"word_matches\":0,\"acoustic_word\":4,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":"
+    },
+    {
+      "t": "07:46:19.362",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:19.362",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:17\",\"to_ref\":\"78:18\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":5,\"total_words\":5,\"coverage\":1,\"co"
+    },
+    {
+      "t": "07:46:19.362",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:18\",\"margin\":-1.256,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:46:19.362",
+      "kind": "ui",
+      "text": "event: word_progress 78:17 idx=5/5 matched=[4] → coach[cursor=17 state=tracking]: word-progress, passage-complete"
+    },
+    {
+      "t": "07:46:19.362",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:18@0.99] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:19.669",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.3,\"text\":\"ما\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:24\",\"score\":0.75}}"
+    },
+    {
+      "t": "07:46:19.669",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:18\",\"text_length\":2,\"word_matches\":0,\"acoustic_word\":3,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":4"
+    },
+    {
+      "t": "07:46:19.669",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:19.669",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:18\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":4,\"total_words\":6,\"coverage"
+    },
+    {
+      "t": "07:46:20.026",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"ش ب\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:37\",\"score\":0.75}}"
+    },
+    {
+      "t": "07:46:20.026",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:18\",\"text_length\":3,\"word_matches\":0,\"acoustic_word\":4,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":5"
+    },
+    {
+      "t": "07:46:20.026",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:20.026",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:18\",\"margin\":-1.256,\"fresh_samples\":19200,\"matched_indices\":[4]}"
+    },
+    {
+      "t": "07:46:20.026",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"cascade_blocked\",\"ref\":\"78:18\",\"margin\":null,\"fresh_samples\":19200,\"matched_indices\":[4]}"
+    },
+    {
+      "t": "07:46:20.026",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:18\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmed before final word\",\"word_position\":5,\"total_words\":6,"
+    },
+    {
+      "t": "07:46:20.026",
+      "kind": "ui",
+      "text": "event: verse_match 78:18 conf=0.99 → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:20.026",
+      "kind": "ui",
+      "text": "event: word_progress 78:18 idx=5/6 matched=[4] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:20.471",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.1,\"text\":\"حلب\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.6667}}"
+    },
+    {
+      "t": "07:46:20.471",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:18\",\"text_length\":3,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:20.915",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.5,\"text\":\"رايك حلبا.\",\"tokenCount\":5,\"champion\":{\"ref\":\"78:7\",\"score\":0.625}}"
+    },
+    {
+      "t": "07:46:20.915",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:18\",\"text_length\":10,\"word_matches\":0,\"acoustic_word\":5,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":"
+    },
+    {
+      "t": "07:46:20.915",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:20.915",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:18\",\"to_ref\":\"78:19\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":6,\"total_words\":6,\"coverage\":1,\"co"
+    },
+    {
+      "t": "07:46:20.915",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:19\",\"margin\":-1.131,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:46:20.915",
+      "kind": "ui",
+      "text": "event: word_progress 78:18 idx=6/6 matched=[5] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:20.915",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:19@0.99] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:21.189",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.9,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:21.189",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:19\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1"
+    },
+    {
+      "t": "07:46:21.189",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:21.189",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:19\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:46:21.629",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.3,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:21.629",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:19\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:21.629",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:21.629",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:19\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:46:21.993",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.8,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:21.993",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:19\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:21.993",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:22.378",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.1,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:22.378",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:19\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:22.788",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.4,\"text\":\"ال\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:6\",\"score\":0.8}}"
+    },
+    {
+      "t": "07:46:22.788",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:19\",\"text_length\":2,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.7,\"text\":\"ال\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:6\",\"score\":0.8}}"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:19\",\"text_length\":2,\"word_matches\":0,\"acoustic_word\":3,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":4"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:19\",\"margin\":-1.131,\"fresh_samples\":35200,\"matched_indices\":[3]}"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:19\",\"to_ref\":\"78:20\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":4,\"total_words\":4,\"coverage\":1,\"co"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:20\",\"margin\":0.444,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "ui",
+      "text": "event: verse_match 78:19 conf=0.99 → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "ui",
+      "text": "event: word_progress 78:19 idx=4/4 matched=[3] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:23.224",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:20@0.99] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:23.477",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.8,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:23.477",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:20\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1"
+    },
+    {
+      "t": "07:46:23.477",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:23.477",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:20\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:46:23.754",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.1,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:23.754",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:20\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:23.754",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:23.754",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:20\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:46:24.064",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.4,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:24.064",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:20\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:24.065",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:24.065",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:20\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:46:24.404",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"نهايه\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:23\",\"score\":0.6}}"
+    },
+    {
+      "t": "07:46:24.404",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:20\",\"text_length\":5,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:24.404",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:24.789",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2,\"text\":\"الم\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:6\",\"score\":1}}"
+    },
+    {
+      "t": "07:46:24.789",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:20\",\"text_length\":3,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:25.195",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.3,\"text\":\"شر\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:1\",\"score\":0.5}}"
+    },
+    {
+      "t": "07:46:25.195",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:20\",\"text_length\":2,\"word_matches\":0,\"acoustic_word\":2,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":3"
+    },
+    {
+      "t": "07:46:25.196",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:25.638",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.6,\"text\":\"الم\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:6\",\"score\":1}}"
+    },
+    {
+      "t": "07:46:25.639",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:20\",\"text_length\":3,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:26.118",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.9,\"text\":\"شركره\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:15\",\"score\":0.6}}"
+    },
+    {
+      "t": "07:46:26.118",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:20\",\"text_length\":5,\"word_matches\":0,\"acoustic_word\":3,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":4"
+    },
+    {
+      "t": "07:46:26.118",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:26.118",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:20\",\"margin\":0.444,\"fresh_samples\":38400,\"matched_indices\":[3]}"
+    },
+    {
+      "t": "07:46:26.118",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:20\",\"to_ref\":\"78:21\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":4,\"total_words\":4,\"coverage\":1,\"co"
+    },
+    {
+      "t": "07:46:26.118",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:21\",\"margin\":0.592,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:46:26.118",
+      "kind": "ui",
+      "text": "event: verse_match 78:20 conf=0.99 → coach[cursor=17 state=tracking]: off-track"
+    },
+    {
+      "t": "07:46:26.118",
+      "kind": "ui",
+      "text": "event: word_progress 78:20 idx=4/4 matched=[3] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:26.119",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:21@0.99] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:26.382",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.8,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:26.382",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:21\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:26.382",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:26.382",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:21\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:46:26.668",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.1,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:26.668",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:21\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:26.668",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:26.668",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:21\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:46:26.982",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.4,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:26.982",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:21\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:26.982",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:26.982",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:21\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":2,\"total_words\":4,\"coverage"
+    },
+    {
+      "t": "07:46:27.323",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.7,\"text\":\"نهايه\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:23\",\"score\":0.6}}"
+    },
+    {
+      "t": "07:46:27.323",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:21\",\"text_length\":5,\"word_matches\":0,\"acoustic_word\":1,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":2"
+    },
+    {
+      "t": "07:46:27.323",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:27.693",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2,\"text\":\"الم\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:6\",\"score\":1}}"
+    },
+    {
+      "t": "07:46:27.693",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:21\",\"text_length\":3,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:28.087",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.3,\"text\":\"شر\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:1\",\"score\":0.5}}"
+    },
+    {
+      "t": "07:46:28.087",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:21\",\"text_length\":2,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:28.517",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.6,\"text\":\"الم\",\"tokenCount\":1,\"champion\":{\"ref\":\"78:6\",\"score\":1}}"
+    },
+    {
+      "t": "07:46:28.517",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:21\",\"text_length\":3,\"word_matches\":0,\"acoustic_word\":null,\"char_word\":null,\"advanced\":false,\"final_flush\":false,\"word_positio"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":2.9,\"text\":\"شركره\",\"tokenCount\":3,\"champion\":{\"ref\":\"78:15\",\"score\":0.6}}"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:21\",\"text_length\":5,\"word_matches\":0,\"acoustic_word\":3,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":4"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"confirmed\",\"ref\":\"78:21\",\"margin\":0.592,\"fresh_samples\":38400,\"matched_indices\":[3]}"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:21\",\"to_ref\":\"78:22\",\"action\":\"armed\",\"reason\":\"final word reached\",\"word_position\":4,\"total_words\":4,\"coverage\":1,\"co"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"pending_emission\",\"action\":\"armed\",\"ref\":\"78:22\",\"margin\":1.404,\"fresh_samples\":0}"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "ui",
+      "text": "event: verse_match 78:21 conf=0.99 → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "ui",
+      "text": "event: word_progress 78:21 idx=4/4 matched=[3] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:28.981",
+      "kind": "ui",
+      "text": "event: verse_candidate STABLE [78:22@0.99] → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:29.234",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":0.8,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:29.234",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:22\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1"
+    },
+    {
+      "t": "07:46:29.234",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:29.234",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:22\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":2,\"coverage"
+    },
+    {
+      "t": "07:46:29.511",
+      "kind": "diag",
+      "text": "transcribe {\"audioSec\":1.1,\"text\":\"نهايهدرس\",\"tokenCount\":2,\"champion\":{\"ref\":\"78:4\",\"score\":0.5556}}"
+    },
+    {
+      "t": "07:46:29.511",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"tracking_cycle\",\"ref\":\"78:22\",\"text_length\":8,\"word_matches\":0,\"acoustic_word\":0,\"char_word\":null,\"advanced\":true,\"final_flush\":false,\"word_position\":1"
+    },
+    {
+      "t": "07:46:29.511",
+      "kind": "ui",
+      "text": "event: lex_check → coach[cursor=17 state=tracking]: (no effect)"
+    },
+    {
+      "t": "07:46:29.511",
+      "kind": "diag",
+      "text": "tracker {\"type\":\"advance_decision\",\"from_ref\":\"78:22\",\"to_ref\":null,\"action\":\"blocked\",\"reason\":\"pending confirmation dwell\",\"word_position\":1,\"total_words\":2,\"coverage"
+    }
+  ]
+}

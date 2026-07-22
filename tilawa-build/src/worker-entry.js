@@ -24,6 +24,16 @@
  *                                   can detect a stale-cached worker bundle
  *                                   (see js/config.js WORKER_PATH)
  *   { type: "event", event: WorkerOutbound }       every tilawa onOutput event
+ *                                                   (WorkerOutbound now also
+ *                                                   includes "decoded_text" —
+ *                                                   the raw CTC decode text,
+ *                                                   forwarded on EVERY decode
+ *                                                   cycle in both discovery
+ *                                                   and tracking mode. This
+ *                                                   is the primary signal for
+ *                                                   the alignment-driven
+ *                                                   coach — see
+ *                                                   tilawa-build/README.md)
  *   { type: "stopped" }                            stop flush completed
  *   { type: "transcribed", prediction }            one-shot result
  *   { type: "error", message, fatal }
@@ -96,14 +106,24 @@ function expectedWindow() {
 }
 
 function maybeEmitWordVerdicts(event) {
-  if (event.type !== "raw_transcript" || !event.text) return;
+  // decoded_text (from tilawa's `transcribe` diagnostic) fires every decode
+  // cycle in BOTH discovery and tracking mode — unlike raw_transcript,
+  // which tracking mode suppresses entirely. This is what makes the
+  // alignment-driven coach's continuous capture-and-evaluate model
+  // possible: see CLAUDE.md and js/recitation-coach.js.
+  if (event.type !== "decoded_text" || !event.text) return;
   const window = expectedWindow();
   if (!window) return;
   const decoded = event.text.trim().split(/\s+/).filter(Boolean);
   if (decoded.length === 0) return;
   const verdicts = alignTranscript(decoded, window);
   if (verdicts.length) {
-    postEvent({ type: "word_verdicts", surah: expectedRange.surah, verdicts });
+    postEvent({
+      type: "word_verdicts",
+      surah: expectedRange.surah,
+      verdicts,
+      text: event.text,
+    });
   }
 }
 
@@ -190,6 +210,26 @@ function buildSession(quranSubset, config) {
       // output (see drainLoop / resetEpoch).
       onDiagnostic: (event, data) => {
         if (debugEnabled) self.postMessage({ type: "diag", event, data });
+        // Always-on continuous transcription signal (Phase 1 of the
+        // alignment-driven coach rewrite — see tilawa-build/README.md).
+        // Unlike every other tracker diagnostic, `event === "transcribe"`
+        // IS meaningful here: this one is dispatched directly (not wrapped
+        // as "tracker"), and it fires on EVERY decode cycle in BOTH
+        // discovery and tracking mode (field-verified: unlike
+        // `raw_transcript`, which tracking mode suppresses entirely, this
+        // keeps flowing the whole session). This is deliberately forwarded
+        // unconditionally, not gated behind debugEnabled — it's about to
+        // become the primary data source for verse identity and mistake
+        // detection, not a debug-only aid.
+        if (event === "transcribe" && data && typeof data.text === "string") {
+          postEvent({
+            type: "decoded_text",
+            text: data.text,
+            audioSec: data.audioSec,
+            tokenCount: data.tokenCount,
+            champion: data.champion || null,
+          });
+        }
         // CRITICAL: `event` here is NOT the diagnostic's own type. The
         // vendored tracker wraps every one of its diagnostics as
         // onDiagnostic("tracker", {...theRealDiagnostic}) — event is
