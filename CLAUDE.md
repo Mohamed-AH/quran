@@ -252,30 +252,39 @@ only sliding-window re-decodes.
     start/advance off the now-current state.
   - **Real-ONNX integration validation** (new harness,
     `scratchpad/e2e/realcoach.mjs` — drives the actual compiled worker
-    bundle AND the actual production `js/recitation-coach.js` together,
-    no hand-mirrored logic): clean fixtures mostly score well (Al-Falaq
-    113:1-5 → 100, all done, zero skips), but **Ya-Sin 36:1-5 produced a
-    real false skip on ayah 4** ("عَلَىٰ صِرَٰطٍ مُّسْتَقِيمٍ", 3 words) —
-    zero alignment coverage ever landed on it before evidence for ayah 5
-    stabilized. Ayah 1 (embeds the Basmala + the standalone letter "يٓسٓ")
-    correctly landed in the 'unverified' tier rather than being force-called
-    either way — heard "ل والقر الرحمن الرحيم" vs expected "بِسْمِ ٱللَّهِ
-    ٱلرَّحْمَٰنِ ٱلرَّحِيمِ يسٓ", which is an honest call given "يس" (a
-    2-letter mystical/muqatta'at word) is a genuinely hard ASR target — this
-    is the NEW tier working as designed, not a bug.
-    The ayah-4 false skip, however, is a real, open calibration gap: a
-    short (<=3-word) ayah sandwiched between two others can end up with
-    zero anchors if the alignment window's anchor-trimming happens to land
-    on its neighbors. Per the user's explicitly stated priority, a false
-    skip on genuinely correct audio is an ACCEPTED tradeoff (worse than
-    missing a real skip, better than crediting one) — so this does not
-    block calling Phase 2 functionally complete, but it is a concrete,
-    real (not hypothetical) follow-up: consider whether short ayahs need a
-    wider/dedicated capture window, or whether zero-coverage-at-close should
-    get one extra decode cycle of grace before finalizing 'skipped' when the
-    ayah is short. NOT yet tuned — do not blind-guess a threshold fix here;
-    the same "premature calibration without a real corpus" mistake from the
-    old tracker-fallback gate applies equally to a new signal.
+    bundle AND the actual production `js/recitation-coach.js` together, no
+    hand-mirrored logic) — FULL RUN, all 7 real clean fixtures:
+    Al-Falaq 113:1-5 → 100 (all done, zero skips); An-Nas 114:1-6 → 100;
+    Ar-Rahman 55:1-4 → 100; Al-Mulk 67:1-4 → 100; Al-Asr 103:1-3 → 100;
+    Fatiha 1:1-only-then-stop → verse 1 done, verses 2-7 correctly
+    'not reached' (NOT skipped) — the stop-early-is-not-an-accusation
+    behavior works. 6 of 7 fixtures: zero false skips, zero false
+    mistakes. **The one exception**: Ya-Sin 36:1-5 produced a real false
+    skip on ayah 4 ("عَلَىٰ صِرَٰطٍ مُّسْتَقِيمٍ", 3 words) — zero
+    alignment coverage ever landed on it before evidence for ayah 5
+    stabilized. Ayah 1 in the same fixture (embeds the Basmala + the
+    standalone letter "يٓسٓ") correctly landed in the 'unverified' tier
+    rather than being force-called either way — heard "ل والقر الرحمن
+    الرحيم" vs expected "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ يسٓ", an
+    honest call given "يس" (a 2-letter mystical/muqatta'at word) is a
+    genuinely hard ASR target — this is the NEW tier working as designed,
+    not a bug.
+    The ayah-4 false skip is a real, open calibration gap: a short
+    (<=3-word) ayah sandwiched between two others can end up with zero
+    anchors if the alignment window's anchor-trimming happens to land on
+    its neighbors — plausibly aggravated here by ayah 1's own decode
+    trouble disrupting the alignment window shortly before. Per the user's
+    explicitly stated priority, a false skip on genuinely correct audio is
+    an ACCEPTED tradeoff (worse than missing a real skip, better than
+    crediting one) — so 1 false skip out of 7 clean fixtures (all other 6
+    perfect) does not block calling Phase 2 functionally complete, but it
+    is a concrete, real (not hypothetical) follow-up: consider whether
+    short ayahs need a wider/dedicated capture window, or whether
+    zero-coverage-at-close should get one extra decode cycle of grace
+    before finalizing 'skipped' when the ayah is short. NOT yet tuned — do
+    not blind-guess a threshold fix here; the same "premature calibration
+    without a real corpus" mistake from the old tracker-fallback gate
+    applies equally to a new signal.
 - [ ] **Phase 3 — UI**: uncertain/review chip + heard-vs-expected detail in
   `js/recitation.js`. NOT STARTED.
 - [ ] **Phase 4 — cutover**: remove retired tracker-dependent logic once new
