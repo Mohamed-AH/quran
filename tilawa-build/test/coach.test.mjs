@@ -227,6 +227,31 @@ test("field scenario: a fully-omitted verse between two well-recited ones is cau
   assert.deepEqual(skipEffect.ayahs, [3]);
 });
 
+test("field scenario: a stuck cursor can still catch up to evidence far beyond the old +2 lookahead", () => {
+  // Real regression (Log16.txt, Surah 94): a messy decode of ayah 1 never
+  // produced 2 stable matched words on ayah 2 or 3 (the old lookahead
+  // limit), so the cursor never moved — even though ayahs 4-8 were
+  // decoded almost perfectly moments later. With the lookahead capped at
+  // cursor+2, that later evidence was outside the window entirely and the
+  // session silently missed most of a genuinely correct recitation, never
+  // auto-stopping. The candidate scan (and worker-entry.js's
+  // expectedWindow()) must cover the FULL remaining range so a stuck
+  // cursor can still catch up once real evidence appears anywhere ahead.
+  const coach = makeCoach();
+  coach.handleEvent(wv(1, matched(1, [0, 1, 2, 3]))); // starts, cursor=1
+  // Ayahs 2 and 3 never get any evidence — simulates the messy/stuck
+  // decode period where nothing crosses the advance threshold nearby.
+  // Strong evidence suddenly appears for ayah 6 — far beyond cursor+2 (3).
+  coach.handleEvent(wv(1, matched(6, [0, 1, 2]))); // cycle 1
+  const effects = coach.handleEvent(wv(1, matched(6, [2]))); // cycle 2 — closes ayah 1
+
+  assert.equal(coach.cursor, 6); // reached despite being outside the old +2 window
+  assert.equal(coach.perVerse[1].status, "done");
+  const skipEffect = effects.find((e) => e.type === "verses-skipped");
+  assert.ok(skipEffect); // ayahs 2-5 never independently evidenced — genuinely reported
+  assert.deepEqual(skipEffect.ayahs, [2, 3, 4, 5]);
+});
+
 test("missing and substituted words are attached to the verse-committed effect and repaired by a later match", () => {
   const coach = makeCoach();
   coach.handleEvent(wv(1, matched(1, [0, 1, 2, 3])));

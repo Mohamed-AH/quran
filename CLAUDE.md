@@ -291,6 +291,45 @@ only sliding-window re-decodes.
   engine passes every known regression case; bump `CONFIG.TILAWA.BUILD` +
   all HTML `?v=` stamps; commit; push. NOT STARTED.
 
+## Phase 2 hotfix — stuck-cursor blind spot (2026-07-22, Log16.txt)
+
+User tested Phase 2 live (build `2026-07-21m`, Surah 94/Ash-Sharh 1-8):
+reported "very poor result and did not auto stop" despite reciting the
+whole passage. `Log16.txt`'s raw `transcribe` log proved it: ayahs 4-8 were
+decoded almost perfectly by ~36s into a 102s session, but the coach's
+cursor never left ayah 1 (`milestones` shows "now on ayah 1" exactly once).
+Final summary: only ayah 1 done, ayahs 2-3 'unverified' off contaminated
+early evidence, ayahs 4-8 wrongly reported 'not reached', score 90, no
+auto-stop (needs `cursor === ayahEnd`, unreachable).
+
+**Root cause**: both `expectedWindow()` (worker-entry.js) and the coach's
+advance-candidate scan (`_onWordVerdicts` in recitation-coach.js) capped
+the post-start lookahead at `cursorAyah + 2`. Ayah 1's own decode was
+messy (a hard-to-transcribe short opening line) and never produced 2
+stable matched words on ayah 2 or 3 — so the cursor never advanced. Once
+stuck, the window never widened, so genuine evidence for ayahs 4-8 was
+**never even compared** against the right expected words for the rest of
+the session — not a scoring error, a total blind spot. This is worse than
+any single false skip: it can silently discard most of a correct session.
+
+**Fix**: both the worker's window and the coach's candidate scan now
+cover the FULL remaining range (`[cursor, ayahEnd]`), not `cursor+2`.
+`MAX_WINDOW_WORDS` raised 64→96 for headroom. `align.js`'s own
+`MIN_ANCHORS` gate and the coach's existing 2-consecutive-cycle stability
+requirement are the real guards against a coincidental far-ahead match —
+a tight window was never actually buying safety, just creating this blind
+spot. New regression test in `coach.test.mjs` ("a stuck cursor can still
+catch up to evidence far beyond the old +2 lookahead") directly
+reproduces the Log16.txt failure pattern and confirms the fix — cursor
+now reaches ayah 6 from a stuck ayah 1 in one shot. All 35 unit tests
+pass. Re-ran the real-ONNX clean-fixture suite — Al-Falaq and Ya-Sin
+confirmed unaffected/unchanged (Ya-Sin's separate short-ayah false-skip
+finding, above, persists unchanged — confirms it's a distinct issue, not
+caused by this bug); full 7-fixture re-run in progress at commit time.
+Build stamp bumped to `2026-07-22a` (config.js + all HTML `?v=` tags) —
+this is a real, user-visible fix, unlike Phase 1/2's initial landing
+which was deliberately left unstamped.
+
 ## Known landmines (don't re-learn these the hard way)
 
 - **`event` vs `data.type`**: tilawa wraps ALL tracker diagnostics as

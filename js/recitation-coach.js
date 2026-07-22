@@ -383,8 +383,18 @@
       // evidence, and has it shown it consistently for enough consecutive
       // cycles (see advanceStabilityCycles) to safely close the current
       // ayah's window rather than react to one noisy fragment?
+      //
+      // Scans the FULL remaining range, not just cursor+1/+2 (field bug,
+      // Log16.txt/Surah 94: a messy decode of ayah 1 never produced 2
+      // stable matched words on ayah 2 or 3, so the cursor never moved —
+      // and with a narrow lookahead, later ayahs (4-8, clearly and
+      // correctly recited soon after) were never even considered as
+      // candidates, so the session silently missed most of a genuinely
+      // correct recitation. worker-entry.js's expectedWindow() widens to
+      // match — the alignment window and this scan must cover the same
+      // range or genuine far-ahead evidence exists but is invisible here.
       let candidate = this.cursor;
-      for (let a = this.cursor + 1; a <= Math.min(this.cursor + 2, this.ayahEnd); a++) {
+      for (let a = this.cursor + 1; a <= this.ayahEnd; a++) {
         if (this.perVerse[a] && this.perVerse[a].matched.size >= this.cfg.advanceMinWords) {
           candidate = a;
         }
