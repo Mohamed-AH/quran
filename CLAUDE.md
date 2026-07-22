@@ -325,7 +325,9 @@ now reaches ayah 6 from a stuck ayah 1 in one shot. All 35 unit tests
 pass. Re-ran the real-ONNX clean-fixture suite — Al-Falaq and Ya-Sin
 confirmed unaffected/unchanged (Ya-Sin's separate short-ayah false-skip
 finding, above, persists unchanged — confirms it's a distinct issue, not
-caused by this bug); full 7-fixture re-run in progress at commit time.
+caused by this bug); full 7-fixture re-run confirmed clean — identical
+results to the pre-fix run (6/7 perfect, Ya-Sin's ayah-4 issue unchanged)
+— the widened window introduced zero regressions across the whole corpus.
 Build stamp bumped to `2026-07-22a` (config.js + all HTML `?v=` tags) —
 this is a real, user-visible fix, unlike Phase 1/2's initial landing
 which was deliberately left unstamped.
