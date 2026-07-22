@@ -80,21 +80,34 @@ let scopedSurah = null; // null = full corpus (freestyle, pre-anchor)
 let expectedRange = null; // { surah, ayahStart, ayahEnd }
 let cursorAyah = null;
 
-const MAX_WINDOW_WORDS = 64;
+const MAX_WINDOW_WORDS = 96;
 
+/**
+ * Field bug (Log16.txt, Surah 94, build 2026-07-21m/Phase 2): the window
+ * used to cap at cursorAyah+2 after start. When the cursor stalls — e.g. a
+ * messy decode of a short/hard opening ayah never accumulates 2 stable
+ * matched words on any nearby ayah — the window never widens past that
+ * point for the REST OF THE SESSION, no matter how much later content gets
+ * decoded. Traced directly from the raw `transcribe` log: ayahs 4-8 of
+ * Surah 94 were decoded almost perfectly by ~36s in, but the cursor never
+ * left ayah 1, so none of it was ever compared against the right expected
+ * words — total blind spot, not a scoring error. The coach's advance
+ * candidate scan (js/recitation-coach.js) needs the same range to be able
+ * to detect and act on it. This is the direct cause of a fully-correct
+ * session scoring 90 with only 1/8 verses credited and never auto-stopping
+ * (passage-complete requires cursor === ayahEnd, which was unreachable).
+ */
 function expectedWindow() {
   if (!session || !expectedRange) return null;
   const words = [];
-  // Before the session starts (no cursor yet) align against the head of the
-  // expected passage — this powers transcript-based session start when the
-  // tracker itself is stuck. After start: cursor verse + the next TWO, so a
-  // fast reciter's fragment spanning multiple verses can still be matched
-  // directly (mirrors the coach's multi-step transcript advance).
+  // Always align against the FULL remaining expected range (bounded only
+  // by MAX_WINDOW_WORDS) — before start AND after. A narrow post-start
+  // lookahead sounds more precise but creates exactly the stuck-cursor
+  // blind spot above; align.js's own MIN_ANCHORS gate and the coach's
+  // advance-stability requirement (>=2 consecutive cycles) are the real
+  // guards against a coincidental far-away match, not a tight window.
   const from = cursorAyah === null ? expectedRange.ayahStart : cursorAyah;
-  const to =
-    cursorAyah === null
-      ? expectedRange.ayahEnd
-      : Math.min(cursorAyah + 2, expectedRange.ayahEnd);
+  const to = expectedRange.ayahEnd;
   for (let a = from; a <= to && words.length < MAX_WINDOW_WORDS; a++) {
     const verse = session.db.getVerse(expectedRange.surah, a);
     if (!verse) continue;
