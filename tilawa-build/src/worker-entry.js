@@ -190,6 +190,25 @@ function buildSession(quranSubset, config) {
       // output (see drainLoop / resetEpoch).
       onDiagnostic: (event, data) => {
         if (debugEnabled) self.postMessage({ type: "diag", event, data });
+        // CRITICAL: `event` here is NOT the diagnostic's own type. The
+        // vendored tracker wraps every one of its diagnostics as
+        // onDiagnostic("tracker", {...theRealDiagnostic}) — event is
+        // ALWAYS the literal string "tracker" for every tracking_cycle,
+        // discovery_cycle, commit, advance_decision, stale_exit, etc. The
+        // real type lives at `data.type`. (The ONE exception is the
+        // one-shot `transcribe` diagnostic, dispatched directly as
+        // onDiagnostic("transcribe", {...}) — that one's `event` IS
+        // meaningful.) Field bug (builds 2026-07-21f through -21l): both
+        // lex_check and tracking_abandoned below checked `event ===
+        // "tracking_cycle"` / `event === "stale_exit"` — a comparison that
+        // can NEVER be true, since `event` is always "tracker" — so
+        // neither ever fired, in any build, ever. Every content-verification
+        // gate and false-start-retraction fix built this session was
+        // completely inert in production the entire time; confirmed by
+        // replaying real field logs and by running the actual compiled
+        // bundle (not a hand-mirrored test copy) end-to-end. The fix is
+        // exactly this: check `data.type`, not `event`.
+        //
         // tracking_cycle's `word_matches` is tilawa's own per-cycle LEXICAL
         // alignment count (alignPosition() against the tracked verse's real
         // words) — distinct from `matched_indices` in the word_progress
@@ -205,8 +224,8 @@ function buildSession(quranSubset, config) {
         // so only a sustained, whole-session absence of any real lexical
         // match is trustworthy negative evidence.
         if (
-          event === "tracking_cycle" &&
           data &&
+          data.type === "tracking_cycle" &&
           data.advanced &&
           typeof data.ref === "string"
         ) {
@@ -229,7 +248,7 @@ function buildSession(quranSubset, config) {
         // abandoning, and undo a false "verses skipped" start rather than
         // let a bogus one-shot acoustic match stand — see coach
         // _onTrackingAbandoned.
-        if (event === "stale_exit" && data && typeof data.ref === "string") {
+        if (data && data.type === "stale_exit" && typeof data.ref === "string") {
           const sep = data.ref.indexOf(":");
           if (sep > 0) {
             postEvent({

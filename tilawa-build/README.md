@@ -549,3 +549,84 @@ is untouched; `lexAdvances > 0` is required to trust it), and the worst
 case if tilawa's stale_exit fires on a genuinely-correct-but-slow opening
 commit is simply re-listening for the start signal again — not an
 incorrect verdict.
+
+## `lex_check` and `tracking_abandoned` never fired, in any build, ever — and the fix forced a full recalibration
+
+This supersedes essentially everything the "Content-verification gate" and
+"Per-verse content-verification" sections above say about verified
+thresholds — read this section for what's actually true today.
+
+**The bug.** `worker-entry.js`'s `onDiagnostic` callback checked `event ===
+"tracking_cycle"` and `event === "stale_exit"`. Both comparisons can NEVER
+be true. The vendored tracker wraps every one of its own diagnostics as
+`onDiagnostic("tracker", {...theRealDiagnostic})` — the first argument is
+ALWAYS the literal string `"tracker"`; the real diagnostic type lives at
+`data.type`. (The one exception: the one-shot `transcribe` diagnostic is
+dispatched directly as `onDiagnostic("transcribe", {...})` — that one's
+first argument IS meaningful, which is exactly why this bug was so easy to
+miss: half of the two possible `event` values behaved as expected.)
+
+Confirmed two ways: replaying a real field log (build 2026-07-21l, Surah
+86) event-for-event against the current coach showed the summary SHOULD
+have been `score: 31` with 13 of 17 verses `unverified` — the actual
+report said `score: 99`, zero unverified. And running the actual compiled
+`js/vendor/tilawa-worker.js` bundle directly in Node (a mocked `self`, real
+model, real audio — see `scratchpad e2e/realworker.mjs`, not the old
+`e2e.mjs`, which mirrors this exact logic by hand and had the identical
+bug baked into its mirror) showed **zero** `lex_check` events posted out
+of 38 total, for a session that should have produced over a dozen.
+
+This means every fix in the two sections above, and the `stale_exit` →
+`tracking_abandoned` mechanism, have been completely inert in production
+since they were introduced — the code and unit tests were correct in
+isolation, they simply never received the signal they were built to react
+to. Fixed by checking `data.type` instead of `event`.
+
+**The second finding, which is the more consequential one.** Once
+`lex_check` actually started flowing, the existing thresholds
+(`minLexAdvancesForVerse: 2`, per-verse) turned out to be catastrophically
+miscalibrated for real audio — because they were "verified" against an
+e2e corpus that, due to the same bug, never actually exercised them. A new
+harness (`scratchpad e2e/realworker_multi.mjs`, running the real compiled
+bundle against 6 clean multi-verse recitations — An-Naas, Al-Falaq, Ya-Sin,
+Ar-Rahman, Al-Mulk, Al-Asr; 24 verses total) produced real (lexAdvances,
+fallbackAdvances) pairs per verse for the first time. At the old threshold,
+**16 of 24 genuinely correct verses** — 67% — got falsely flagged
+`unverified`. Worse: Ya-Sin's first 5 verses, entirely correctly recited,
+produced **zero** real lexical hits across the WHOLE session (13
+fallback-only cycles, 0 lexical) — meaning the session-wide gate would have
+forced a fully correct recitation's score to 0. Tilawa's own `word_matches`
+signal simply does not fire reliably for some passages' vocabulary,
+independent of whether the content was correct.
+
+No finite threshold fixes the session-wide case: a longer clean recitation
+of similarly sparse vocabulary can always exceed any fallback-count bar
+while genuinely being correct. Fix:
+- **Session-wide gate** (`contentUnverified`): score-zeroing DISABLED. The
+  field is still computed and reported (for visibility/future work), but
+  no longer affects `score`.
+- **Per-verse gate** (`_looksUnverified`): reformulated from "fewer than N
+  real lexical matches" to "zero real lexical matches AND at least
+  `minFallbackForVerseJudgment` (6) fallback-only cycles" — validated
+  against all 24 real per-verse data points (max real fallback-with-zero-
+  lexical observed in genuinely correct verses: 4), so the new bar has zero
+  false positives on that corpus. This necessarily narrows what the gate
+  catches: several of the original field cases motivating earlier
+  thresholds (a verse fabricated on just 1-3 fallback cycles, or a single
+  coincidental lexical match) are no longer caught by this signal alone —
+  real data proved there is no threshold that catches those without also
+  flagging routine correct recitation. These are now accepted, documented
+  gaps (see the updated tests); structural defenses (spanEvidence
+  stability, forward-jump hysteresis, `tracking_abandoned`) remain the
+  primary protection against genuine skips and fabrications.
+
+**Honest scope note.** This content-verification mechanism, even now
+genuinely functioning, is a coarse, narrow tool: it catches sustained,
+extreme fallback-only stretches (the original English-alphabet-scores-100
+case), not subtle word-level substitutions or moderate lexical sparsity.
+Catching a mispronounced or substituted word within an otherwise-tracked
+verse (e.g. "الطاغي" recited in place of "الطارق") is a fundamentally
+different, still-unshipped problem — see "Lexical substitutions within a
+tracked verse are not yet flagged" above; that requires calibrating
+`CONFIG.FEATURES.WORD_VERDICTS` against real wrong-recitation audio, which
+doesn't exist in this repo yet.

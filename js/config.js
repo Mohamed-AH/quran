@@ -91,7 +91,7 @@ CONFIG.TILAWA.MODEL_SOURCES[0] = CONFIG.API_BASE_URL + '/tilawa/model';
 // Every `<script src="js/...">` tag in app.html/test-recitation.html/etc.
 // now carries its own `?v=` query string — bump ALL of them (grep for the
 // previous date stamp) together with this constant on every recitation change.
-CONFIG.TILAWA.BUILD = '2026-07-21l';
+CONFIG.TILAWA.BUILD = '2026-07-21m';
 
 // Cache-bust the worker script: without this, `js/config.js` (small, fetched
 // fresh on most loads) can report the latest BUILD while the browser quietly
